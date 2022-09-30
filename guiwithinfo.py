@@ -32,8 +32,11 @@ class GUI:
             # Clears the entry box
             infoEntry.delete(0, "end")
 
+        # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box 
         def transcribe() :
             speechrecog.recogtest
+            transcribedAudio = speechrecog.recogtest.transcript
+            transcription.insert("end", transcribedAudio + "\n");
 
         uploadButton = Button(self.master, text='Upload')
         uploadButton.grid(row=0, column=0)
@@ -49,7 +52,7 @@ class GUI:
         downloadButton = Button(self.master, text='Download')
         downloadButton.grid(row=0, column=4)
 
-        transcribeButton = Button(self.master, text='Transcribe')
+        transcribeButton = Button(self.master, text='Transcribe', command=transcribe)
         transcribeButton.grid(row=0, column=5)
 
         clientOptions = [
