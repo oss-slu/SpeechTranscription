@@ -38,7 +38,7 @@ class GUI:
         infoEntry = Entry(self.master)
         infoEntry.grid(row=1, column=2)
 
-        infoSubmit = Button(self.master)
+        infoSubmit = Button(self.master, text="Submit")
         infoSubmit.grid(row=1, column=3)
 
         grammerCheck1 = IntVar()
