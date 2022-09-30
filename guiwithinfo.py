@@ -18,6 +18,10 @@ class GUI:
                 transcription.insert("end", "Age: ")
             elif (clicked.get() == "Gender"):
                 transcription.insert("end", "Gender: ")
+            elif (clicked.get() == "Date of birth"):
+                transcription.insert("end", "Date of birth: ")
+            elif (clicked.get() == "Date of sample"):
+                transcription.insert("end", "Date of sample: ")
             elif (clicked.get() == "Examiner Info"):
                 transcription.insert("end", "Examiner Info: ")
             # Appends the submitted text after the field name
@@ -46,6 +50,8 @@ class GUI:
                 "Name",
                 "Age",
                 "Gender",
+                "Date of birth",
+                "Date of sample",
                 "Examiner Info"
                 ]
         clicked = StringVar()
