@@ -7,6 +7,30 @@ class GUI:
         self.master.title('Speech Transcription')
         self.master.geometry('960x540')
 
+        # Sends client info submitted by user to the transciption box
+        def submitClientInfo() :
+            # Gets the current text in the entry box
+            infoEntryText = infoEntry.get()
+            # Prints the relevant field
+            if (clicked.get() == "Name"):
+                transcription.insert("end", "Name: ")
+            elif (clicked.get() == "Age"):
+                transcription.insert("end", "Age: ")
+            elif (clicked.get() == "Gender"):
+                transcription.insert("end", "Gender: ")
+            elif (clicked.get() == "Date of Birth"):
+                transcription.insert("end", "Date of Birth: ")
+            elif (clicked.get() == "Date of Sample"):
+                transcription.insert("end", "Date of Sample: ")
+            elif (clicked.get() == "Examiner Info"):
+                transcription.insert("end", "Examiner Info: ")
+            elif (clicked.get() == "Sampling Context"):
+                transcription.insert("end", "Sampling Context: ")
+            # Appends the submitted text after the field name
+            transcription.insert("end", infoEntryText + "\n")
+            # Clears the entry box
+            infoEntry.delete(0, "end")
+
         uploadButton = Button(self.master, text='Upload')
         uploadButton.grid(row=0, column=0)
         recordButton = Button(self.master, text='Record')
@@ -28,7 +52,10 @@ class GUI:
                 "Name",
                 "Age",
                 "Gender",
-                "Examiner Info"
+                "Date of Birth",
+                "Date of Sample",
+                "Examiner Info",
+                "Sampling Context"
                 ]
         clicked = StringVar()
         clicked.set("Name")
@@ -38,7 +65,7 @@ class GUI:
         infoEntry = Entry(self.master)
         infoEntry.grid(row=1, column=2)
 
-        infoSubmit = Button(self.master, text="Submit")
+        infoSubmit = Button(self.master, text="Submit", command=submitClientInfo)
         infoSubmit.grid(row=1, column=3)
 
         grammerCheck1 = IntVar()
@@ -68,9 +95,9 @@ class GUI:
         transcription = Text(self.master)
         transcription.grid(row=5, column=0, columnspan=3)
 
+
         transcriptionWithGrammer = Text(self.master)
         transcriptionWithGrammer.grid(row=5, column=3, columnspan=3)
-
 
         self.master.mainloop()
 
