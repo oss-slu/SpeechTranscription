@@ -1,5 +1,4 @@
 import pyaudio
-import keyboard
 import wave
 
 class Record:
@@ -51,13 +50,6 @@ class Record:
         self.isRecording = True
     def stop(self):
         self.isRecording = False
-
-if __name__ == "__main__":
-    mic = Record()
-    mic.start()
-    while True:
-        if keyboard.read_key() == "r":
-            mic.stop()
 
 
 
