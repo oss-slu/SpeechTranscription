@@ -1,5 +1,6 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu
 import tkinter as tk
+import speechrecog.recogtest
 
 class GUI:
     def __init__(self):
@@ -30,6 +31,9 @@ class GUI:
             transcription.insert("end", infoEntryText + "\n")
             # Clears the entry box
             infoEntry.delete(0, "end")
+
+        def transcribe() :
+            speechrecog.recogtest
 
         uploadButton = Button(self.master, text='Upload')
         uploadButton.grid(row=0, column=0)
