@@ -10,11 +10,11 @@ class GUI:
 
     def recordAudio(self, recordButton):
         if self.isRecording:
-            recorder.start()
+            self.recorder.start()
             recordButton.config(text='Record')
             self.isRecording = False
         else:
-            recorder.stop()
+            self.recorder.stop()
             recordButton.config(text='Stop')
             self.isRecording = True
 
