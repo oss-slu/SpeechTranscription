@@ -14,5 +14,8 @@ class recog:
         with harvard as source:
             audio = r.record(source)
 
-        transcript = r.recognize_google(audio)
-        print(transcript)
+        self.transcript = r.recognize_google(audio, language = 'en-IN')
+        print(self.transcript)
+
+    def getTranscript(self):
+        return self.transcript

@@ -49,8 +49,7 @@ class GUI:
 
 # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box 
     def transcribe(self) :
-        recog(self.filePath)
-        transcribedAudio = recog(filePath).transcript
+        transcribedAudio = recog(self.filePath).getTranscript()
         self.transcription.insert("end", transcribedAudio + "\n");
 
     def __init__(self):
