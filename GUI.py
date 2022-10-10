@@ -1,20 +1,18 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu
 import tkinter as tk
-import recording_audio
+from recording_audio import *
 
 class GUI:
 
-    isRecording = False
-    recorder = recording_audio.Record()
-
-
     def recordAudio(self, recordButton):
         if self.isRecording:
-            self.recorder.start()
+            print(self.isRecording)
+            self.recorder.stop_recording()
             recordButton.config(text='Record')
             self.isRecording = False
         else:
-            self.recorder.stop()
+            print(self.isRecording)
+            self.recorder.recording(True)
             recordButton.config(text='Stop')
             self.isRecording = True
 
@@ -53,6 +51,9 @@ class GUI:
         self.master = tk.Tk()
         self.master.title('Speech Transcription')
         self.master.geometry('960x540')
+
+        self.recorder = Record(self.master)
+        self.isRecording = False
 
         uploadButton = Button(self.master, text='Upload')
         uploadButton.grid(row=0, column=0)

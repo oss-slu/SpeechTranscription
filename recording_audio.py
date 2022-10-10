@@ -1,56 +1,62 @@
 import pyaudio
 import wave
+import tkinter as tk
 
 class Record:
-    def __init__(self):
+    def __init__(self, main):
 
-        self.isRecording = False
+        self.main = main
 
-        CHUNK = 1024
-        FORMAT = pyaudio.paInt16
-        CHANNELS = 1
-        RATE = 44100
+        self.CHUNK = 8000
+        self.FORMAT = pyaudio.paInt16
+        self.CHANNELS = 1
+        self.RATE = 44100
 
-        p = pyaudio.PyAudio()
+        self.p = pyaudio.PyAudio()
 
-        stream = p.open(format=FORMAT,
-                        channels=CHANNELS,
-                        rate=RATE,
+        self.frames = []
+
+        self.stream = self.p.open(format=self.FORMAT,
+                        channels=self.CHANNELS,
+                        rate=self.RATE,
                         input=True,
-                        frames_per_buffer=CHUNK)
+                        frames_per_buffer=self.CHUNK)
 
+    def recording(self, isRecording): 
+        print("test")
+        self.frames = []   
+        stream = self.p.open(format=self.FORMAT,
+                    channels=self.CHANNELS,
+                    rate=self.RATE,
+                    input=True,
+                    frames_per_buffer=self.CHUNK)
+                    
+        while isRecording:
+            data = self.stream.read(self.CHUNK, exception_on_overflow = False)
+            self.frames.append(data)
+            self.main.update()
+            print("**recording**")
 
-        print("start recording...")
-        print("hit r to stop recording")
+        print("recording ended")
 
-        frames = []
-        #seconds = 5
-        #for i in range(0, int(RATE / CHUNK * seconds)):
-        #    data = stream.read(CHUNK)
-        #    frames.append(data)
-        while self.isRecording:
-            data = stream.read(CHUNK)
-            frames.append(data)
-
-
-        print("recording stopped")
-
-        stream.stop_stream()
         stream.close()
-        p.terminate()
 
         outfile = wave.open("output1.wav", 'wb')
-        outfile.setnchannels(CHANNELS)
-        outfile.setsampwidth(p.get_sample_size(FORMAT))
-        outfile.setframerate(RATE)
-        outfile.writeframes(b''.join(frames))
+        outfile.setnchannels(self.CHANNELS)
+        outfile.setsampwidth(self.p.get_sample_size(self.FORMAT))
+        outfile.setframerate(self.RATE)
+        outfile.writeframes(b''.join(self.frames))
         outfile.close()
 
-    def start(self):
-        self.isRecording = True
-    def stop(self):
-        self.isRecording = False
+        print("file saved")
 
+        
+
+    def stop_recording(self):
+        self.isRecording = False
+        print("not recording")
+        
+        print("file saved")
 
 
 
