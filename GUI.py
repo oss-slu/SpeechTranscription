@@ -1,18 +1,20 @@
-from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu
+from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog
+from speechrecog.recogtest import recog
 import tkinter as tk
-from recording_audio import *
+import recording_audio
 
 class GUI:
 
+    isRecording = False
+    recorder = recording_audio.Record()
+
     def recordAudio(self, recordButton):
         if self.isRecording:
-            print(self.isRecording)
-            self.recorder.stop_recording()
+            self.recorder.start()
             recordButton.config(text='Record')
             self.isRecording = False
         else:
-            print(self.isRecording)
-            self.recorder.recording(True)
+            self.recorder.stop()
             recordButton.config(text='Stop')
             self.isRecording = True
 
