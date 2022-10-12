@@ -64,6 +64,7 @@ class GUI:
             converting = addConventions.addWordLevelErrors(converting)
         if (self.grammarCheck4.get() == 1):
             converting = addConventions.addOmissions(converting)
+        self.transcriptionWithgrammar.delete('1.0', "end")
         self.transcriptionWithgrammar.insert("end", converting)
 
     def __init__(self):
