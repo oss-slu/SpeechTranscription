@@ -13,9 +13,10 @@ def addInflectionalMorphemes (x):
         # Token is plural and ends in s
         if (tuple[1] == "NNS" and tuple[0][-1] == 's'):
             converted += wnl.lemmatize(tuple[0], "n") + "/s "
-        # Token is "'s"
+        # Token is "'s" and is possessive
         elif (tuple[0] == "'s" and tuple[1] == "POS"):
             converted = converted[:-1] + "/s "
+        # Token is "'s" and is verb contraction
         elif (tuple[0] == "'s"):
             converted = converted[:-1] + "/'s "
         # Token is past tense verb ending in "ed"
