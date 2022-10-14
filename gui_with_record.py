@@ -15,9 +15,6 @@ p = pyaudio.PyAudio()
 
 class GUI:
 
-    #isRecording = False
-    #recorder = recording_audio.Record()
-
     def record(self):
         self.isRecording = True
         self.frames = []
@@ -42,19 +39,22 @@ class GUI:
 
     def stop(self):
         self.isRecording = False
+        self.filePath = 'session_output.wav'
 
     def recordAudio(self):
-        #print('action called')
         if self.recordButton['text'] == 'Record':
             self.recordButton['text'] = 'Stop'
-            #self.recorder.record(self.base)
-            self.master.record()
+            self.record()
             print('*recording*')
         else:
             self.recordButton['text'] = 'Record'
-            #self.recorder.stop()
-            self.master.stop()
+            self.stop()
             print('*recording stopped*')
+
+    def uploadAudio(self, audioPlaceholder):
+        self.filePath = filedialog.askopenfilename()
+        print('File uploaded: ', self.filePath)
+        audioPlaceholder.config(text='Audio Uploaded Here!')
 
 
 # Sends client info submitted by user to the transciption box
@@ -83,8 +83,7 @@ class GUI:
 
 # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box 
     def transcribe(self) :
-        speechrecog.recogtest
-        transcribedAudio = speechrecog.recogtest.transcript
+        transcribedAudio = recog(self.filePath).getTranscript()
         self.transcription.insert("end", transcribedAudio + "\n");
 
     def __init__(self):
