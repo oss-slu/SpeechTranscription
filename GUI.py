@@ -1,27 +1,62 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog
 from speechrecog.recogtest import recog
 import tkinter as tk
-import recording_audio
+#import recording_audio
+import pyaudio
+import wave
+import os
+
+#global variables needed to record audio
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
+p = pyaudio.PyAudio()
 
 class GUI:
 
-    isRecording = False
-    recorder = recording_audio.Record()
+    def record(self):
+        self.isRecording = True
+        self.frames = []
+        stream = self.p.open(format = self.FORMAT,
+                            channels = self.CHANNELS,
+                            rate = self.RATE,
+                            input = True,
+                            frames_per_buffer = self.CHUNK)
+        while self.isRecording:
+            data = stream.read(self.CHUNK)
+            self.frames.append(data)
+            self.master.update()
 
-    def recordAudio(self, recordButton):
-        if self.isRecording:
-            self.recorder.start()
-            recordButton.config(text='Record')
-            self.isRecording = False
+        stream.close()
+
+        wf = wave.open('session_output.wav', 'wb')
+        wf.setnchannels(self.CHANNELS)
+        wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
+        wf.setframerate(self.RATE)
+        wf.writeframes(b''.join(self.frames))
+        wf.close()
+
+    def stop(self):
+        self.isRecording = False
+        self.filePath = 'session_output.wav'
+        self.audioPlaceholder.config(text='Audio Recorded Here!')
+
+    def recordAudio(self):
+        if self.recordButton['text'] == 'Record':
+            self.recordButton['text'] = 'Stop'
+            self.record()
+            print('*recording*')
         else:
-            self.recorder.stop()
-            recordButton.config(text='Stop')
-            self.isRecording = True
+            self.recordButton['text'] = 'Record'
+            self.stop()
+            print('*recording stopped*')
 
-    def uploadAudio(self, audioPlaceholder):
+    def uploadAudio(self):
         self.filePath = filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
-        audioPlaceholder.config(text='Audio Uploaded Here!')
+        self.audioPlaceholder.config(text='Audio Uploaded Here!')
+
 
 # Sends client info submitted by user to the transciption box
     def submitClientInfo(self) :
@@ -47,7 +82,7 @@ class GUI:
         # Clears the entry box
         self.infoEntry.delete(0, "end")
 
-# Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box 
+# Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
         transcribedAudio = recog(self.filePath).getTranscript()
         self.transcription.insert("end", transcribedAudio + "\n");
@@ -57,10 +92,24 @@ class GUI:
         self.master.title('Speech Transcription')
         self.master.geometry('960x540')
 
-        uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio(self.audioPlaceholder))
-        uploadButton.grid(row=0, column=0)
+        #self.recorder = Record(self.master)
+        self.CHUNK = CHUNK
+        self.FORMAT = FORMAT
+        self.CHANNELS = CHANNELS
+        self.RATE = RATE
+        self.p = p
 
-        self.recordButton = Button(self.master, text='Record', command=lambda: self.recordAudio(self.recordButton))
+        self.frames = []
+        self.isRecording = False
+        self.stream = self.p.open(format = self.FORMAT,
+                                channels = self.CHANNELS,
+                                rate = self.RATE,
+                                input = True,
+                                frames_per_buffer = self.CHUNK)
+
+        uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
+        uploadButton.grid(row=0, column=0)
+        self.recordButton = Button(self.master, text='Record', command=lambda: self.recordAudio())
         self.recordButton.grid(row=0, column=1)
 
         self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
