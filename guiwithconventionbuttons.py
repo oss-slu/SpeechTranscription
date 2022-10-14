@@ -53,7 +53,7 @@ class GUI:
         transcribedAudio = recog(self.filePath).getTranscript()
         self.transcription.insert("end", transcribedAudio + "\n");
 
-# Adds conventions to text from transcription box and puts output in transcriptionWithgrammar box
+# Adds conventions to text from transcription box and puts output in transcriptionwithGrammar box
     def addConventionsClick(self):
         converting = self.transcription.get("1.0", "end")
         if (self.grammarCheck1.get() == 1):
@@ -64,8 +64,8 @@ class GUI:
             converting = addConventions.addWordLevelErrors(converting)
         if (self.grammarCheck4.get() == 1):
             converting = addConventions.addOmissions(converting)
-        self.transcriptionWithgrammar.delete('1.0', "end")
-        self.transcriptionWithgrammar.insert("end", converting)
+        self.transcriptionwithGrammar.delete('1.0', "end")
+        self.transcriptionwithGrammar.insert("end", converting)
 
     def __init__(self):
         self.master = tk.Tk()
@@ -134,8 +134,8 @@ class GUI:
         self.transcription = Text(self.master)
         self.transcription.grid(row=5, column=0, columnspan=3)
 
-        self.transcriptionWithgrammar = Text(self.master)
-        self.transcriptionWithgrammar.grid(row=5, column=3, columnspan=3)
+        self.transcriptionwithGrammar = Text(self.master)
+        self.transcriptionwithGrammar.grid(row=5, column=3, columnspan=3)
 
 
         self.master.mainloop()
