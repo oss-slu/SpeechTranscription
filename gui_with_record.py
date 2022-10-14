@@ -40,6 +40,7 @@ class GUI:
     def stop(self):
         self.isRecording = False
         self.filePath = 'session_output.wav'
+        self.audioPlaceholder.config(text='Audio Recorded Here!')
 
     def recordAudio(self):
         if self.recordButton['text'] == 'Record':
@@ -51,10 +52,10 @@ class GUI:
             self.stop()
             print('*recording stopped*')
 
-    def uploadAudio(self, audioPlaceholder):
+    def uploadAudio(self):
         self.filePath = filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
-        audioPlaceholder.config(text='Audio Uploaded Here!')
+        self.audioPlaceholder.config(text='Audio Uploaded Here!')
 
 
 # Sends client info submitted by user to the transciption box
@@ -106,13 +107,13 @@ class GUI:
                                 input = True, 
                                 frames_per_buffer = self.CHUNK)
 
-        uploadButton = Button(self.master, text='Upload')
+        uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
         uploadButton.grid(row=0, column=0)
         self.recordButton = Button(self.master, text='Record', command=lambda: self.recordAudio())
         self.recordButton.grid(row=0, column=1)
 
-        audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
-        audioPlaceholder.grid(row=0, column=2)
+        self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
+        self.audioPlaceholder.grid(row=0, column=2)
 
         playButton = Button(self.master, text='Play')
         playButton.grid(row=0, column=3)
