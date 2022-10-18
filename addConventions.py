@@ -15,7 +15,7 @@ def addInflectionalMorphemes (x):
             converted += wnl.lemmatize(tuple[0], "n") + "/s "
         # Token is "'s" and is possessive
         elif (tuple[0] == "'s" and tuple[1] == "POS"):
-            converted = converted[:-1] + "/s "
+            converted = converted[:-1] + "/z "
         # Token is "'s" and is verb contraction
         elif (tuple[0] == "'s"):
             converted = converted[:-1] + "/'s "
