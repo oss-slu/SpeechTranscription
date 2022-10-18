@@ -27,7 +27,10 @@ def addInflectionalMorphemes (x):
             converted += wnl.lemmatize(tuple[0], "v") + "/3s "
         # Token is present participle
         elif (tuple[1] == "VBG"):
-            converted += wnl.lemmatize(tuple[0], "v") + "/ing "
+            if wnl.lemmatize(tuple[0], "v") == tuple[0]:
+                converted += wnl.lemmatize(tuple[0], "v") + " "
+            else:
+                converted += wnl.lemmatize(tuple[0], "v") + "/ing "
         # Contraction tokens
         elif (tuple[0] == "n't"):
             converted = converted[:-1] + "/n't "
@@ -45,10 +48,16 @@ def addInflectionalMorphemes (x):
             converted = converted[:-1] + "/'ve "
         # Token is punctuation
         elif (tuple[0] == "," or tuple[0] == "." or tuple[0] == "?" or tuple[0] == "!"):
-            converted = converted[:-1] + tuple[0] + " "
+            if (tuple[0] != ","):
+                converted = converted[:-1] + tuple[0] + "\n"
+            else:
+                converted = converted[:-1] + tuple[0] + " "
         # Token is a word with no changes needed
         else:
             converted += tuple[0] + " "
+
+    converted = converted.replace("ca/n't", "can/'t")
+    converted = converted.replace("do/n't", "don't")
 
     return converted + "\n"
 
