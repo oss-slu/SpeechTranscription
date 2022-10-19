@@ -1,10 +1,12 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog
 from speechrecog.recogtest import recog
 import tkinter as tk
+from tkinter.filedialog import asksaveasfile
 #import recording_audio
 import pyaudio
 import wave
 import os
+import shutil
 import addConventions
 
 #global variables needed to record audio
@@ -52,6 +54,40 @@ class GUI:
             self.recordButton['text'] = 'Record'
             self.stop()
             print('*recording stopped*')
+    
+    def play(self):
+        audio_file = wave.open(self.filePath, 'rb')
+        #code to create seperate output audio stream so audio can be played
+        out_p = pyaudio.PyAudio()
+        out_stream = out_p.open(
+            format = out_p.get_format_from_width(audio_file.getsampwidth()),
+            channels = audio_file.getnchannels(),
+            rate = audio_file.getframerate(),
+            output = True
+        )
+        output = audio_file.readframes(self.CHUNK)
+        while output != b'':
+            out_stream.write(output)
+            output = audio_file.readframes(self.CHUNK)
+
+    def download_recorded_audio(self):
+        print('downloading')
+        #self.filePath = filedialog.asksaveasfile(filetypes = files, defaultextension = files)
+        #create a copy of audio that is saved to computer
+        download_file = filedialog.asksaveasfile(defaultextension = '.wav',
+                                        filetypes = [("Wave File", '.wav'),
+                                                    ("All Files", '.*')],
+                                        #initialdir = self.filePath,
+                                        initialfile = "downloaded_audio.wav"         
+                                        )
+        #print(download_file)
+        #print(self.filePath)
+        download = wave.open(download_file.name, 'wb')
+        download.setnchannels(self.CHANNELS)
+        download.setsampwidth(self.p.get_sample_size(self.FORMAT))
+        download.setframerate(self.RATE)
+        download.writeframes(b''.join(self.frames))
+        download.close() 
 
     def uploadAudio(self):
         self.filePath = filedialog.askopenfilename()
@@ -155,10 +191,10 @@ class GUI:
         self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
         self.audioPlaceholder.grid(row=0, column=2)
 
-        playButton = Button(self.master, text='Play')
+        playButton = Button(self.master, text='Play', command=lambda: self.play())
         playButton.grid(row=0, column=3)
 
-        downloadButton = Button(self.master, text='Download')
+        downloadButton = Button(self.master, text='Download', command=lambda: self.download_recorded_audio())
         downloadButton.grid(row=0, column=4)
 
         transcribeButton = Button(self.master, text='Transcribe', command=self.transcribe)
