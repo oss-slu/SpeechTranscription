@@ -1,6 +1,7 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog
 from speechrecog.recogtest import recog
 import tkinter as tk
+from tkinter.filedialog import asksaveasfile
 #import recording_audio
 import pyaudio
 import wave
@@ -54,7 +55,6 @@ class GUI:
             print('*recording stopped*')
 
     def play(self):
-        print('play')
         audio_file = wave.open(self.filePath, 'rb')
         #code to create seperate output audio stream so audio can be played
         out_p = pyaudio.PyAudio()
@@ -71,14 +71,24 @@ class GUI:
 
     def download_recorded_audio(self):
         print('downloading')
+        #self.filePath = filedialog.asksaveasfile(filetypes = files, defaultextension = files)
         #create a copy of audio that is saved to computer
-        download_file = wave.open("downloaded_file.wav", 'wb')
-        download_file.setnchannels(self.CHANNELS)
-        download_file.setsampwidth(self.p.get_sample_size(self.FORMAT))
-        download_file.setframerate(self.RATE)
-        download_file.writeframes(b''.join(self.frames))
-        download_file.close()
-
+        download_file = filedialog.asksaveasfile(defaultextension = '.wav',
+                                        filetypes = [("Wave File", '.wav'),
+                                                    ("All Files", '.*')],
+                                        #initialdir = self.filePath,
+                                        initialfile = "downloaded_audio.wav"         
+                                        )
+        #print(download_file)
+        #print(self.filePath)
+        download = wave.open(download_file.name, 'wb')
+        download.setnchannels(self.CHANNELS)
+        download.setsampwidth(self.p.get_sample_size(self.FORMAT))
+        download.setframerate(self.RATE)
+        download.writeframes(b''.join(self.frames))
+        download.close() 
+        
+       
     def uploadAudio(self):
         self.filePath = filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
