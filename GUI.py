@@ -109,13 +109,23 @@ class GUI:
         self.transcriptionWithGrammar.configure(state='disabled')
 
     def editTranscription(self):
-        if self.editTranscriptionButton['text'] == 'Save':
-            self.editTranscriptionButton['text'] = 'Edit'
+        if self.editTranscriptionButton['text'] == 'Save Transcription':
+            self.editTranscriptionButton['text'] = 'Edit Transcription'
             self.transcription.configure(state='disabled')
 
         else:
-            self.editTranscriptionButton['text'] = 'Save'
+            self.editTranscriptionButton['text'] = 'Save Transcription'
             self.transcription.configure(state='normal')
+
+    def editGrammar(self):
+        if self.editGrammarButton['text'] == 'Save Grammar':
+            self.editGrammarButton['text'] = 'Edit Grammar'
+            self.transcriptionWithGrammar.configure(state='disabled')
+
+        else:
+            self.editGrammarButton['text'] = 'Save Grammar'
+            self.transcriptionWithGrammar.configure(state='normal')
+
 
     def __init__(self):
         self.master = tk.Tk()
@@ -190,10 +200,14 @@ class GUI:
 
         self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
         self.editTranscriptionButton.grid(row=6, column=1)
+
+        self.editGrammarButton = Button(self.master, text='Edit Grammar', command=self.editGrammar)
+        self.editGrammarButton.grid(row=6, column=4)
+
         exportButton = Button(self.master, text='Export to Word Document')
-        exportButton.grid(row=6, column=4)
+        exportButton.grid(row=7, column=4)
         printButton = Button(self.master, text='Print')
-        printButton.grid(row=7, column=4)
+        printButton.grid(row=8, column=4)
 
         self.transcription = Text(self.master)
         self.transcription.configure(state='disabled')
