@@ -5,6 +5,7 @@ import tkinter as tk
 import pyaudio
 import wave
 import os
+import addConventions
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -76,7 +77,7 @@ class GUI:
             self.transcription.insert("end", "Date of Sample: ")
         elif (self.clicked.get() == "Examiner Info"):
             self.transcription.insert("end", "Examiner Info: ")
-        elif (clicked.get() == "Sampling Context"):
+        elif (self.clicked.get() == "Sampling Context"):
             self.transcription.insert("end", "Sampling Context: ")
         # Appends the submitted text after the field name
         self.transcription.insert("end", infoEntryText + "\n")
@@ -90,6 +91,22 @@ class GUI:
         self.transcription.configure(state='normal')
         self.transcription.insert("end", transcribedAudio + "\n");
         self.transcription.configure(state='disabled')
+
+# Adds conventions to text from transcription box and puts output in transcriptionWithGrammar box
+    def addConventionsClick(self):
+        self.transcriptionWithGrammar.configure(state='normal')
+        converting = self.transcription.get("1.0", "end")
+        if (self.grammarCheck1.get() == 1):
+            converting = addConventions.addEndPunctuation(converting)
+        if (self.grammarCheck2.get() == 1):
+            converting = addConventions.addInflectionalMorphemes(converting)
+        if (self.grammarCheck3.get() == 1):
+            converting = addConventions.addWordLevelErrors(converting)
+        if (self.grammarCheck4.get() == 1):
+            converting = addConventions.addOmissions(converting)
+        self.transcriptionWithGrammar.delete('1.0', "end")
+        self.transcriptionWithGrammar.insert("end", converting)
+        self.transcriptionWithGrammar.configure(state='disabled')
 
     def editTranscription(self):
         if self.editTranscriptionButton['text'] == 'Save':
@@ -154,21 +171,21 @@ class GUI:
         infoSubmit = Button(self.master, text="Submit", command=self.submitClientInfo)
         infoSubmit.grid(row=1, column=3)
 
-        grammerCheck1 = IntVar()
-        grammerCheck2 = IntVar()
-        grammerCheck3 = IntVar()
-        grammerCheck4 = IntVar()
-        grammerButton1 = Checkbutton(self.master, text='Grammer Option 1')
-        grammerButton2 = Checkbutton(self.master, text='Grammer Option 2')
-        grammerButton3 = Checkbutton(self.master, text='Grammer Option 3')
-        grammerButton4 = Checkbutton(self.master, text='Grammer Option 4')
+        self.grammarCheck1 = IntVar()
+        self.grammarCheck2 = IntVar()
+        self.grammarCheck3 = IntVar()
+        self.grammarCheck4 = IntVar()
+        grammarButton1 = Checkbutton(self.master, text='End Punctuation', variable=self.grammarCheck1)
+        grammarButton2 = Checkbutton(self.master, text='Inflectional Morphemes', variable=self.grammarCheck2)
+        grammarButton3 = Checkbutton(self.master, text='Word Level Errors', variable=self.grammarCheck3)
+        grammarButton4 = Checkbutton(self.master, text='Omissions', variable=self.grammarCheck4)
 
-        grammerButton1.grid(row=2, column=1)
-        grammerButton2.grid(row=2, column=3)
-        grammerButton3.grid(row=3, column=1)
-        grammerButton4.grid(row=3, column=3)
+        grammarButton1.grid(row=2, column=1)
+        grammarButton2.grid(row=2, column=3)
+        grammarButton3.grid(row=3, column=1)
+        grammarButton4.grid(row=3, column=3)
 
-        addConventionsButton = Button(self.master, text='Add Conventions')
+        addConventionsButton = Button(self.master, text='Add Conventions', command=self.addConventionsClick)
         addConventionsButton.grid(row=4, column=2)
 
         self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
@@ -182,9 +199,9 @@ class GUI:
         self.transcription.configure(state='disabled')
         self.transcription.grid(row=5, column=0, columnspan=3)
 
-        transcriptionWithGrammer = Text(self.master)
-        transcriptionWithGrammer.configure(state='disabled')
-        transcriptionWithGrammer.grid(row=5, column=3, columnspan=3)
+        self.transcriptionWithGrammar = Text(self.master)
+        self.transcriptionWithGrammar.configure(state='disabled')
+        self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
 
 
         self.master.mainloop()
