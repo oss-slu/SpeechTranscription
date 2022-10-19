@@ -62,6 +62,7 @@ class GUI:
     def submitClientInfo(self) :
         # Gets the current text in the entry box
         infoEntryText = self.infoEntry.get()
+        self.transcription.configure(state='normal')
         # Prints the relevant field
         if (self.clicked.get() == "Name"):
             self.transcription.insert("end", "Name: ")
@@ -79,13 +80,25 @@ class GUI:
             self.transcription.insert("end", "Sampling Context: ")
         # Appends the submitted text after the field name
         self.transcription.insert("end", infoEntryText + "\n")
+        self.transcription.configure(state='disabled')
         # Clears the entry box
         self.infoEntry.delete(0, "end")
 
 # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
         transcribedAudio = recog(self.filePath).getTranscript()
+        self.transcription.configure(state='normal')
         self.transcription.insert("end", transcribedAudio + "\n");
+        self.transcription.configure(state='disabled')
+
+    def editTranscription(self):
+        if self.editTranscriptionButton['text'] == 'Save':
+            self.editTranscriptionButton['text'] = 'Edit'
+            self.transcription.configure(state='disabled')
+
+        else:
+            self.editTranscriptionButton['text'] = 'Save'
+            self.transcription.configure(state='normal')
 
     def __init__(self):
         self.master = tk.Tk()
@@ -158,17 +171,19 @@ class GUI:
         addConventionsButton = Button(self.master, text='Add Conventions')
         addConventionsButton.grid(row=4, column=2)
 
-        editTranscriptionButton = Button(self.master, text='Edit Transcription')
-        editTranscriptionButton.grid(row=6, column=1)
+        self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
+        self.editTranscriptionButton.grid(row=6, column=1)
         exportButton = Button(self.master, text='Export to Word Document')
         exportButton.grid(row=6, column=4)
         printButton = Button(self.master, text='Print')
         printButton.grid(row=7, column=4)
 
         self.transcription = Text(self.master)
+        self.transcription.configure(state='disabled')
         self.transcription.grid(row=5, column=0, columnspan=3)
 
         transcriptionWithGrammer = Text(self.master)
+        transcriptionWithGrammer.configure(state='disabled')
         transcriptionWithGrammer.grid(row=5, column=3, columnspan=3)
 
 
