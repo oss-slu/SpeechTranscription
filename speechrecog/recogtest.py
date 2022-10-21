@@ -14,7 +14,7 @@ class recog:
         with harvard as source:
             audio = r.record(source)
 
-        self.transcript = r.recognize_google(audio, language = 'en-IN')
+        self.transcript = r.recognize_sphinx(audio, language = 'en-IN')
         print(self.transcript)
 
     def getTranscript(self):
