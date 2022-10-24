@@ -1,6 +1,8 @@
 from nltk import word_tokenize, pos_tag, WordNetLemmatizer
+import language_tool_python
 
 wnl = WordNetLemmatizer()
+tool = language_tool_python.LanguageTool("en-US")
 
 def addEndPunctuation (x) :
     return x
@@ -56,6 +58,7 @@ def addInflectionalMorphemes (x):
         else:
             converted += tuple[0] + " "
 
+    # Manual replacements for irregular cases
     converted = converted.replace("ca/n't", "can/'t")
     converted = converted.replace("do/n't", "don't")
 
@@ -63,7 +66,12 @@ def addInflectionalMorphemes (x):
 
 
 def addWordLevelErrors(x) :
-    return x
+    # Gets all detected errors in a single sentence
+    matches = tool.check(x)
+    suggestions = ""
+    for match in matches:
+        suggestions += match + "\n\n"
+    return suggestions
 
 def addOmissions(x):
     return x
