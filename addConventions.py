@@ -12,8 +12,11 @@ def addInflectionalMorphemes (x):
     tokens = pos_tag(word_tokenize(x))
     converted = ""
     for tuple in tokens:
+        # Token is C or E for child/examiner
+        if (tuple[0] == "C" or tuple[0] == "E"):
+            converted += "\n" + tuple[0] + " "
         # Token is plural and ends in s
-        if (tuple[1] == "NNS" and tuple[0][-1] == 's'):
+        elif (tuple[1] == "NNS" and tuple[0][-1] == 's'):
             converted += wnl.lemmatize(tuple[0], "n") + "/s "
         # Token is "'s" and is possessive
         elif (tuple[0] == "'s" and tuple[1] == "POS"):
