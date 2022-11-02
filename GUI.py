@@ -190,6 +190,8 @@ class GUI:
 
         self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
         self.editTranscriptionButton.grid(row=6, column=1)
+        self.grammarCheckButton = Button(self.master, text='Grammar Check')
+        self.grammarCheckButton.grid(row=6, column=2)
         exportButton = Button(self.master, text='Export to Word Document')
         exportButton.grid(row=6, column=4)
         printButton = Button(self.master, text='Print')
