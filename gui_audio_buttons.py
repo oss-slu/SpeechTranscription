@@ -55,6 +55,7 @@ class GUI:
             print('*recording stopped*')
 
     def play(self):
+        self.playing = True
         audio_file = wave.open(self.filePath, 'rb')
         #code to create seperate output audio stream so audio can be played
         out_p = pyaudio.PyAudio()
@@ -66,8 +67,22 @@ class GUI:
         )
         output = audio_file.readframes(self.CHUNK)
         while output != b'':
-            out_stream.write(output)
-            output = audio_file.readframes(self.CHUNK)
+            if self.playing:
+                out_stream.write(output)
+                output = audio_file.readframes(self.CHUNK)
+            else:
+                return
+
+    def pause(self):
+        self.playing = False
+    
+    def playback(self):
+        if self.playButton['text'] == 'Play':
+            self.playButton['text'] == 'Pause'
+            self.play()
+        else:
+            self.playButton['text'] == 'Pause'
+            self.pause()
 
     def download_recorded_audio(self):
         print('downloading')
@@ -138,6 +153,7 @@ class GUI:
 
         self.frames = []
         self.isRecording = False
+        self.playing = False
         self.stream = self.p.open(format = self.FORMAT,
                                 channels = self.CHANNELS,
                                 rate = self.RATE,
@@ -152,8 +168,8 @@ class GUI:
         self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
         self.audioPlaceholder.grid(row=0, column=2)
 
-        playButton = Button(self.master, text='Play', command=lambda: self.play())
-        playButton.grid(row=0, column=3)
+        self.playButton = Button(self.master, text='Play', command=lambda: self.playback())
+        self.playButton.grid(row=0, column=3)
 
         downloadButton = Button(self.master, text='Download', command=lambda: self.download_recorded_audio())
         downloadButton.grid(row=0, column=4)
