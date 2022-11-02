@@ -155,6 +155,7 @@ class GUI:
             if (corrected != sentence):
                 pass
                 # Do something
+        self.transcriptionWithGrammar.configure(state='disabled')
 
     def editTranscription(self):
         if self.editTranscriptionButton['text'] == 'Save Transcription':
