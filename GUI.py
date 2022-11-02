@@ -7,6 +7,7 @@ import pyaudio
 import wave
 import os
 import shutil
+import nltk
 import addConventions
 
 #global variables needed to record audio
@@ -143,6 +144,17 @@ class GUI:
         self.transcriptionWithGrammar.delete('1.0', "end")
         self.transcriptionWithGrammar.insert("end", converting)
         self.transcriptionWithGrammar.configure(state='disabled')
+
+# Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
+    def grammarCheck(self):
+        self.transcriptionWithGrammar.configure(state='normal')
+        text = self.transcription.get("1.0", "end")
+        sentences = nltk.sent_tokenize(text)
+        for sentence in sentences:
+            corrected = addConventions.addWordLevelErrors(sentence)
+            if (corrected != sentence):
+                pass
+                # Do something
 
     def editTranscription(self):
         if self.editTranscriptionButton['text'] == 'Save Transcription':
