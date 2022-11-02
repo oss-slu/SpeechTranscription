@@ -7,7 +7,6 @@ import pyaudio
 import wave
 import os
 import shutil
-import addConventions
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -54,7 +53,7 @@ class GUI:
             self.recordButton['text'] = 'Record'
             self.stop()
             print('*recording stopped*')
-    
+
     def play(self):
         audio_file = wave.open(self.filePath, 'rb')
         #code to create seperate output audio stream so audio can be played
@@ -88,7 +87,8 @@ class GUI:
         download.setframerate(self.RATE)
         download.writeframes(b''.join(self.frames))
         download.close() 
-
+        
+       
     def uploadAudio(self):
         self.filePath = filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
@@ -99,7 +99,6 @@ class GUI:
     def submitClientInfo(self) :
         # Gets the current text in the entry box
         infoEntryText = self.infoEntry.get()
-        self.transcription.configure(state='normal')
         # Prints the relevant field
         if (self.clicked.get() == "Name"):
             self.transcription.insert("end", "Name: ")
@@ -113,55 +112,17 @@ class GUI:
             self.transcription.insert("end", "Date of Sample: ")
         elif (self.clicked.get() == "Examiner Info"):
             self.transcription.insert("end", "Examiner Info: ")
-        elif (self.clicked.get() == "Sampling Context"):
+        elif (clicked.get() == "Sampling Context"):
             self.transcription.insert("end", "Sampling Context: ")
         # Appends the submitted text after the field name
         self.transcription.insert("end", infoEntryText + "\n")
-        self.transcription.configure(state='disabled')
         # Clears the entry box
         self.infoEntry.delete(0, "end")
 
 # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
         transcribedAudio = recog(self.filePath).getTranscript()
-        self.transcription.configure(state='normal')
         self.transcription.insert("end", transcribedAudio + "\n");
-        self.transcription.configure(state='disabled')
-
-# Adds conventions to text from transcription box and puts output in transcriptionWithGrammar box
-    def addConventionsClick(self):
-        self.transcriptionWithGrammar.configure(state='normal')
-        converting = self.transcription.get("1.0", "end")
-        if (self.grammarCheck1.get() == 1):
-            converting = addConventions.addEndPunctuation(converting)
-        if (self.grammarCheck2.get() == 1):
-            converting = addConventions.addInflectionalMorphemes(converting)
-        if (self.grammarCheck3.get() == 1):
-            converting = addConventions.addWordLevelErrors(converting)
-        if (self.grammarCheck4.get() == 1):
-            converting = addConventions.addOmissions(converting)
-        self.transcriptionWithGrammar.delete('1.0', "end")
-        self.transcriptionWithGrammar.insert("end", converting)
-        self.transcriptionWithGrammar.configure(state='disabled')
-
-    def editTranscription(self):
-        if self.editTranscriptionButton['text'] == 'Save Transcription':
-            self.editTranscriptionButton['text'] = 'Edit Transcription'
-            self.transcription.configure(state='disabled')
-
-        else:
-            self.editTranscriptionButton['text'] = 'Save Transcription'
-            self.transcription.configure(state='normal')
-
-    def editGrammar(self):
-        if self.editGrammarButton['text'] == 'Save Grammar':
-            self.editGrammarButton['text'] = 'Edit Grammar'
-            self.transcriptionWithGrammar.configure(state='disabled')
-
-        else:
-            self.editGrammarButton['text'] = 'Save Grammar'
-            self.transcriptionWithGrammar.configure(state='normal')
-
 
     def __init__(self):
         self.master = tk.Tk()
@@ -217,43 +178,35 @@ class GUI:
         infoSubmit = Button(self.master, text="Submit", command=self.submitClientInfo)
         infoSubmit.grid(row=1, column=3)
 
-        self.grammarCheck1 = IntVar()
-        self.grammarCheck2 = IntVar()
-        self.grammarCheck3 = IntVar()
-        self.grammarCheck4 = IntVar()
-        grammarButton1 = Checkbutton(self.master, text='End Punctuation', variable=self.grammarCheck1)
-        grammarButton2 = Checkbutton(self.master, text='Inflectional Morphemes', variable=self.grammarCheck2)
-        grammarButton3 = Checkbutton(self.master, text='Word Level Errors', variable=self.grammarCheck3)
-        grammarButton4 = Checkbutton(self.master, text='Omissions', variable=self.grammarCheck4)
+        grammerCheck1 = IntVar()
+        grammerCheck2 = IntVar()
+        grammerCheck3 = IntVar()
+        grammerCheck4 = IntVar()
+        grammerButton1 = Checkbutton(self.master, text='Grammer Option 1')
+        grammerButton2 = Checkbutton(self.master, text='Grammer Option 2')
+        grammerButton3 = Checkbutton(self.master, text='Grammer Option 3')
+        grammerButton4 = Checkbutton(self.master, text='Grammer Option 4')
 
-        grammarButton1.grid(row=2, column=1)
-        grammarButton2.grid(row=2, column=3)
-        grammarButton3.grid(row=3, column=1)
-        grammarButton4.grid(row=3, column=3)
+        grammerButton1.grid(row=2, column=1)
+        grammerButton2.grid(row=2, column=3)
+        grammerButton3.grid(row=3, column=1)
+        grammerButton4.grid(row=3, column=3)
 
-        addConventionsButton = Button(self.master, text='Add Conventions', command=self.addConventionsClick)
+        addConventionsButton = Button(self.master, text='Add Conventions')
         addConventionsButton.grid(row=4, column=2)
 
-        self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
-        self.editTranscriptionButton.grid(row=6, column=1)
-        self.grammarCheckButton = Button(self.master, text='Grammar Check')
-        self.grammarCheckButton.grid(row=6, column=2)
-
-        self.editGrammarButton = Button(self.master, text='Edit Grammar', command=self.editGrammar)
-        self.editGrammarButton.grid(row=6, column=4)
-
+        editTranscriptionButton = Button(self.master, text='Edit Transcription')
+        editTranscriptionButton.grid(row=6, column=1)
         exportButton = Button(self.master, text='Export to Word Document')
-        exportButton.grid(row=7, column=4)
+        exportButton.grid(row=6, column=4)
         printButton = Button(self.master, text='Print')
-        printButton.grid(row=8, column=4)
+        printButton.grid(row=7, column=4)
 
         self.transcription = Text(self.master)
-        self.transcription.configure(state='disabled')
         self.transcription.grid(row=5, column=0, columnspan=3)
 
-        self.transcriptionWithGrammar = Text(self.master)
-        self.transcriptionWithGrammar.configure(state='disabled')
-        self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
+        transcriptionWithGrammer = Text(self.master)
+        transcriptionWithGrammer.grid(row=5, column=3, columnspan=3)
 
 
         self.master.mainloop()

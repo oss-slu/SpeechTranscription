@@ -69,12 +69,9 @@ def addInflectionalMorphemes (x):
 
 
 def addWordLevelErrors(x) :
-    # Gets all detected errors in a single sentence
-    matches = tool.check(x)
-    suggestions = ""
-    for match in matches:
-        suggestions += match + "\n\n"
-    return suggestions
+    # Takes input x, which should be a sentence, and returns the corrected form
+    corrected = tool.correct(x)
+    return corrected
 
 def addOmissions(x):
     return x
