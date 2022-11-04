@@ -1,4 +1,4 @@
-from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog
+from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext
 from speechrecog.recogtest import recog
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
@@ -260,11 +260,19 @@ class GUI:
         printButton = Button(self.master, text='Print')
         printButton.grid(row=8, column=4)
 
-        self.transcription = Text(self.master)
+        self.transcription = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
         self.transcription.configure(state='disabled')
         self.transcription.grid(row=5, column=0, columnspan=3)
+        self.transcription.tag_config('squiggly', bgstipple='@squiggly.xbm', background='red')
 
-        self.transcriptionWithGrammar = Text(self.master)
+
+        #testing the squiggly here
+        self.transcription.configure(state='normal')
+        self.transcription.insert('end', 'This sentence is incorrect. ', 'squiggly')
+        self.transcription.insert('end', 'This sentence is correct.')
+        self.transcription.configure(state='disabled')
+
+        self.transcriptionWithGrammar = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
         self.transcriptionWithGrammar.configure(state='disabled')
         self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
 
