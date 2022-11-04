@@ -217,7 +217,10 @@ class GUI:
                 "Name",
                 "Age",
                 "Gender",
-                "Examiner Info"
+                "Date of Birth",
+                "Date of Sample"
+                "Examiner Info",
+                "Sampling Context"
                 ]
         self.clicked = StringVar()
         self.clicked.set("Name")
