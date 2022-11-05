@@ -68,7 +68,7 @@ def addInflectionalMorphemes (x):
     return converted + "\n"
 
 
-def addWordLevelErrors(x) :
+def correctSentence(x) :
     # Takes input x, which should be a sentence, and returns the corrected form
     corrected = tool.correct(x)
     return corrected

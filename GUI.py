@@ -17,6 +17,11 @@ CHANNELS = 1
 RATE = 44100
 p = pyaudio.PyAudio()
 
+# Global variable for usage in grammarCheck and getNextCorrection
+tokenizedSentences = []
+numCorrectedSentences = []
+
+
 class GUI:
 
     def record(self):
@@ -147,29 +152,25 @@ class GUI:
 
 # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
+        # Configuring boxes
         self.transcription.grid(row=5, column=0, columnspan=3)
         self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
-        self.transcription.configure(state='normal')
-        self.transcriptionWithGrammar.configure(state='normal')
+        # Get raw transcription and tokenize into sentences for processing
         text = self.transcription.get("1.0", "end")
-        sentences = nltk.sent_tokenize(text)
-        self.transcription.delete('1.0', "end")
-        for sentence in sentences:
-            corrected = addConventions.addWordLevelErrors(sentence)
-            if (corrected != sentence):
-                self.transcription.insert('end', sentence, 'squiggly')
-                self.transcription.insert('end', "\n")
-                self.transcriptionWithGrammar.insert('end', corrected)
-                self.transcriptionWithGrammar.insert('end', "\n")
-                self.incorrectSentencesFound.append(sentence)
-                self.correctedSentences.append(corrected)
-            else:
-                self.transcription.insert('end', sentence)
-                self.transcription.insert('end', "\n")
-                self.transcriptionWithGrammar.insert('end', sentence)
-                self.transcriptionWithGrammar.insert('end', "\n")
-        self.transcription.configure(state='disabled')
-        self.transcriptionWithGrammar.configure(state='disabled')
+        self.tokenizedSentences = nltk.sent_tokenize(text)
+        self.getNextCorrection(tokenizedSentences)
+    
+    def getNextCorrection(self):
+        buttonNotClicked = True
+        for i in range(len(tokenizedSentences)):
+            if (tokenizedSentences[i] != addConventions.correctSentence(tokenizedSentences[i])):
+                # Send corrected (later: SALT converted) sentence to box for user attention
+                while (buttonNotClicked):
+                    pass
+
+    def applyCorrection(self):
+        # Append sentence in correction box to right-hand box
+        pass
 
     def editTranscription(self):
         if self.editTranscriptionButton['text'] == 'Save Transcription':
