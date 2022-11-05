@@ -147,6 +147,8 @@ class GUI:
 
 # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
+        self.transcription.grid(row=5, column=0, columnspan=3)
+        self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
         self.transcription.configure(state='normal')
         self.transcriptionWithGrammar.configure(state='normal')
         text = self.transcription.get("1.0", "end")
@@ -282,16 +284,8 @@ class GUI:
         self.transcription.grid(row=5, column=0, columnspan=3)
         self.transcription.tag_config('squiggly', bgstipple='@squiggly.xbm', background='red')
 
-
-        #testing the squiggly here
-        self.transcription.configure(state='normal')
-        self.transcription.insert('end', 'This sentence is incorrect. ', 'squiggly')
-        self.transcription.insert('end', 'This sentence is correct.')
-        self.transcription.configure(state='disabled')
-
         self.transcriptionWithGrammar = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
         self.transcriptionWithGrammar.configure(state='disabled')
-        self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
 
 
         self.master.mainloop()
