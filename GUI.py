@@ -19,7 +19,6 @@ p = pyaudio.PyAudio()
 
 # Global variable for usage in grammarCheck and getNextCorrection
 tokenizedSentences = []
-numCorrectedSentences = []
 
 
 class GUI:

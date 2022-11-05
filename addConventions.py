@@ -4,9 +4,6 @@ import language_tool_python
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")
 
-def addEndPunctuation (x) :
-    return x
-
 def addInflectionalMorphemes (x):
     # Creates tuples for each word or contraction with their part of speech
     tokens = pos_tag(word_tokenize(x))
@@ -72,6 +69,3 @@ def correctSentence(x) :
     # Takes input x, which should be a sentence, and returns the corrected form
     corrected = tool.correct(x)
     return corrected
-
-def addOmissions(x):
-    return x
