@@ -147,14 +147,26 @@ class GUI:
 
 # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
+        self.transcription.configure(state='normal')
         self.transcriptionWithGrammar.configure(state='normal')
         text = self.transcription.get("1.0", "end")
         sentences = nltk.sent_tokenize(text)
+        self.transcription.delete('1.0', "end")
         for sentence in sentences:
             corrected = addConventions.addWordLevelErrors(sentence)
             if (corrected != sentence):
-                pass
-                # Do something
+                self.transcription.insert('end', sentence, 'squiggly')
+                self.transcription.insert('end', "\n")
+                self.transcriptionWithGrammar.insert('end', corrected)
+                self.transcriptionWithGrammar.insert('end', "\n")
+                self.incorrectSentencesFound.append(sentence)
+                self.correctedSentences.append(corrected)
+            else:
+                self.transcription.insert('end', sentence)
+                self.transcription.insert('end', "\n")
+                self.transcriptionWithGrammar.insert('end', sentence)
+                self.transcriptionWithGrammar.insert('end', "\n")
+        self.transcription.configure(state='disabled')
         self.transcriptionWithGrammar.configure(state='disabled')
 
     def editTranscription(self):
@@ -218,7 +230,7 @@ class GUI:
                 "Age",
                 "Gender",
                 "Date of Birth",
-                "Date of Sample"
+                "Date of Sample",
                 "Examiner Info",
                 "Sampling Context"
                 ]
@@ -252,8 +264,10 @@ class GUI:
 
         self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
         self.editTranscriptionButton.grid(row=6, column=1)
-        self.grammarCheckButton = Button(self.master, text='Grammar Check')
+        self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
         self.grammarCheckButton.grid(row=6, column=2)
+        self.incorrectSentencesFound = []
+        self.correctedSentences = []
 
         self.editGrammarButton = Button(self.master, text='Edit Grammar', command=self.editGrammar)
         self.editGrammarButton.grid(row=6, column=4)
