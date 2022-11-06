@@ -1,4 +1,4 @@
-from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext
+from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
 from speechrecog.recogtest import recog
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
@@ -152,14 +152,15 @@ class GUI:
 # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
         # Configuring boxes
-        self.transcription.grid(row=5, column=0, columnspan=3)
         self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
+        self.correctionEntry.grid(row=6, column=3, columnspan=2)
+        self.submitCorrectionButton.grid(row=6, column=5)
         # Get raw transcription and tokenize into sentences for processing
         text = self.transcription.get("1.0", "end")
         self.tokenizedSentences = nltk.sent_tokenize(text)
         self.getNextCorrection(tokenizedSentences)
     
-    def getNextCorrection(self):
+    def getNextCorrection(self, tokenizedSentences):
         buttonNotClicked = True
         for i in range(len(tokenizedSentences)):
             if (tokenizedSentences[i] != addConventions.correctSentence(tokenizedSentences[i])):
@@ -271,21 +272,26 @@ class GUI:
         self.incorrectSentencesFound = []
         self.correctedSentences = []
 
-        self.editGrammarButton = Button(self.master, text='Edit Grammar', command=self.editGrammar)
-        self.editGrammarButton.grid(row=6, column=4)
+        self.correctionEntry = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Courier New',12), spacing1=1)
+        self.correctionEntry.configure(wrap=WORD)
+
+        self.submitCorrectionButton = Button(self.master, text='Submit')
+
+        self.editGrammarButton = Button(self.master, text='Edit', command=self.editGrammar)
+        self.editGrammarButton.grid(row=7, column=4)
 
         exportButton = Button(self.master, text='Export to Word Document')
-        exportButton.grid(row=7, column=4)
+        exportButton.grid(row=8, column=4)
         printButton = Button(self.master, text='Print')
-        printButton.grid(row=8, column=4)
+        printButton.grid(row=9, column=4)
 
         self.transcription = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
-        self.transcription.configure(state='disabled')
+        self.transcription.configure(state='disabled', wrap=WORD)
         self.transcription.grid(row=5, column=0, columnspan=3)
         self.transcription.tag_config('squiggly', bgstipple='@squiggly.xbm', background='red')
 
         self.transcriptionWithGrammar = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
-        self.transcriptionWithGrammar.configure(state='disabled')
+        self.transcriptionWithGrammar.configure(state='disabled', wrap=WORD)
 
 
         self.master.mainloop()
