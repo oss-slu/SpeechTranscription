@@ -160,16 +160,24 @@ class GUI:
         self.tokenizedSentences = nltk.sent_tokenize(text)
         self.getNextCorrection(tokenizedSentences)
     
+    # Loops through tokenizedSentences until one needs to be corrected, sending it to correctionEntry
     def getNextCorrection(self, tokenizedSentences):
-        buttonNotClicked = True
         for i in range(len(tokenizedSentences)):
             if (tokenizedSentences[i] != addConventions.correctSentence(tokenizedSentences[i])):
+                self.correctionEntry.insert("end", addConventions.correctSentence(tokenizedSentences[i]))
+                # Remove the i sentences from tokenizedSentences that were already processed
+                del tokenizedSentences[:i+1]
+                break
                 # Send corrected (later: SALT converted) sentence to box for user attention
-                while (buttonNotClicked):
-                    pass
+        # Maybe add message here for user to confirm that there are no sentences left to be processed
 
     def applyCorrection(self):
-        # Append sentence in correction box to right-hand box
+        # Append sentence in correctionEntry to right-hand box
+        self.transcriptionWithGrammar.insert("end", self.correctionEntry.get("1.0", "end") + "\n")
+        # Remove previously worked-on sentence
+        self.correctionEntry.delete('1.0', "end")
+        # Queue up the next correction for the user
+        self.getNextCorrection()
         pass
 
     def editTranscription(self):
@@ -269,13 +277,11 @@ class GUI:
         self.editTranscriptionButton.grid(row=6, column=1)
         self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
         self.grammarCheckButton.grid(row=6, column=2)
-        self.incorrectSentencesFound = []
-        self.correctedSentences = []
 
         self.correctionEntry = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Courier New',12), spacing1=1)
         self.correctionEntry.configure(wrap=WORD)
 
-        self.submitCorrectionButton = Button(self.master, text='Submit')
+        self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection())
 
         self.editGrammarButton = Button(self.master, text='Edit', command=self.editGrammar)
         self.editGrammarButton.grid(row=7, column=4)
