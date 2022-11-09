@@ -148,9 +148,14 @@ class GUI:
 
 # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
-        # Configuring boxes
         self.tokenizedSentences = []
+        # Flag for if user wants to manually submit each sentence
+        self.checkAllSentences = False
+        # Configuring right-hand box, correction box, and submit button
         self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
+        self.transcriptionWithGrammar.configure(state='normal')
+        self.transcriptionWithGrammar.delete('1.0', "end")
+        self.transcriptionWithGrammar.configure(state='disabled')
         self.correctionEntry.grid(row=6, column=3, columnspan=2)
         self.submitCorrectionButton.grid(row=6, column=5)
         # Get raw transcription and tokenize into sentences for processing
@@ -160,33 +165,29 @@ class GUI:
     
     # Loops through tokenizedSentences until one needs to be corrected, sending it to correctionEntry
     def getNextCorrection(self):
-        for sentence in self.tokenizedSentences:
-            print(sentence)
-            if (sentence != addConventions.correctSentence(sentence)):
-                self.correctionEntry.insert("end", addConventions.correctSentence(sentence))
-                # Remove the i sentences from tokenizedSentences that were already processed
-                print(sentence)
-                self.tokenizedSentences.remove(sentence)
+        if (len(self.tokenizedSentences) == 0):
+            # Maybe return message that all sentences were processed
+            return
+        while (len(self.tokenizedSentences)):
+            if ((self.tokenizedSentences[0] != addConventions.correctSentence(self.tokenizedSentences[0])) or self.checkAllSentences):
+                self.correctionEntry.insert("end", addConventions.correctSentence(self.tokenizedSentences[0]))
+                del self.tokenizedSentences[0]
                 break
             else:
                 self.transcriptionWithGrammar.configure(state='normal')
-                self.transcriptionWithGrammar.insert("end", sentence + "\n")
+                self.transcriptionWithGrammar.insert("end", self.tokenizedSentences[0] + "\n")
                 self.transcriptionWithGrammar.configure(state='disabled')
-                self.tokenizedSentences.remove(sentence)
-                # Send corrected (later: SALT converted) sentence to box for user attention
-        # Maybe add message here for user to confirm that there are no sentences left to be processed
+                del self.tokenizedSentences[0]
 
     def applyCorrection(self):
         # Append sentence in correctionEntry to right-hand box
         self.transcriptionWithGrammar.configure(state='normal')
-        self.transcriptionWithGrammar.insert("end", self.correctionEntry.get("1.0", "end") + "\n")
+        self.transcriptionWithGrammar.insert("end", self.correctionEntry.get("1.0", "end"))
         self.transcriptionWithGrammar.configure(state='disabled')
         # Remove previously worked-on sentence
         self.correctionEntry.delete('1.0', "end")
         # Queue up the next correction for the user
-        print(self.tokenizedSentences)
         self.getNextCorrection()
-        pass
 
     def editTranscription(self):
         if self.editTranscriptionButton['text'] == 'Save Transcription':
