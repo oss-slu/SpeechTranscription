@@ -17,9 +17,6 @@ CHANNELS = 1
 RATE = 44100
 p = pyaudio.PyAudio()
 
-# Global variable for usage in grammarCheck and getNextCorrection
-tokenizedSentences = []
-
 
 class GUI:
 
@@ -152,27 +149,30 @@ class GUI:
 # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
         # Configuring boxes
+        self.tokenizedSentences = []
         self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
         self.correctionEntry.grid(row=6, column=3, columnspan=2)
         self.submitCorrectionButton.grid(row=6, column=5)
         # Get raw transcription and tokenize into sentences for processing
         text = self.transcription.get("1.0", "end")
-        tokenizedSentences = nltk.sent_tokenize(text)
-        self.getNextCorrection(tokenizedSentences)
+        self.tokenizedSentences = nltk.sent_tokenize(text)
+        self.getNextCorrection()
     
     # Loops through tokenizedSentences until one needs to be corrected, sending it to correctionEntry
-    def getNextCorrection(self, tokenizedSentences):
-        for i in range(len(tokenizedSentences)):
-            print(tokenizedSentences[i])
-            if (tokenizedSentences[i] != addConventions.correctSentence(tokenizedSentences[i])):
-                self.correctionEntry.insert("end", addConventions.correctSentence(tokenizedSentences[i]))
+    def getNextCorrection(self):
+        for sentence in self.tokenizedSentences:
+            print(sentence)
+            if (sentence != addConventions.correctSentence(sentence)):
+                self.correctionEntry.insert("end", addConventions.correctSentence(sentence))
                 # Remove the i sentences from tokenizedSentences that were already processed
-                del tokenizedSentences[:i]
+                print(sentence)
+                self.tokenizedSentences.remove(sentence)
                 break
             else:
                 self.transcriptionWithGrammar.configure(state='normal')
-                self.transcriptionWithGrammar.insert("end", tokenizedSentences[i] + "\n")
+                self.transcriptionWithGrammar.insert("end", sentence + "\n")
                 self.transcriptionWithGrammar.configure(state='disabled')
+                self.tokenizedSentences.remove(sentence)
                 # Send corrected (later: SALT converted) sentence to box for user attention
         # Maybe add message here for user to confirm that there are no sentences left to be processed
 
@@ -184,7 +184,8 @@ class GUI:
         # Remove previously worked-on sentence
         self.correctionEntry.delete('1.0', "end")
         # Queue up the next correction for the user
-        self.getNextCorrection(tokenizedSentences)
+        print(self.tokenizedSentences)
+        self.getNextCorrection()
         pass
 
     def editTranscription(self):
