@@ -116,8 +116,8 @@ class GUI:
             self.transcription.insert("end", "Date of Birth: ")
         elif (self.clicked.get() == "Date of Sample"):
             self.transcription.insert("end", "Date of Sample: ")
-        elif (self.clicked.get() == "Examiner Info"):
-            self.transcription.insert("end", "Examiner Info: ")
+        elif (self.clicked.get() == "Examiner Name"):
+            self.transcription.insert("end", "Examiner Name: ")
         elif (self.clicked.get() == "Sampling Context"):
             self.transcription.insert("end", "Sampling Context: ")
         # Appends the submitted text after the field name
@@ -249,7 +249,7 @@ class GUI:
                 "Gender",
                 "Date of Birth",
                 "Date of Sample",
-                "Examiner Info",
+                "Examiner Name",
                 "Sampling Context"
                 ]
         self.clicked = StringVar()
