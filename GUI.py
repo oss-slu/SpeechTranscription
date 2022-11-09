@@ -157,27 +157,34 @@ class GUI:
         self.submitCorrectionButton.grid(row=6, column=5)
         # Get raw transcription and tokenize into sentences for processing
         text = self.transcription.get("1.0", "end")
-        self.tokenizedSentences = nltk.sent_tokenize(text)
+        tokenizedSentences = nltk.sent_tokenize(text)
         self.getNextCorrection(tokenizedSentences)
     
     # Loops through tokenizedSentences until one needs to be corrected, sending it to correctionEntry
     def getNextCorrection(self, tokenizedSentences):
         for i in range(len(tokenizedSentences)):
+            print(tokenizedSentences[i])
             if (tokenizedSentences[i] != addConventions.correctSentence(tokenizedSentences[i])):
                 self.correctionEntry.insert("end", addConventions.correctSentence(tokenizedSentences[i]))
                 # Remove the i sentences from tokenizedSentences that were already processed
-                del tokenizedSentences[:i+1]
+                del tokenizedSentences[:i]
                 break
+            else:
+                self.transcriptionWithGrammar.configure(state='normal')
+                self.transcriptionWithGrammar.insert("end", tokenizedSentences[i] + "\n")
+                self.transcriptionWithGrammar.configure(state='disabled')
                 # Send corrected (later: SALT converted) sentence to box for user attention
         # Maybe add message here for user to confirm that there are no sentences left to be processed
 
     def applyCorrection(self):
         # Append sentence in correctionEntry to right-hand box
+        self.transcriptionWithGrammar.configure(state='normal')
         self.transcriptionWithGrammar.insert("end", self.correctionEntry.get("1.0", "end") + "\n")
+        self.transcriptionWithGrammar.configure(state='disabled')
         # Remove previously worked-on sentence
         self.correctionEntry.delete('1.0', "end")
         # Queue up the next correction for the user
-        self.getNextCorrection()
+        self.getNextCorrection(tokenizedSentences)
         pass
 
     def editTranscription(self):
@@ -273,6 +280,14 @@ class GUI:
         addConventionsButton = Button(self.master, text='Add Conventions', command=self.addConventionsClick)
         addConventionsButton.grid(row=4, column=2)
 
+        self.transcription = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
+        self.transcription.configure(state='disabled', wrap=WORD)
+        self.transcription.grid(row=5, column=0, columnspan=3)
+        self.transcription.tag_config('squiggly', bgstipple='@squiggly.xbm', background='red')
+
+        self.transcriptionWithGrammar = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
+        self.transcriptionWithGrammar.configure(state='disabled', wrap=WORD)
+
         self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
         self.editTranscriptionButton.grid(row=6, column=1)
         self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
@@ -281,7 +296,7 @@ class GUI:
         self.correctionEntry = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Courier New',12), spacing1=1)
         self.correctionEntry.configure(wrap=WORD)
 
-        self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection())
+        self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection)
 
         self.editGrammarButton = Button(self.master, text='Edit', command=self.editGrammar)
         self.editGrammarButton.grid(row=7, column=4)
@@ -290,14 +305,6 @@ class GUI:
         exportButton.grid(row=8, column=4)
         printButton = Button(self.master, text='Print')
         printButton.grid(row=9, column=4)
-
-        self.transcription = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
-        self.transcription.configure(state='disabled', wrap=WORD)
-        self.transcription.grid(row=5, column=0, columnspan=3)
-        self.transcription.tag_config('squiggly', bgstipple='@squiggly.xbm', background='red')
-
-        self.transcriptionWithGrammar = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
-        self.transcriptionWithGrammar.configure(state='disabled', wrap=WORD)
 
 
         self.master.mainloop()
