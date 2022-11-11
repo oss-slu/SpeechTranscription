@@ -8,6 +8,9 @@ import wave
 import os
 import shutil
 import addConventions
+from pydub import AudioSegment
+from pydub.effects import normalize
+import threading
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -54,8 +57,9 @@ class GUI:
             self.recordButton['text'] = 'Record'
             self.stop()
             print('*recording stopped*')
-    
+   
     def play(self):
+        self.playing = True
         audio_file = wave.open(self.filePath, 'rb')
         #code to create seperate output audio stream so audio can be played
         out_p = pyaudio.PyAudio()
@@ -66,9 +70,23 @@ class GUI:
             output = True
         )
         output = audio_file.readframes(self.CHUNK)
-        while output != b'':
+        while output != b'' and self.playing:
+            
             out_stream.write(output)
             output = audio_file.readframes(self.CHUNK)
+
+    def pause(self):
+        self.playing = False
+
+    def playback_click(self):
+        play_thread = threading.Thread(target=self.play)
+        if self.playButton['text'] == 'Play':
+            self.playButton['text'] = 'Pause'
+            play_thread.start()
+        else:
+            self.playButton['text'] = 'Play'
+            self.pause()
+        
 
     def download_recorded_audio(self):
         print('downloading')
@@ -177,6 +195,7 @@ class GUI:
 
         self.frames = []
         self.isRecording = False
+        self.playing = False
         self.stream = self.p.open(format = self.FORMAT,
                                 channels = self.CHANNELS,
                                 rate = self.RATE,
@@ -191,8 +210,8 @@ class GUI:
         self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
         self.audioPlaceholder.grid(row=0, column=2)
 
-        playButton = Button(self.master, text='Play', command=lambda: self.play())
-        playButton.grid(row=0, column=3)
+        self.playButton = Button(self.master, text='Play', command=lambda: self.playback_click())
+        self.playButton.grid(row=0, column=3)
 
         downloadButton = Button(self.master, text='Download', command=lambda: self.download_recorded_audio())
         downloadButton.grid(row=0, column=4)
