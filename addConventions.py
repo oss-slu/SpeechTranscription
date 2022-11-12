@@ -65,7 +65,63 @@ def addInflectionalMorphemes (x):
     return converted + "\n"
 
 
+# Takes a sentence x and returns the correct form in SALT standard with error coding
 def correctSentence(x) :
-    # Takes input x, which should be a sentence, and returns the corrected form
     corrected = tool.correct(x)
-    return corrected
+    originalWords = x.split()
+    correctedWords = corrected.split()
+    print("Original: ", originalWords)
+    print("Corrected: ", correctedWords)
+    originalIndex = 0
+    correctedIndex = 0
+    saltSentence = ""
+    while (originalIndex < len(originalWords) or correctedIndex < len(correctedWords)):
+        # Words only remain in the corrected sentence, append all with asterisk (missing word)
+        if (originalIndex >= len(originalWords)):
+            print(1)
+            while (correctedIndex < len(correctedWords)):
+                saltSentence += correctedWords[correctedIndex] + "* "
+                correctedIndex += 1
+        # Words only remain in the original sentence, append all unchanged
+        elif (correctedIndex >= len(correctedWords)):
+            print(2)
+            while (originalIndex < len(originalWords)):
+                saltSentence += originalWords[originalIndex] + "* "
+                originalIndex += 1
+        # The current word in each sentence is the same, so append it
+        elif (originalWords[originalIndex] == correctedWords[correctedIndex]):
+            saltSentence += originalWords[originalIndex] + " "
+            originalIndex += 1
+            correctedIndex += 1
+        # The current word in the original sentence matches the next word in the corrected one, append word in corrected with asterisk
+        # (Checks to make sure index won't go out of bounds)
+        elif (correctedIndex < len(correctedWords) - 1 and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
+            print(4)
+            saltSentence += corrected[correctedIndex] + "* "
+            correctedIndex += 1
+        # The current word in the corrected sentence matches the next word in the original one, append word in original with [EW]
+        # (Checks to make sure index won't go out of bounds)
+        elif (originalIndex < len(originalWords) - 1 and originalWords[originalIndex+1] == correctedWords[correctedIndex]):
+            print(5)
+            saltSentence += originalWords[originalIndex] + "[EW] "
+            originalIndex += 1
+        # If either index is at the last element, default to word-level error
+        elif (originalIndex == len(originalWords) - 1 or correctedIndex == len(correctedWords) - 1):
+            print(6)
+            saltSentence += originalWords[originalIndex] + "[EW:" + correctedWords[correctedIndex] + "] "
+            originalIndex += 1
+            correctedIndex += 1
+        # Word-level error if both words up next are matching
+        elif (originalWords[originalIndex+1] == correctedWords[correctedIndex+1]):
+            print(7)
+            saltSentence += originalWords[originalIndex] + "[EW:" + correctedWords[correctedIndex] + "] "
+            originalIndex += 1
+            correctedIndex += 1
+        # Both words up next do not match, defer to original sentence and increment both indices
+        else:
+            print(8)
+            saltSentence += originalWords[originalIndex]
+            originalIndex += 1
+            correctedIndex += 1
+
+    return saltSentence
