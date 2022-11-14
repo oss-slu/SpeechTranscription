@@ -114,7 +114,10 @@ def correctSentence(x) :
         # Word-level error if both words up next are matching
         elif (originalWords[originalIndex+1] == correctedWords[correctedIndex+1]):
             print(7)
-            saltSentence += originalWords[originalIndex] + "[EW:" + correctedWords[correctedIndex] + "] "
+            if (correctedWords[correctedIndex].endswith('s') and wnl.lemmatize(correctedWords[correctedIndex], 'v') == originalWords[originalIndex]):
+                saltSentence += originalWords[originalIndex] + "/*3s "
+            else:
+                saltSentence += originalWords[originalIndex] + "[EW:" + correctedWords[correctedIndex] + "] "
             originalIndex += 1
             correctedIndex += 1
         # Both words up next do not match, defer to original sentence and increment both indices
