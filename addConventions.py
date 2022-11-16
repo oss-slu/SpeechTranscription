@@ -127,4 +127,6 @@ def correctSentence(x) :
             originalIndex += 1
             correctedIndex += 1
 
-    return saltSentence
+    saltSentence = saltSentence[:-1]
+
+    return saltSentence 
