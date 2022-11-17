@@ -71,7 +71,6 @@ class GUI:
         )
         output = audio_file.readframes(self.CHUNK)
         while output != b'' and self.playing:
-            
             out_stream.write(output)
             output = audio_file.readframes(self.CHUNK)
 
@@ -141,7 +140,11 @@ class GUI:
 
 # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
-        transcribedAudio = recog(self.filePath).getTranscript()
+        # create copy of file as AudioSegment for pydub normalize function
+        pre_normalized_audio = AudioSegment.from_file(self.filePath, format = "wav")
+        self.normalized_audio = normalize(pre_normalized_audio)
+        # transcribed audio is now using normalized audiofile
+        transcribedAudio = recog(self.normalized_audio).getTranscript()
         self.transcription.configure(state='normal')
         self.transcription.insert("end", transcribedAudio + "\n");
         self.transcription.configure(state='disabled')
