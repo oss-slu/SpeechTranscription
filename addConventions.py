@@ -1,10 +1,76 @@
-from nltk import word_tokenize, pos_tag, WordNetLemmatizer
+from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
 
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")
 
-def addInflectionalMorphemes (x):
+# This function removes error coding from a sentence, leaving us with a grammatically correct sentence so NLTK can process it
+def removeErrorCoding(x):
+    words = x.split()
+    sentence = ""
+    for word in words:
+        # Handles all cases where there is error coding with a bracket
+        if ("[" in word):
+            # This case handles bracketed error codes that also have a suggestion by getting the substring between : and ]
+            # ex: "are[EW:is]"" returns "is"
+            if (":" in word):
+                colonIndex = word.find(":")
+                closeBracketIndex = word.find("]")
+                sentence += word[colonIndex + 1:closeBracketIndex] + " "
+            # This case handles extra words ([EW]) by not appending them to the corrected sentence
+            # ex: "at[EW]" returns ""
+            else:
+                pass
+        # Handles missing word case (*)
+        elif ("*" in word):
+            sentence += word.replace("*", "") + " "
+        # Word has no error coding, can be appended as normal
+        else:
+            sentence += word + " "
+
+    sentence = sentence[:-1]
+
+# Splits transcription into sentences first, then sends each sentence to addInflectionalMorphemesToSentence()
+# Sentences with error coding are sent to removeErrorCoding() first so NLTK can process them
+def addInflectionalMorphemes(x):
+    sentences = []
+    sentences = sent_tokenize(x)
+    converting = "" # Will contain entire transcript fully corrected at end of function
+    for sentence in sentences:
+        # There is error coding in the sentence
+        if ("[" in sentence or "*" in sentence):
+            # First, removes error coding then applies morphemes to clean sentence
+            errorCodingRemoved = removeErrorCoding(sentence)
+            morphemesOnCorrectedSentence = addInflectionalMorphemesToSentence(errorCodingRemoved)
+            # Splits both forms of sentence into words
+            originalWords = sentence.split()
+            correctedWords = morphemesOnCorrectedSentence.split()
+            # Forms final sentence by combining morphemes from corrected sentence and 
+            finalSentence = ""
+            originalWordIndex = 0
+            correctedWordIndex = 0
+            while (originalWordIndex < len(originalWords)):
+                # Extra word; was not processed during saltification so do NOT increment correctedWordIndex
+                if ("[EW]" in originalWords[originalWordIndex]):
+                    finalSentence += originalWords[originalWordIndex] + " "
+                    originalWordIndex += 1
+                # Word contains error coding; preserve it from original sentence
+                elif ("[" in originalWords[originalWordIndex] or "*" in originalWords[originalWordIndex]):
+                    finalSentence += originalWords[originalWordIndex] + " "
+                    originalWordIndex += 1
+                    correctedWordIndex += 1
+                # Original word has no error coding; get word from saltified sentence 
+                else:
+                    finalSentence += correctedWords[originalWordIndex] + " "
+                    originalWordIndex += 1
+                    correctedWordIndex += 1
+            converting += finalSentence
+        # There is no error coding in the sentence
+        else: 
+            converting += addInflectionalMorphemesToSentence(sentence)
+    return converting
+
+def addInflectionalMorphemesToSentence(x):
     # Creates tuples for each word or contraction with their part of speech
     tokens = pos_tag(word_tokenize(x))
     converted = ""

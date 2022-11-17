@@ -131,17 +131,10 @@ class GUI:
         self.transcription.configure(state='disabled')
 
 # Adds conventions to text from transcription box and puts output in transcriptionWithGrammar box
-    def addConventionsClick(self):
+    def inflectionalMorphemes(self):
         self.transcriptionWithGrammar.configure(state='normal')
         converting = self.transcription.get("1.0", "end")
-        if (self.grammarCheck1.get() == 1):
-            converting = addConventions.addEndPunctuation(converting)
-        if (self.grammarCheck2.get() == 1):
-            converting = addConventions.addInflectionalMorphemes(converting)
-        if (self.grammarCheck3.get() == 1):
-            converting = addConventions.addWordLevelErrors(converting)
-        if (self.grammarCheck4.get() == 1):
-            converting = addConventions.addOmissions(converting)
+        converting = addConventions.addInflectionalMorphemes(converting)
         self.transcriptionWithGrammar.delete('1.0', "end")
         self.transcriptionWithGrammar.insert("end", converting)
         self.transcriptionWithGrammar.configure(state='disabled')
@@ -279,7 +272,7 @@ class GUI:
         grammarButton3.grid(row=3, column=1)
         grammarButton4.grid(row=3, column=3)
 
-        addConventionsButton = Button(self.master, text='Add Conventions', command=self.addConventionsClick)
+        addConventionsButton = Button(self.master, text='Add Conventions', command=self.inflectionalMorphemes)
         addConventionsButton.grid(row=4, column=2)
 
         self.transcription = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
