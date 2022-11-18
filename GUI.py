@@ -320,6 +320,9 @@ class GUI:
 
         self.clearGrammarButton = Button(self.master, text='Clear', command=self.clearGrammar)
 
+        self.addMorphemesButton = Button(self.master, text='Add Morphemes', command=self.inflectionalMorphemes)
+        self.addMorphemesButton.grid(row=7, column=2)
+
         exportButton = Button(self.master, text='Export to Word Document')
         exportButton.grid(row=8, column=4)
         printButton = Button(self.master, text='Print')
