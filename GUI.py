@@ -133,10 +133,12 @@ class GUI:
 # Adds conventions to text from transcription box and puts output in transcriptionWithGrammar box
     def inflectionalMorphemes(self):
         self.transcriptionWithGrammar.configure(state='normal')
-        converting = self.transcription.get("1.0", "end")
-        converting = addConventions.addInflectionalMorphemes(converting)
+        converting = self.transcriptionWithGrammar.get("1.0", "end")
+        # My name is Jake. My name are Jake. (this is a relic of debugging, DO NOT DELETE)
+        final = addConventions.addInflectionalMorphemes(converting)
+        print(converting)
         self.transcriptionWithGrammar.delete('1.0', "end")
-        self.transcriptionWithGrammar.insert("end", converting)
+        self.transcriptionWithGrammar.insert("end", final)
         self.transcriptionWithGrammar.configure(state='disabled')
 
 # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles

@@ -7,6 +7,7 @@ tool = language_tool_python.LanguageTool("en-US")
 # This function removes error coding from a sentence, leaving us with a grammatically correct sentence so NLTK can process it
 def removeErrorCoding(x):
     words = x.split()
+    print(words)
     sentence = ""
     for word in words:
         # Handles all cases where there is error coding with a bracket
@@ -17,18 +18,24 @@ def removeErrorCoding(x):
                 colonIndex = word.find(":")
                 closeBracketIndex = word.find("]")
                 sentence += word[colonIndex + 1:closeBracketIndex] + " "
+                print(word[colonIndex + 1:closeBracketIndex])
             # This case handles extra words ([EW]) by not appending them to the corrected sentence
             # ex: "at[EW]" returns ""
             else:
+                print(word)
                 pass
         # Handles missing word case (*)
         elif ("*" in word):
             sentence += word.replace("*", "") + " "
+            print(word.replace("*", ""))
         # Word has no error coding, can be appended as normal
         else:
+            print(word)
             sentence += word + " "
+        print(sentence)
 
     sentence = sentence[:-1]
+    return sentence
 
 # Splits transcription into sentences first, then sends each sentence to addInflectionalMorphemesToSentence()
 # Sentences with error coding are sent to removeErrorCoding() first so NLTK can process them
@@ -41,6 +48,7 @@ def addInflectionalMorphemes(x):
         if ("[" in sentence or "*" in sentence):
             # First, removes error coding then applies morphemes to clean sentence
             errorCodingRemoved = removeErrorCoding(sentence)
+            print(errorCodingRemoved)
             morphemesOnCorrectedSentence = addInflectionalMorphemesToSentence(errorCodingRemoved)
             # Splits both forms of sentence into words
             originalWords = sentence.split()
