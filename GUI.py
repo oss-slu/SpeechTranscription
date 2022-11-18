@@ -1,4 +1,4 @@
-from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog
+from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
 from speechrecog.recogtest import recog
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
@@ -7,6 +7,7 @@ import pyaudio
 import wave
 import os
 import shutil
+import nltk
 import addConventions
 
 #global variables needed to record audio
@@ -15,6 +16,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 p = pyaudio.PyAudio()
+
 
 class GUI:
 
@@ -111,8 +113,8 @@ class GUI:
             self.transcription.insert("end", "Date of Birth: ")
         elif (self.clicked.get() == "Date of Sample"):
             self.transcription.insert("end", "Date of Sample: ")
-        elif (self.clicked.get() == "Examiner Info"):
-            self.transcription.insert("end", "Examiner Info: ")
+        elif (self.clicked.get() == "Examiner Name"):
+            self.transcription.insert("end", "Examiner Name: ")
         elif (self.clicked.get() == "Sampling Context"):
             self.transcription.insert("end", "Sampling Context: ")
         # Appends the submitted text after the field name
@@ -129,20 +131,59 @@ class GUI:
         self.transcription.configure(state='disabled')
 
 # Adds conventions to text from transcription box and puts output in transcriptionWithGrammar box
-    def addConventionsClick(self):
+    def inflectionalMorphemes(self):
         self.transcriptionWithGrammar.configure(state='normal')
-        converting = self.transcription.get("1.0", "end")
-        if (self.grammarCheck1.get() == 1):
-            converting = addConventions.addEndPunctuation(converting)
-        if (self.grammarCheck2.get() == 1):
-            converting = addConventions.addInflectionalMorphemes(converting)
-        if (self.grammarCheck3.get() == 1):
-            converting = addConventions.addWordLevelErrors(converting)
-        if (self.grammarCheck4.get() == 1):
-            converting = addConventions.addOmissions(converting)
+        converting = self.transcriptionWithGrammar.get("1.0", "end")
+        # My name is Jake. My name are Jake. (this is a relic of debugging, DO NOT DELETE)
+        final = addConventions.addInflectionalMorphemes(converting)
+        print(converting)
         self.transcriptionWithGrammar.delete('1.0', "end")
-        self.transcriptionWithGrammar.insert("end", converting)
+        self.transcriptionWithGrammar.insert("end", final)
         self.transcriptionWithGrammar.configure(state='disabled')
+
+# Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
+    def grammarCheck(self):
+        self.tokenizedSentences = []
+        # Flag for if user wants to manually submit each sentence
+        self.checkAllSentences = False
+        # Configuring right-hand box, correction box, and submit button
+        self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
+        self.transcriptionWithGrammar.delete('1.0', "end")
+        self.editGrammarButton.grid(row=7, column=4)
+        self.clearGrammarButton.grid(row=7, column=5)
+        self.correctionEntry.grid(row=6, column=3, columnspan=2)
+        self.correctionEntry.delete('1.0', "end")
+        self.submitCorrectionButton.grid(row=6, column=5)
+        # Get raw transcription and tokenize into sentences for processing
+        text = self.transcription.get("1.0", "end")
+        self.tokenizedSentences = nltk.sent_tokenize(text)
+        self.getNextCorrection()
+    
+    # Loops through tokenizedSentences until one needs to be corrected, sending it to correctionEntry
+    def getNextCorrection(self):
+        if (len(self.tokenizedSentences) == 0):
+            # Maybe return message that all sentences were processed
+            return
+        while (len(self.tokenizedSentences)):
+            if ((self.tokenizedSentences[0] != addConventions.correctSentence(self.tokenizedSentences[0])) or self.checkAllSentences):
+                self.correctionEntry.insert("end", addConventions.correctSentence(self.tokenizedSentences[0]))
+                del self.tokenizedSentences[0]
+                break
+            else:
+                self.transcriptionWithGrammar.configure(state='normal')
+                self.transcriptionWithGrammar.insert("end", self.tokenizedSentences[0] + "\n")
+                self.transcriptionWithGrammar.configure(state='disabled')
+                del self.tokenizedSentences[0]
+
+    def applyCorrection(self):
+        # Append sentence in correctionEntry to right-hand box
+        self.transcriptionWithGrammar.configure(state='normal')
+        self.transcriptionWithGrammar.insert("end", self.correctionEntry.get("1.0", "end"))
+        self.transcriptionWithGrammar.configure(state='disabled')
+        # Remove previously worked-on sentence
+        self.correctionEntry.delete('1.0', "end")
+        # Queue up the next correction for the user
+        self.getNextCorrection()
 
     def editTranscription(self):
         if self.editTranscriptionButton['text'] == 'Save Transcription':
@@ -161,6 +202,24 @@ class GUI:
         else:
             self.editGrammarButton['text'] = 'Save Grammar'
             self.transcriptionWithGrammar.configure(state='normal')
+
+    def clearTranscription(self):
+        if self.editTranscriptionButton['text'] == 'Save Transcription':
+            self.transcription.delete('1.0', "end")
+
+        else:
+            self.transcription.configure(state='normal')
+            self.transcription.delete('1.0', "end")
+            self.transcription.configure(state='disabled')
+
+    def clearGrammar(self):
+        if self.editGrammarButton['text'] == 'Save Grammar':
+            self.transcriptionWithGrammar.delete('1.0', "end")
+
+        else:
+            self.transcriptionWithGrammar.configure(state='normal')
+            self.transcriptionWithGrammar.delete('1.0', "end")
+            self.transcriptionWithGrammar.configure(state='disabled')
 
 
     def __init__(self):
@@ -204,7 +263,10 @@ class GUI:
                 "Name",
                 "Age",
                 "Gender",
-                "Examiner Info"
+                "Date of Birth",
+                "Date of Sample",
+                "Examiner Name",
+                "Sampling Context"
                 ]
         self.clicked = StringVar()
         self.clicked.set("Name")
@@ -231,27 +293,42 @@ class GUI:
         grammarButton3.grid(row=3, column=1)
         grammarButton4.grid(row=3, column=3)
 
-        addConventionsButton = Button(self.master, text='Add Conventions', command=self.addConventionsClick)
+        addConventionsButton = Button(self.master, text='Add Conventions', command=self.inflectionalMorphemes)
         addConventionsButton.grid(row=4, column=2)
 
+        self.transcription = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
+        self.transcription.configure(state='disabled', wrap=WORD)
+        self.transcription.grid(row=5, column=0, columnspan=3)
+        self.transcription.tag_config('squiggly', bgstipple='@squiggly.xbm', background='red')
+
+        self.transcriptionWithGrammar = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
+        self.transcriptionWithGrammar.configure(state='disabled', wrap=WORD)
+
         self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
-        self.editTranscriptionButton.grid(row=6, column=1)
+        self.editTranscriptionButton.grid(row=6, column=0)
+
+        self.clearTranscriptionButton = Button(self.master, text='Clear', command=self.clearTranscription)
+        self.clearTranscriptionButton.grid(row=6, column=1)
+
+        self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
+        self.grammarCheckButton.grid(row=6, column=2)
+
+        self.correctionEntry = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Courier New',12), spacing1=1)
+        self.correctionEntry.configure(wrap=WORD)
+
+        self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection)
 
         self.editGrammarButton = Button(self.master, text='Edit Grammar', command=self.editGrammar)
-        self.editGrammarButton.grid(row=6, column=4)
+
+        self.clearGrammarButton = Button(self.master, text='Clear', command=self.clearGrammar)
+
+        self.addMorphemesButton = Button(self.master, text='Add Morphemes', command=self.inflectionalMorphemes)
+        self.addMorphemesButton.grid(row=7, column=2)
 
         exportButton = Button(self.master, text='Export to Word Document')
-        exportButton.grid(row=7, column=4)
+        exportButton.grid(row=8, column=4)
         printButton = Button(self.master, text='Print')
-        printButton.grid(row=8, column=4)
-
-        self.transcription = Text(self.master)
-        self.transcription.configure(state='disabled')
-        self.transcription.grid(row=5, column=0, columnspan=3)
-
-        self.transcriptionWithGrammar = Text(self.master)
-        self.transcriptionWithGrammar.configure(state='disabled')
-        self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
+        printButton.grid(row=9, column=4)
 
 
         self.master.mainloop()
