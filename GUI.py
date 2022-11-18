@@ -146,10 +146,11 @@ class GUI:
         self.checkAllSentences = False
         # Configuring right-hand box, correction box, and submit button
         self.transcriptionWithGrammar.grid(row=5, column=3, columnspan=3)
-        self.transcriptionWithGrammar.configure(state='normal')
         self.transcriptionWithGrammar.delete('1.0', "end")
-        self.transcriptionWithGrammar.configure(state='disabled')
+        self.editGrammarButton.grid(row=7, column=4)
+        self.clearGrammarButton.grid(row=7, column=5)
         self.correctionEntry.grid(row=6, column=3, columnspan=2)
+        self.correctionEntry.delete('1.0', "end")
         self.submitCorrectionButton.grid(row=6, column=5)
         # Get raw transcription and tokenize into sentences for processing
         text = self.transcription.get("1.0", "end")
@@ -199,6 +200,24 @@ class GUI:
         else:
             self.editGrammarButton['text'] = 'Save Grammar'
             self.transcriptionWithGrammar.configure(state='normal')
+
+    def clearTranscription(self):
+        if self.editTranscriptionButton['text'] == 'Save Transcription':
+            self.transcription.delete('1.0', "end")
+
+        else:
+            self.transcription.configure(state='normal')
+            self.transcription.delete('1.0', "end")
+            self.transcription.configure(state='disabled')
+
+    def clearGrammar(self):
+        if self.editGrammarButton['text'] == 'Save Grammar':
+            self.transcriptionWithGrammar.delete('1.0', "end")
+
+        else:
+            self.transcriptionWithGrammar.configure(state='normal')
+            self.transcriptionWithGrammar.delete('1.0', "end")
+            self.transcriptionWithGrammar.configure(state='disabled')
 
 
     def __init__(self):
@@ -284,7 +303,11 @@ class GUI:
         self.transcriptionWithGrammar.configure(state='disabled', wrap=WORD)
 
         self.editTranscriptionButton = Button(self.master, text='Edit Transcription', command=self.editTranscription)
-        self.editTranscriptionButton.grid(row=6, column=1)
+        self.editTranscriptionButton.grid(row=6, column=0)
+
+        self.clearTranscriptionButton = Button(self.master, text='Clear', command=self.clearTranscription)
+        self.clearTranscriptionButton.grid(row=6, column=1)
+
         self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
         self.grammarCheckButton.grid(row=6, column=2)
 
@@ -293,8 +316,9 @@ class GUI:
 
         self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection)
 
-        self.editGrammarButton = Button(self.master, text='Edit', command=self.editGrammar)
-        self.editGrammarButton.grid(row=7, column=4)
+        self.editGrammarButton = Button(self.master, text='Edit Grammar', command=self.editGrammar)
+
+        self.clearGrammarButton = Button(self.master, text='Clear', command=self.clearGrammar)
 
         exportButton = Button(self.master, text='Export to Word Document')
         exportButton.grid(row=8, column=4)
