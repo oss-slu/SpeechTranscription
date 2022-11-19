@@ -7,7 +7,6 @@ tool = language_tool_python.LanguageTool("en-US")
 # This function removes error coding from a sentence, leaving us with a grammatically correct sentence so NLTK can process it
 def removeErrorCoding(x):
     words = x.split()
-    print(words)
     sentence = ""
     for word in words:
         # Handles all cases where there is error coding with a bracket
@@ -18,21 +17,16 @@ def removeErrorCoding(x):
                 colonIndex = word.find(":")
                 closeBracketIndex = word.find("]")
                 sentence += word[colonIndex + 1:closeBracketIndex] + " "
-                print(word[colonIndex + 1:closeBracketIndex])
             # This case handles extra words ([EW]) by not appending them to the corrected sentence
             # ex: "at[EW]" returns ""
             else:
-                print(word)
                 pass
         # Handles missing word case (*)
         elif ("*" in word):
             sentence += word.replace("*", "") + " "
-            print(word.replace("*", ""))
         # Word has no error coding, can be appended as normal
         else:
-            print(word)
             sentence += word + " "
-        print(sentence)
 
     sentence = sentence[:-1]
     return sentence
@@ -48,7 +42,6 @@ def addInflectionalMorphemes(x):
         if ("[" in sentence or "*" in sentence):
             # First, removes error coding then applies morphemes to clean sentence
             errorCodingRemoved = removeErrorCoding(sentence)
-            print(errorCodingRemoved)
             morphemesOnCorrectedSentence = addInflectionalMorphemesToSentence(errorCodingRemoved)
             # Splits both forms of sentence into words
             originalWords = sentence.split()
@@ -72,10 +65,10 @@ def addInflectionalMorphemes(x):
                     finalSentence += correctedWords[originalWordIndex] + " "
                     originalWordIndex += 1
                     correctedWordIndex += 1
-            converting += finalSentence
+            converting += finalSentence + "\n"
         # There is no error coding in the sentence
         else: 
-            converting += addInflectionalMorphemesToSentence(sentence)
+            converting += addInflectionalMorphemesToSentence(sentence) + "\n"
     return converting
 
 def addInflectionalMorphemesToSentence(x):
@@ -125,7 +118,7 @@ def addInflectionalMorphemesToSentence(x):
         # Token is punctuation
         elif (tuple[0] == "," or tuple[0] == "." or tuple[0] == "?" or tuple[0] == "!"):
             if (tuple[0] != ","):
-                converted = converted[:-1] + tuple[0] + "\n"
+                converted = converted[:-1] + tuple[0]
             else:
                 converted = converted[:-1] + tuple[0] + " "
         # Token is a word with no changes needed
@@ -136,7 +129,7 @@ def addInflectionalMorphemesToSentence(x):
     converted = converted.replace("ca/n't", "can/'t")
     converted = converted.replace("do/n't", "don't")
 
-    return converted + "\n"
+    return converted
 
 
 # Takes a sentence x and returns the correct form in SALT standard with error coding
@@ -144,21 +137,17 @@ def correctSentence(x) :
     corrected = tool.correct(x)
     originalWords = x.split()
     correctedWords = corrected.split()
-    print("Original: ", originalWords)
-    print("Corrected: ", correctedWords)
     originalIndex = 0
     correctedIndex = 0
     saltSentence = ""
     while (originalIndex < len(originalWords) or correctedIndex < len(correctedWords)):
         # Words only remain in the corrected sentence, append all with asterisk (missing word)
         if (originalIndex >= len(originalWords)):
-            print(1)
             while (correctedIndex < len(correctedWords)):
                 saltSentence += correctedWords[correctedIndex] + "* "
                 correctedIndex += 1
         # Words only remain in the original sentence, append all unchanged
         elif (correctedIndex >= len(correctedWords)):
-            print(2)
             while (originalIndex < len(originalWords)):
                 saltSentence += originalWords[originalIndex] + "* "
                 originalIndex += 1
@@ -170,24 +159,20 @@ def correctSentence(x) :
         # The current word in the original sentence matches the next word in the corrected one, append word in corrected with asterisk
         # (Checks to make sure index won't go out of bounds)
         elif (correctedIndex < len(correctedWords) - 1 and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
-            print(4)
             saltSentence += corrected[correctedIndex] + "* "
             correctedIndex += 1
         # The current word in the corrected sentence matches the next word in the original one, append word in original with [EW]
         # (Checks to make sure index won't go out of bounds)
         elif (originalIndex < len(originalWords) - 1 and originalWords[originalIndex+1] == correctedWords[correctedIndex]):
-            print(5)
             saltSentence += originalWords[originalIndex] + "[EW] "
             originalIndex += 1
         # If either index is at the last element, default to word-level error
         elif (originalIndex == len(originalWords) - 1 or correctedIndex == len(correctedWords) - 1):
-            print(6)
             saltSentence += originalWords[originalIndex] + "[EW:" + correctedWords[correctedIndex] + "] "
             originalIndex += 1
             correctedIndex += 1
         # Word-level error if both words up next are matching
         elif (originalWords[originalIndex+1] == correctedWords[correctedIndex+1]):
-            print(7)
             if (correctedWords[correctedIndex].endswith('s') and wnl.lemmatize(correctedWords[correctedIndex], 'v') == originalWords[originalIndex]):
                 saltSentence += originalWords[originalIndex] + "/*3s "
             else:
@@ -196,7 +181,6 @@ def correctSentence(x) :
             correctedIndex += 1
         # Both words up next do not match, defer to original sentence and increment both indices
         else:
-            print(8)
             saltSentence += originalWords[originalIndex]
             originalIndex += 1
             correctedIndex += 1
