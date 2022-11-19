@@ -305,9 +305,6 @@ class GUI:
         # Clears conventionBox
         self.clearConventionBoxButton = Button(self.master, text='Clear', command=self.clearConventionBox)
 
-        self.editTranscriptionBoxButton = Button(self.master, text='Edit Transcription', command=self.editTranscriptionBox)
-        self.editTranscriptionBoxButton.grid(row=6, column=0)
-
 
         # CONVENTION-RELATED BUTTONS/BOXES
 
