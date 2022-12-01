@@ -62,7 +62,7 @@ def addInflectionalMorphemes(x):
                     correctedWordIndex += 1
                 # Original word has no error coding; get word from saltified sentence 
                 else:
-                    finalSentence += correctedWords[originalWordIndex] + " "
+                    finalSentence += correctedWords[correctedWordIndex] + " "
                     originalWordIndex += 1
                     correctedWordIndex += 1
             converting += finalSentence + "\n"
@@ -173,7 +173,7 @@ def correctSentence(x) :
             correctedIndex += 1
         # Word-level error if both words up next are matching
         elif (originalWords[originalIndex+1] == correctedWords[correctedIndex+1]):
-            if (correctedWords[correctedIndex].endswith('s') and wnl.lemmatize(correctedWords[correctedIndex], 'v') == originalWords[originalIndex]):
+            if (correctedWords[correctedIndex].endswith('s') and ((wnl.lemmatize(correctedWords[correctedIndex], 'v') == originalWords[originalIndex]) and originalWords[originalIndex] != "have")):
                 saltSentence += originalWords[originalIndex] + "/*3s "
             else:
                 saltSentence += originalWords[originalIndex] + "[EW:" + correctedWords[correctedIndex] + "] "
