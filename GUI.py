@@ -9,6 +9,11 @@ import os
 import shutil
 import nltk
 import addConventions
+import ffmpeg
+import ffprobe
+from pydub import AudioSegment
+from pydub.effects import normalize
+import threading
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -58,6 +63,7 @@ class GUI:
             print('*recording stopped*')
     
     def play(self):
+        self.playing = True
         audio_file = wave.open(self.filePath, 'rb')
         #code to create seperate output audio stream so audio can be played
         out_p = pyaudio.PyAudio()
@@ -68,9 +74,21 @@ class GUI:
             output = True
         )
         output = audio_file.readframes(self.CHUNK)
-        while output != b'':
+        while output != b'' and self.playing:
             out_stream.write(output)
             output = audio_file.readframes(self.CHUNK)
+
+    def pause(self):
+        self.playing = False
+
+    def playback_click(self):
+        play_thread = threading.Thread(target=self.play)
+        if self.playButton['text'] == 'Play':
+            self.playButton['text'] = 'Stop'
+            play_thread.start()
+        else:
+            self.playButton['text'] = 'Play'
+            self.pause()
 
     def download_recorded_audio(self):
         print('downloading')
@@ -123,11 +141,20 @@ class GUI:
         # Clears the entry box
         self.infoEntryBox.delete(0, "end")
 
+    def convertToWAV(self, audioSeg):
+        audioSeg.export(out_f = "converted.wav", format = "wav")
+
     # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
-        transcribedAudio = recog(self.filePath).getTranscript()
+        # create copy of file as AudioSegment for pydub normalize function
+        pre_normalized_audio = AudioSegment.from_file(self.filePath, format = "wav")
+        normalized_audio = normalize(pre_normalized_audio)
+        # transcribed audio is now using normalized audiofile
+        self.convertToWAV(normalized_audio)
+        transcribedAudio = recog("converted.wav").getTranscript()
+        #normal_wav.close()
         self.transcriptionBox.configure(state='normal')
-        self.transcriptionBox.insert("end", transcribedAudio + "\n");
+        self.transcriptionBox.insert("end", transcribedAudio + "\n")
         self.transcriptionBox.configure(state='disabled')
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
@@ -235,6 +262,7 @@ class GUI:
 
         self.frames = []
         self.isRecording = False
+        self.playing = False
         self.stream = self.p.open(format = self.FORMAT,
                                 channels = self.CHANNELS,
                                 rate = self.RATE,
@@ -249,8 +277,8 @@ class GUI:
         self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
         self.audioPlaceholder.grid(row=0, column=2)
 
-        playButton = Button(self.master, text='Play', command=lambda: self.play())
-        playButton.grid(row=0, column=3)
+        self.playButton = Button(self.master, text='Play', command=lambda: self.playback_click())
+        self.playButton.grid(row=0, column=3)
 
         downloadButton = Button(self.master, text='Download', command=lambda: self.download_recorded_audio())
         downloadButton.grid(row=0, column=4)
