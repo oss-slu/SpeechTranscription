@@ -9,6 +9,7 @@ import os
 import shutil
 import nltk
 import addConventions
+from diarizationAndTranscription import diarizeAndTranscribe
 import ffmpeg
 import ffprobe
 from pydub import AudioSegment
@@ -161,7 +162,7 @@ class GUI:
         normalized_audio = normalize(pre_normalized_audio)
         # transcribed audio is now using normalized audiofile
         self.convertToWAV(normalized_audio)
-        transcribedAudio = recog("converted.wav").getTranscript()
+        transcribedAudio = diarizeAndTranscribe("converted.wav")
         #normal_wav.close()
         self.transcriptionBox.configure(state='normal')
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
