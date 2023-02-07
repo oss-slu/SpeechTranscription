@@ -2,4 +2,11 @@ pyaudio
 wave
 SpeechRecognition
 nltk
+ffmpeg
+ffprobe
+ffprobe-python
+pydub
+fleep
+language-tool-python
+
 
