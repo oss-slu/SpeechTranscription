@@ -8,12 +8,13 @@ import numpy as np
 
 # Adapted from https://github.com/raotnameh/Trim_audio
 def trim(start, end, filename, fileFormat, i):
-    t1 = start
-    t2 = end
+    t1 = start * 1000
+    t2 = end * 1000
     print("t1: " + str(t1))
     print("t2: " + str(t2))
     trimmedAudio = AudioSegment.from_wav(filename + "." + fileFormat)
     trimmedAudio = trimmedAudio[t1:t2]
+    print("Trimmed audio duration: " + str(trimmedAudio.duration_seconds))
     # Exports new file with same name as base file + _(index)
     trimmedAudio.export(filename + "_" + str(i) + ".wav", format=fileFormat)
 
@@ -52,4 +53,6 @@ def diarizeAndTranscribe(audioFile):
     for i in range(len(labelling)):
         transcript += labelling[i][0] + " "
         trim(labelling[i][1], labelling[i][2], filenameWithoutExtension, fileExtension, i)
+        print("Attempting to transcribe: " + filenameWithoutExtension + "_" + str(i) + "." + fileExtension)
         transcript += recog(filenameWithoutExtension + "_" + str(i) + "." + fileExtension).getTranscript() + "\n"
+    return transcript
