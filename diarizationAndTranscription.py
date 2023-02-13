@@ -40,7 +40,6 @@ def diarizeAndTranscribe(audioFile):
     encoder = VoiceEncoder("cpu")
     _, cont_embeds, wav_splits = encoder.embed_utterance(wav, return_partials=True, rate=16)
     
-    refinement = RefinementOptions(gaussian_blur_sigma=1, p_percentile=0.9)
     clusterer = SpectralClusterer(min_clusters=1, max_clusters=2, refinement_options=refinement)
     labels = clusterer.predict(cont_embeds)
 
@@ -51,7 +50,7 @@ def diarizeAndTranscribe(audioFile):
     filenameWithoutExtension = audioFile.split('.')[0]
     fileExtension = audioFile.split('.')[1]
     for i in range(len(labelling)):
-        transcript += labelling[i][0] + " "
+        transcript += "Speaker " + labelling[i][0] + ": "
         trim(labelling[i][1], labelling[i][2], filenameWithoutExtension, fileExtension, i)
         print("Attempting to transcribe: " + filenameWithoutExtension + "_" + str(i) + "." + fileExtension)
         transcript += recog(filenameWithoutExtension + "_" + str(i) + "." + fileExtension).getTranscript() + "\n"
