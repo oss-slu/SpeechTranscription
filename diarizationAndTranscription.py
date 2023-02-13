@@ -40,7 +40,7 @@ def diarizeAndTranscribe(audioFile):
     encoder = VoiceEncoder("cpu")
     _, cont_embeds, wav_splits = encoder.embed_utterance(wav, return_partials=True, rate=16)
     
-    clusterer = SpectralClusterer(min_clusters=1, max_clusters=2, refinement_options=refinement)
+    clusterer = SpectralClusterer(min_clusters=1, max_clusters=2)
     labels = clusterer.predict(cont_embeds)
 
     labelling = create_labelling(labels, wav_splits)
