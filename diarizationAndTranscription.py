@@ -1,23 +1,39 @@
-# Code adapted from https://medium.com/saarthi-ai/who-spoke-when-build-your-own-speaker-diarization-module-from-scratch-e7d725ee279
-from resemblyzer import preprocess_wav, VoiceEncoder
+from resemblyzer import VoiceEncoder
 from resemblyzer.audio import sampling_rate
 from spectralcluster import SpectralClusterer, RefinementOptions
 from speechrecog.recogtest import recog
 from pydub import AudioSegment
 import numpy as np
+import librosa
 
 # Adapted from https://github.com/raotnameh/Trim_audio
-def trim(start, end, filename, fileFormat, i):
-    t1 = start * 1000
+# start: start time (s) of segment to be trimmed
+# end: end time (s) of segment to be trimmed
+# filename: name of wav file
+# 
+# Trims a segment from a wav file, exports to current directory as 'filename'_segment.wav
+def trim(start, end, filename):
+
+    t1 = start * 1000 # converts to milliseconds
     t2 = end * 1000
     print("t1: " + str(t1))
     print("t2: " + str(t2))
-    trimmedAudio = AudioSegment.from_wav(filename + "." + fileFormat)
+    trimmedAudio = AudioSegment.from_wav(filename)
     trimmedAudio = trimmedAudio[t1:t2]
     print("Trimmed audio duration: " + str(trimmedAudio.duration_seconds))
-    # Exports new file with same name as base file + _(index)
-    trimmedAudio.export(filename + "_" + str(i) + ".wav", format=fileFormat)
+    # Gets name of file without extension
+    name = filename.split('.')[0]
+    trimmedAudio.export(name + "_segment.wav", format="wav")
 
+# Formats audio to be accepted by clustering process
+def resample(audio):
+    wav, sampleRate = librosa.load(str(audio), sr=None)
+    resampledAudio = librosa.resample(wav, orig_sr=sampleRate, target_sr=sampling_rate)
+    return resampledAudio
+
+# Function adapted from https://medium.com/saarthi-ai/who-spoke-when-build-your-own-speaker-diarization-module-from-scratch-e7d725ee279
+# Returns an array of tuples of form [speakerNumber, startTime, endTime]
+# Effectively identifies segments and the speakers of those segments
 def create_labelling(labels, wav_splits):
     times = [((s.start + s.stop) / 2) / sampling_rate for s in wav_splits]
     labelling = []
@@ -36,22 +52,23 @@ def create_labelling(labels, wav_splits):
 
 def diarizeAndTranscribe(audioFile):
 
-    wav = preprocess_wav(audioFile)
+    # Diarization Process
+    wav = resample(audioFile)
     encoder = VoiceEncoder("cpu")
     _, cont_embeds, wav_splits = encoder.embed_utterance(wav, return_partials=True, rate=16)
-    
     clusterer = SpectralClusterer(min_clusters=1, max_clusters=2)
     labels = clusterer.predict(cont_embeds)
-
     labelling = create_labelling(labels, wav_splits)
     print("Labelling: " + str(labelling))
     print("Number of splits found: " + str(len(labelling)))
+
+    # Transcribing Segments
     transcript = ""
-    filenameWithoutExtension = audioFile.split('.')[0]
-    fileExtension = audioFile.split('.')[1]
+    name = audioFile.split(".")[0]
     for i in range(len(labelling)):
         transcript += "Speaker " + labelling[i][0] + ": "
-        trim(labelling[i][1], labelling[i][2], filenameWithoutExtension, fileExtension, i)
-        print("Attempting to transcribe: " + filenameWithoutExtension + "_" + str(i) + "." + fileExtension)
-        transcript += recog(filenameWithoutExtension + "_" + str(i) + "." + fileExtension).getTranscript() + "\n"
+        trim(labelling[i][1], labelling[i][2], audioFile)
+        print("Attempting to transcribe: " + audioFile)
+        transcript += recog(name + "_segment.wav").getTranscript() + "\n"
+        
     return transcript
