@@ -1,5 +1,6 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
 from speechrecog.recogtest import recog
+from grammar import addConventions
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
 #import recording_audio
@@ -8,7 +9,6 @@ import wave
 import os
 import shutil
 import nltk
-import addConventions
 from diarizationAndTranscription import diarizeAndTranscribe
 import ffmpeg
 import ffprobe
@@ -328,7 +328,6 @@ class GUI:
         self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
         self.transcriptionBox.configure(state='disabled', wrap=WORD)
         self.transcriptionBox.grid(row=5, column=0, columnspan=3)
-        self.transcriptionBox.tag_config('squiggly', bgstipple='@squiggly.xbm', background='red')
         # Permits user to type in transcriptionBox
         self.editTranscriptionBoxButton = Button(self.master, text='Edit Transcription', command=self.editTranscriptionBox)
         self.editTranscriptionBoxButton.grid(row=6, column=0)
