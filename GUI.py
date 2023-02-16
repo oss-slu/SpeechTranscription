@@ -9,6 +9,7 @@ import wave
 import os
 import shutil
 import nltk
+from diarizationAndTranscription import diarizeAndTranscribe
 import ffmpeg
 import ffprobe
 from pydub import AudioSegment
@@ -142,7 +143,7 @@ class GUI:
         # Clears the entry box
         self.infoEntryBox.delete(0, "end")
 
-    def mp3towav(audiofile):
+    def mp3towav(self, audiofile):
         dst = self.filePath
         sound = AudioSegment.from_mp3(audiofile)
         sound.export(dst, format="wav")
@@ -153,15 +154,15 @@ class GUI:
     # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
         with open(self.filePath, "rb") as audiofile:
-            audiocheck = fleep.get(audiiofile.read(128))
-        if (audio.extension == "mp3"):
+            audiocheck = fleep.get(audiofile.read(128))
+        if (audiocheck.extension == "mp3"):
             self.mp3towav(self.filePath)
         # create copy of file as AudioSegment for pydub normalize function
         pre_normalized_audio = AudioSegment.from_file(self.filePath, format = "wav")
         normalized_audio = normalize(pre_normalized_audio)
         # transcribed audio is now using normalized audiofile
         self.convertToWAV(normalized_audio)
-        transcribedAudio = recog("converted.wav").getTranscript()
+        transcribedAudio = diarizeAndTranscribe("converted.wav")
         #normal_wav.close()
         self.transcriptionBox.configure(state='normal')
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
