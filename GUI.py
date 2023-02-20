@@ -5,8 +5,6 @@ from tkinter.filedialog import asksaveasfile
 #import recording_audio
 import pyaudio
 import wave
-import os
-import shutil
 import nltk
 from speechrecog.diarizationAndTranscription import diarizeAndTranscribe
 import ffmpeg
@@ -178,12 +176,23 @@ class GUI:
 
     # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
+        name = self.filePath.split('.')[0]
+        extension = self.filePath.split('.')[1]
         with open(self.filePath, "rb") as audiofile:
             audiocheck = fleep.get(audiofile.read(128))
-        if (audiocheck.extension == "mp3"):
-            self.mp3towav(self.filePath)
+        if (extension == "MP3"):
+            mp3 = AudioSegment.from_mp3(self.filePath)
+            ret = mp3.export("export.wav", format = "wav")
+            print("Attempting to export wav from mp3. ret = " + str(ret))
+        elif (extension == "wav"):
+            wav = AudioSegment.from_wav(self.filePath)
+            ret = wav.export("export.wav", format = "wav" )
+            print("Attempting to export wav from wav. ret = " + str(ret))
+        else:
+            print("The format is not valid. name: " + name + " extension: " + extension)
         # create copy of file as AudioSegment for pydub normalize function
-        pre_normalized_audio = AudioSegment.from_file(self.filePath, format = "wav")
+        print("File path attempting to be normalized: " + self.filePath)
+        pre_normalized_audio = AudioSegment.from_file("export.wav", format = "wav")
         normalized_audio = normalize(pre_normalized_audio)
         # transcribed audio is now using normalized audiofile
         self.convertToWAV(normalized_audio)
