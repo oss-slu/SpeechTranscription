@@ -9,7 +9,7 @@ import wave
 import os
 import shutil
 import nltk
-from diarizationAndTranscription import diarizeAndTranscribe
+from speechrecog.diarizationAndTranscription import diarizeAndTranscribe
 import ffmpeg
 import ffprobe
 from pydub import AudioSegment
