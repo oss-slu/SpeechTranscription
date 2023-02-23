@@ -176,11 +176,6 @@ class GUI:
     def transcribe(self) :
         name = self.filePath.split('.')[0]
         extension = self.filePath.split('.')[1]
-<<<<<<< HEAD
-=======
-        with open(self.filePath, "rb") as audiofile:
-            audiocheck = fleep.get(audiofile.read(128))
->>>>>>> a2a2ad1 (Now able to use mp3 files. Requires ffmpeg installed and the bin folder added to the path)
         if (extension == "MP3"):
             mp3 = AudioSegment.from_mp3(self.filePath)
             ret = mp3.export("export.wav", format = "wav")
