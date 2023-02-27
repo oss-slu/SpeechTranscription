@@ -1,12 +1,12 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
-from grammar import addConventions
+from functions import addConventions
+from functions import diarizationAndTranscription
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
 #import recording_audio
 import pyaudio
 import wave
 import nltk
-from speechrecog.diarizationAndTranscription import diarizeAndTranscribe
 import ffmpeg
 import ffprobe
 from pydub import AudioSegment
@@ -196,7 +196,7 @@ class GUI:
         normalized_audio = normalize(pre_normalized_audio)
         # transcribed audio is now using normalized audiofile
         self.convertToWAV(normalized_audio)
-        transcribedAudio = diarizeAndTranscribe("converted.wav")
+        transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav")
         #normal_wav.close()
         self.transcriptionBox.configure(state='normal')
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
