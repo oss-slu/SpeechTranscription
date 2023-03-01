@@ -227,8 +227,7 @@ class GUI:
     def getNextCorrection(self):
         if (len(self.tokenizedSentences) == 0):
             # Maybe return message that all sentences were processed
-            return self.conventionBox.grid(row=5, column=4, columnspan=3)
-        self.conventionBox.delete('1.0', "end")
+            return
         while (len(self.tokenizedSentences)):
             if ((self.tokenizedSentences[0] != addConventions.correctSentence(self.tokenizedSentences[0])) or self.checkAllSentences):
                 self.correctionEntryBox.insert("end", addConventions.correctSentence(self.tokenizedSentences[0]))
