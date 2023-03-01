@@ -118,7 +118,6 @@ class GUI:
 
     # Sends client info submitted by user to the transciption box
     def submitClientInfo(self) :
-        self.infoArray = ['','','','','','','']
         # Gets the current text in the entry box
         infoEntryText = self.infoEntryBox.get()
         # Sets the relevant variable
@@ -147,9 +146,8 @@ class GUI:
         self.infoEntryBox.delete(0, "end")
 
         # Updates Table
-        self.clientInfoBox.grid(row=5, column=0)
-        self.clientInfoBox.delete('1.0', "end")
         self.clientInfoBox.configure(state='normal')
+        self.clientInfoBox.delete('1.0', "end")
         for x in range(7):
             if self.infoArray[x] != '':
                 if x == 0:
@@ -249,6 +247,13 @@ class GUI:
         # Queue up the next correction for the user
         self.getNextCorrection()
 
+    def toggleClientInfoBox(self):
+        if self.infoIsVisible:
+            self.clientInfoBox.grid_remove()
+        else:
+            self.clientInfoBox.grid(row=5, column=0)
+        self.infoIsVisible = not self.infoIsVisible
+
     def editTranscriptionBox(self):
         if self.editTranscriptionBoxButton['text'] == 'Save Transcription':
             self.editTranscriptionBoxButton['text'] = 'Edit Transcription'
@@ -314,6 +319,8 @@ class GUI:
         self.dateOfSample = ''
         self.examinerName = ''
         self.samplingContext = ''
+        self.infoArray = ['','','','','','','']
+
 
         uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
         uploadButton.grid(row=0, column=0)
@@ -361,9 +368,15 @@ class GUI:
         # Client Information Box on the far left
         self.clientInfoBox = scrolledtext.ScrolledText(self.master, width = 20, height = 20, font=('Courier New',12), spacing1=1)
         self.clientInfoBox.configure(state='disabled', wrap=WORD)
+        self.clientInfoBox.grid(row=5, column=0)
+
+        # Show/hide button for the box
+        self.infoIsVisible = True
+        self.toggleClientInfoBoxButton = Button(self.master, text='Toggle Table', command=self.toggleClientInfoBox)
+        self.toggleClientInfoBoxButton.grid(row=6, column=0)
 
         # transcriptionBox is the left-hand box used for editing speech-recognized text
-        self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
+        self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Courier New',12), spacing1=1)
         self.transcriptionBox.configure(state='disabled', wrap=WORD)
         self.transcriptionBox.grid(row=5, column=1, columnspan=3)
         # Permits user to type in transcriptionBox
@@ -374,7 +387,7 @@ class GUI:
         self.clearTranscriptionBoxButton.grid(row=6, column=2)
 
         # conventionBox is the right-hand box used for adding all types of conventions
-        self.conventionBox = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
+        self.conventionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Courier New',12), spacing1=1)
         self.conventionBox.configure(state='disabled', wrap=WORD)
         # Permits user to type in conventionBox
         self.editConventionBoxButton = Button(self.master, text='Edit Convention Box', command=self.editConventionBox)
