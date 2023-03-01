@@ -1,5 +1,4 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
-from speechrecog.recogtest import recog
 from grammar import addConventions
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
@@ -9,7 +8,7 @@ import wave
 import os
 import shutil
 import nltk
-from diarizationAndTranscription import diarizeAndTranscribe
+from speechrecog.diarizationAndTranscription import diarizeAndTranscribe
 import ffmpeg
 import ffprobe
 from pydub import AudioSegment
@@ -121,25 +120,21 @@ class GUI:
     def submitClientInfo(self) :
         # Gets the current text in the entry box
         infoEntryText = self.infoEntryBox.get()
-        self.transcriptionBox.configure(state='normal')
-        # Prints the relevant field
+        # Sets the relevant variable
         if (self.clicked.get() == "Name"):
-            self.transcriptionBox.insert("end", "Name: ")
+            self.name = infoEntryText;
         elif (self.clicked.get() == "Age"):
-            self.transcriptionBox.insert("end", "Age: ")
+            self.age = infoEntryText;
         elif (self.clicked.get() == "Gender"):
-            self.transcriptionBox.insert("end", "Gender: ")
+            self.gender = infoEntryText;
         elif (self.clicked.get() == "Date of Birth"):
-            self.transcriptionBox.insert("end", "Date of Birth: ")
+            self.dateOfBirth = infoEntryText;
         elif (self.clicked.get() == "Date of Sample"):
-            self.transcriptionBox.insert("end", "Date of Sample: ")
+            self.dateOfSample = infoEntryText;
         elif (self.clicked.get() == "Examiner Name"):
-            self.transcriptionBox.insert("end", "Examiner Name: ")
+            self.examinerName = infoEntryText;
         elif (self.clicked.get() == "Sampling Context"):
-            self.transcriptionBox.insert("end", "Sampling Context: ")
-        # Appends the submitted text after the field name
-        self.transcriptionBox.insert("end", infoEntryText + "\n")
-        self.transcriptionBox.configure(state='disabled')
+            self.samplingContext = infoEntryText;
         # Clears the entry box
         self.infoEntryBox.delete(0, "end")
 
@@ -280,6 +275,14 @@ class GUI:
                                 input = True,
                                 frames_per_buffer = self.CHUNK)
 
+        self.name = ''
+        self.age = ''
+        self.gender = ''
+        self.dateOfBirth = ''
+        self.dateOfSample = ''
+        self.examinerName = ''
+        self.samplingContext = ''
+
         uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
         uploadButton.grid(row=0, column=0)
         self.recordButton = Button(self.master, text='Record', command=lambda: self.recordAudio())
@@ -296,7 +299,6 @@ class GUI:
 
         transcribeButton = Button(self.master, text='Transcribe', command=self.transcribe)
         transcribeButton.grid(row=0, column=5)
-
 
         # CLIENT INFORMATION-RELATED BUTTONS/BOXES
 
