@@ -134,7 +134,12 @@ def addInflectionalMorphemesToSentence(x):
 
 # Takes a sentence x and returns the correct form in SALT standard with error coding
 def correctSentence(x) :
-    corrected = tool.correct(x)
+    is_bad_rule = lambda rule: rule.category == 'PUNCTUATION' or rule.message == 'This word is normally spelled with a hyphen.'
+    matches = tool.check(x)
+    matches = [rule for rule in matches if not is_bad_rule(rule)]
+    print(matches)
+    corrected = language_tool_python.utils.correct(x, matches)
+    print(corrected)
     originalWords = x.split()
     correctedWords = corrected.split()
     originalIndex = 0
@@ -151,15 +156,31 @@ def correctSentence(x) :
             while (originalIndex < len(originalWords)):
                 saltSentence += originalWords[originalIndex] + "* "
                 originalIndex += 1
-        # The current word in each sentence is the same, so append it
+        # The current word in each sentence is the same
+        # WARNING - THESE LINES ARE NOT YET RELEVANT - Check if the original sentence repeated the word several times,
+        # WARNING - THESE LINES ARE NOT YET RELEVANT - if so provide correct coding "(And and) and" and increment accordingly
+        # Otherwise, simply append and increment both sentences by one
         elif (originalWords[originalIndex] == correctedWords[correctedIndex]):
+            """ # Code that would process repeats, not ready to be implemented
+            repeatCounter = 0;
+            while (originalIndex + 1 < len(correctedWords) - 1 and originalWords[originalIndex + repeatCounter + 1] == correctedWords[correctedIndex]):
+                repeatCounter += 1
+            if (repeatCounter > 0):
+                saltSentence += "(" + originalWords[originalIndex]
+                for i in range(repeatCounter)
+                    saltSentence += " " + originalWords[originalIndex]
+                saltSentence += ")"
+                originalIndex += repeatCounter + 1
+                correctedIndex += 1
+            else:
+            """
             saltSentence += originalWords[originalIndex] + " "
             originalIndex += 1
             correctedIndex += 1
         # The current word in the original sentence matches the next word in the corrected one, append word in corrected with asterisk
         # (Checks to make sure index won't go out of bounds)
         elif (correctedIndex < len(correctedWords) - 1 and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
-            saltSentence += corrected[correctedIndex] + "* "
+            saltSentence += correctedWords[correctedIndex] + "* "
             correctedIndex += 1
         # The current word in the corrected sentence matches the next word in the original one, append word in original with [EW]
         # (Checks to make sure index won't go out of bounds)
@@ -181,7 +202,7 @@ def correctSentence(x) :
             correctedIndex += 1
         # Both words up next do not match, defer to original sentence and increment both indices
         else:
-            saltSentence += originalWords[originalIndex]
+            saltSentence += originalWords[originalIndex] + " "
             originalIndex += 1
             correctedIndex += 1
 
