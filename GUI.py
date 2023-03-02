@@ -1,5 +1,4 @@
 from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
-from speechrecog.recogtest import recog
 from grammar import addConventions
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
@@ -9,7 +8,7 @@ import wave
 import os
 import shutil
 import nltk
-from diarizationAndTranscription import diarizeAndTranscribe
+from speechrecog.diarizationAndTranscription import diarizeAndTranscribe
 import ffmpeg
 import ffprobe
 from pydub import AudioSegment
@@ -121,27 +120,53 @@ class GUI:
     def submitClientInfo(self) :
         # Gets the current text in the entry box
         infoEntryText = self.infoEntryBox.get()
-        self.transcriptionBox.configure(state='normal')
-        # Prints the relevant field
+        # Sets the relevant variable
         if (self.clicked.get() == "Name"):
-            self.transcriptionBox.insert("end", "Name: ")
+            self.name = infoEntryText;
+            self.infoArray[0] = self.name
         elif (self.clicked.get() == "Age"):
-            self.transcriptionBox.insert("end", "Age: ")
+            self.age = infoEntryText;
+            self.infoArray[1] = self.age
         elif (self.clicked.get() == "Gender"):
-            self.transcriptionBox.insert("end", "Gender: ")
+            self.gender = infoEntryText;
+            self.infoArray[2] = self.gender
         elif (self.clicked.get() == "Date of Birth"):
-            self.transcriptionBox.insert("end", "Date of Birth: ")
+            self.dateOfBirth = infoEntryText;
+            self.infoArray[3] = self.dateOfBirth
         elif (self.clicked.get() == "Date of Sample"):
-            self.transcriptionBox.insert("end", "Date of Sample: ")
+            self.dateOfSample = infoEntryText;
+            self.infoArray[4] = self.dateOfSample
         elif (self.clicked.get() == "Examiner Name"):
-            self.transcriptionBox.insert("end", "Examiner Name: ")
+            self.examinerName = infoEntryText;
+            self.infoArray[5] = self.examinerName
         elif (self.clicked.get() == "Sampling Context"):
-            self.transcriptionBox.insert("end", "Sampling Context: ")
-        # Appends the submitted text after the field name
-        self.transcriptionBox.insert("end", infoEntryText + "\n")
-        self.transcriptionBox.configure(state='disabled')
+            self.samplingContext = infoEntryText;
+            self.infoArray[6] = self.samplingContext
         # Clears the entry box
         self.infoEntryBox.delete(0, "end")
+
+        # Updates Table
+        self.clientInfoBox.configure(state='normal')
+        self.clientInfoBox.delete('1.0', "end")
+        for x in range(7):
+            if self.infoArray[x] != '':
+                if x == 0:
+                    self.clientInfoBox.insert("end", "Name: ")
+                if x == 1:
+                    self.clientInfoBox.insert("end", "Age: ")
+                if x == 2:
+                    self.clientInfoBox.insert("end", "Gender: ")
+                if x == 3:
+                    self.clientInfoBox.insert("end", "Date of Birth: ")
+                if x == 4:
+                    self.clientInfoBox.insert("end", "Date of Sample: ")
+                if x == 5:
+                    self.clientInfoBox.insert("end", "Examiner Name: ")
+                if x == 6:
+                    self.clientInfoBox.insert("end", "Sampling Context: ")
+
+                self.clientInfoBox.insert("end", self.infoArray[x] + "\n")
+        self.clientInfoBox.configure(state='disabled')
 
     def mp3towav(self, audiofile):
         dst = self.filePath
@@ -184,13 +209,13 @@ class GUI:
         # Flag for if user wants to manually submit each sentence
         self.checkAllSentences = False
         # Configuring right-hand box, correction box, and submit button
-        self.conventionBox.grid(row=5, column=3, columnspan=3)
+        self.conventionBox.grid(row=5, column=4, columnspan=3)
         self.conventionBox.delete('1.0', "end")
-        self.editConventionBoxButton.grid(row=7, column=4)
-        self.clearConventionBoxButton.grid(row=7, column=5)
-        self.correctionEntryBox.grid(row=6, column=3, columnspan=2)
+        self.editConventionBoxButton.grid(row=7, column=5)
+        self.clearConventionBoxButton.grid(row=7, column=6)
+        self.correctionEntryBox.grid(row=6, column=4, columnspan=2)
         self.correctionEntryBox.delete('1.0', "end")
-        self.submitCorrectionButton.grid(row=6, column=5)
+        self.submitCorrectionButton.grid(row=6, column=6)
         # Get raw transcription and tokenize into sentences for processing
         text = self.transcriptionBox.get("1.0", "end")
         self.tokenizedSentences = nltk.sent_tokenize(text)
@@ -221,6 +246,13 @@ class GUI:
         self.correctionEntryBox.delete('1.0', "end")
         # Queue up the next correction for the user
         self.getNextCorrection()
+
+    def toggleClientInfoBox(self):
+        if self.infoIsVisible:
+            self.clientInfoBox.grid_remove()
+        else:
+            self.clientInfoBox.grid(row=5, column=0)
+        self.infoIsVisible = not self.infoIsVisible
 
     def editTranscriptionBox(self):
         if self.editTranscriptionBoxButton['text'] == 'Save Transcription':
@@ -280,6 +312,16 @@ class GUI:
                                 input = True,
                                 frames_per_buffer = self.CHUNK)
 
+        self.name = ''
+        self.age = ''
+        self.gender = ''
+        self.dateOfBirth = ''
+        self.dateOfSample = ''
+        self.examinerName = ''
+        self.samplingContext = ''
+        self.infoArray = ['','','','','','','']
+
+
         uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
         uploadButton.grid(row=0, column=0)
         self.recordButton = Button(self.master, text='Record', command=lambda: self.recordAudio())
@@ -296,7 +338,6 @@ class GUI:
 
         transcribeButton = Button(self.master, text='Transcribe', command=self.transcribe)
         transcribeButton.grid(row=0, column=5)
-
 
         # CLIENT INFORMATION-RELATED BUTTONS/BOXES
 
@@ -323,20 +364,30 @@ class GUI:
 
 
         # LARGE BOXES AND RELATED BUTTONS
+        
+        # Client Information Box on the far left
+        self.clientInfoBox = scrolledtext.ScrolledText(self.master, width = 20, height = 20, font=('Courier New',12), spacing1=1)
+        self.clientInfoBox.configure(state='disabled', wrap=WORD)
+        self.clientInfoBox.grid(row=5, column=0)
+
+        # Show/hide button for the box
+        self.infoIsVisible = True
+        self.toggleClientInfoBoxButton = Button(self.master, text='Toggle Table', command=self.toggleClientInfoBox)
+        self.toggleClientInfoBoxButton.grid(row=6, column=0)
 
         # transcriptionBox is the left-hand box used for editing speech-recognized text
-        self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
+        self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Courier New',12), spacing1=1)
         self.transcriptionBox.configure(state='disabled', wrap=WORD)
-        self.transcriptionBox.grid(row=5, column=0, columnspan=3)
+        self.transcriptionBox.grid(row=5, column=1, columnspan=3)
         # Permits user to type in transcriptionBox
         self.editTranscriptionBoxButton = Button(self.master, text='Edit Transcription', command=self.editTranscriptionBox)
-        self.editTranscriptionBoxButton.grid(row=6, column=0)
+        self.editTranscriptionBoxButton.grid(row=6, column=1)
         # Clears transcriptionBox
         self.clearTranscriptionBoxButton = Button(self.master, text='Clear', command=self.clearTranscriptionBox)
-        self.clearTranscriptionBoxButton.grid(row=6, column=1)
+        self.clearTranscriptionBoxButton.grid(row=6, column=2)
 
         # conventionBox is the right-hand box used for adding all types of conventions
-        self.conventionBox = scrolledtext.ScrolledText(self.master, width = 60, height = 20, font=('Courier New',12), spacing1=1)
+        self.conventionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Courier New',12), spacing1=1)
         self.conventionBox.configure(state='disabled', wrap=WORD)
         # Permits user to type in conventionBox
         self.editConventionBoxButton = Button(self.master, text='Edit Convention Box', command=self.editConventionBox)
@@ -348,7 +399,7 @@ class GUI:
 
         # Initiates grammarCheck process on text in transcriptionBox
         self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
-        self.grammarCheckButton.grid(row=6, column=2)
+        self.grammarCheckButton.grid(row=6, column=3)
         # Manually edit sentences caught during grammarCheck process
         self.correctionEntryBox = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Courier New',12), spacing1=1)
         self.correctionEntryBox.configure(wrap=WORD)
@@ -356,17 +407,17 @@ class GUI:
         self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection)
         # Applies inflectional morphemes to text in right-hand box
         self.addMorphemesButton = Button(self.master, text='Add Morphemes', command=self.inflectionalMorphemes)
-        self.addMorphemesButton.grid(row=7, column=2)
+        self.addMorphemesButton.grid(row=7, column=3)
 
 
         # EXPORT-RELATED
 
         # Exports to word
         exportButton = Button(self.master, text='Export to Word Document')
-        exportButton.grid(row=8, column=4)
+        exportButton.grid(row=8, column=5)
         # Prints
         printButton = Button(self.master, text='Print')
-        printButton.grid(row=9, column=4)
+        printButton.grid(row=9, column=5)
 
 
         self.master.mainloop()

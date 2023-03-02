@@ -8,5 +8,6 @@ ffprobe-python
 pydub
 fleep
 language-tool-python
-
+spectralcluster
+Resemblyzer
 
