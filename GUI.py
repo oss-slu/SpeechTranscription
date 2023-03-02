@@ -3,7 +3,6 @@ from functions import addConventions
 from functions import diarizationAndTranscription
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
-#import recording_audio
 import pyaudio
 import wave
 import nltk
@@ -12,7 +11,6 @@ import ffprobe
 from pydub import AudioSegment
 from pydub.effects import normalize
 import threading
-import fleep
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -178,8 +176,6 @@ class GUI:
     def transcribe(self) :
         name = self.filePath.split('.')[0]
         extension = self.filePath.split('.')[1]
-        with open(self.filePath, "rb") as audiofile:
-            audiocheck = fleep.get(audiofile.read(128))
         if (extension == "MP3"):
             mp3 = AudioSegment.from_mp3(self.filePath)
             ret = mp3.export("export.wav", format = "wav")

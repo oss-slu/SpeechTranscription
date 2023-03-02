@@ -5,9 +5,10 @@ nltk
 ffmpeg
 ffprobe
 ffprobe-python
+ffmpeg-python
 pydub
-fleep
 language-tool-python
 spectralcluster
 Resemblyzer
+git+https://github.com/openai/whisper.git
 
