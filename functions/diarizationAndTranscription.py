@@ -92,6 +92,7 @@ def diarizeAndTranscribe(audioFile):
     transcript = transcript.replace('. ', '.\n')
     transcript = transcript.replace('! ', '!\n')
     transcript = transcript.replace('? ', '?\n')
+    transcript = transcript.replace('`', "'")
     transcript = transcript.strip()
     print(transcript)
     return transcript
