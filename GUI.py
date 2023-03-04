@@ -2,6 +2,10 @@ from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, 
 from functions import addConventions
 from functions import diarizationAndTranscription
 import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter import *
+from tkinter.ttk import *
+import sv_ttk
 from tkinter.filedialog import asksaveasfile
 import pyaudio
 import wave
@@ -298,8 +302,9 @@ class GUI:
 
     def __init__(self):
         self.master = tk.Tk()
+        sv_ttk.set_theme("light")
         self.master.title('Speech Transcription')
-        self.master.geometry('960x540')
+        self.master.geometry('1400x700')
 
         #self.recorder = Record(self.master)
         self.CHUNK = CHUNK
@@ -328,21 +333,21 @@ class GUI:
 
 
         uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
-        uploadButton.grid(row=0, column=0)
+        uploadButton.grid(row=0, column=0, padx=2, pady=2)
         self.recordButton = Button(self.master, text='Record', command=lambda: self.recordAudio())
-        self.recordButton.grid(row=0, column=1)
+        self.recordButton.grid(row=0, column=1, padx=2, pady=2)
 
         self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
-        self.audioPlaceholder.grid(row=0, column=2)
+        self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
 
         self.playButton = Button(self.master, text='Play', command=lambda: self.playback_click())
-        self.playButton.grid(row=0, column=3)
+        self.playButton.grid(row=0, column=3, padx=2, pady=2)
 
         downloadButton = Button(self.master, text='Download', command=lambda: self.download_recorded_audio())
-        downloadButton.grid(row=0, column=4)
+        downloadButton.grid(row=0, column=4, padx=2, pady=2)
 
         transcribeButton = Button(self.master, text='Transcribe', command=self.transcribe)
-        transcribeButton.grid(row=0, column=5)
+        transcribeButton.grid(row=0, column=5, padx=2, pady=2)
 
         # CLIENT INFORMATION-RELATED BUTTONS/BOXES
 
@@ -354,45 +359,45 @@ class GUI:
                 "Date of Birth",
                 "Date of Sample",
                 "Examiner Name",
-                "Sampling Context"
+                "Sampling Context" 
                 ]
 
         # Allows user to select a sampling attribute, type the relevant information, and submit it
         self.clicked = StringVar()
         self.clicked.set("Name")
         infoDropdown = OptionMenu(self.master, self.clicked, *clientOptions)
-        infoDropdown.grid(row=1, column=1)
+        infoDropdown.grid(row=1, column=1, padx=2, pady=2)
         self.infoEntryBox = Entry(self.master)
-        self.infoEntryBox.grid(row=1, column=2)
+        self.infoEntryBox.grid(row=1, column=2, padx=2, pady=2)
         infoSubmitButton = Button(self.master, text="Submit", command=self.submitClientInfo)
-        infoSubmitButton.grid(row=1, column=3)
+        infoSubmitButton.grid(row=1, column=3, padx=2, pady=2)
 
 
         # LARGE BOXES AND RELATED BUTTONS
         
         # Client Information Box on the far left
-        self.clientInfoBox = scrolledtext.ScrolledText(self.master, width = 20, height = 20, font=('Courier New',12), spacing1=1)
+        self.clientInfoBox = scrolledtext.ScrolledText(self.master, width = 20, height = 20, font=('Everson Mono', 13), spacing1=1)
         self.clientInfoBox.configure(state='disabled', wrap=WORD)
-        self.clientInfoBox.grid(row=5, column=0)
+        self.clientInfoBox.grid(row=5, column=0, padx=10, pady=10)
 
         # Show/hide button for the box
         self.infoIsVisible = True
         self.toggleClientInfoBoxButton = Button(self.master, text='Toggle Table', command=self.toggleClientInfoBox)
-        self.toggleClientInfoBoxButton.grid(row=6, column=0)
+        self.toggleClientInfoBoxButton.grid(row=6, column=0, padx=2, pady=2)
 
         # transcriptionBox is the left-hand box used for editing speech-recognized text
-        self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Courier New',12), spacing1=1)
+        self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Everson Mono', 13), spacing1=1)
         self.transcriptionBox.configure(state='disabled', wrap=WORD)
-        self.transcriptionBox.grid(row=5, column=1, columnspan=3)
+        self.transcriptionBox.grid(row=5, column=1, columnspan=3, padx=10, pady=10)
         # Permits user to type in transcriptionBox
         self.editTranscriptionBoxButton = Button(self.master, text='Edit Transcription', command=self.editTranscriptionBox)
-        self.editTranscriptionBoxButton.grid(row=6, column=1)
+        self.editTranscriptionBoxButton.grid(row=6, column=1, padx=10, pady=10)
         # Clears transcriptionBox
         self.clearTranscriptionBoxButton = Button(self.master, text='Clear', command=self.clearTranscriptionBox)
-        self.clearTranscriptionBoxButton.grid(row=6, column=2)
+        self.clearTranscriptionBoxButton.grid(row=6, column=2, padx=10, pady=10)
 
         # conventionBox is the right-hand box used for adding all types of conventions
-        self.conventionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Courier New',12), spacing1=1)
+        self.conventionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Everson Mono', 13), spacing1=1)
         self.conventionBox.configure(state='disabled', wrap=WORD)
         # Permits user to type in conventionBox
         self.editConventionBoxButton = Button(self.master, text='Edit Convention Box', command=self.editConventionBox)
@@ -404,25 +409,25 @@ class GUI:
 
         # Initiates grammarCheck process on text in transcriptionBox
         self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
-        self.grammarCheckButton.grid(row=6, column=3)
+        self.grammarCheckButton.grid(row=6, column=3, padx=5, pady=2)
         # Manually edit sentences caught during grammarCheck process
-        self.correctionEntryBox = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Courier New',12), spacing1=1)
+        self.correctionEntryBox = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Everson Mono', 13), spacing1=1)
         self.correctionEntryBox.configure(wrap=WORD)
         # Appends sentence within correctionEntryBox to right-hand box, continues grammarCheck process
         self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection)
         # Applies inflectional morphemes to text in right-hand box
         self.addMorphemesButton = Button(self.master, text='Add Morphemes', command=self.inflectionalMorphemes)
-        self.addMorphemesButton.grid(row=7, column=3)
+        self.addMorphemesButton.grid(row=8, column=3, padx=2, pady=2)
 
 
         # EXPORT-RELATED
 
         # Exports to word
         exportButton = Button(self.master, text='Export to Word Document')
-        exportButton.grid(row=8, column=5)
+        exportButton.grid(row=8, column=5, padx=2, pady=2)
         # Prints
         printButton = Button(self.master, text='Print')
-        printButton.grid(row=9, column=5)
+        printButton.grid(row=9, column=5, padx=2, pady=2)
 
 
         self.master.mainloop()

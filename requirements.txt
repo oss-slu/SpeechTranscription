@@ -12,4 +12,5 @@ spectralcluster
 Resemblyzer
 python-docx
 git+https://github.com/openai/whisper.git
+sv_ttk
 
