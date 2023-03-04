@@ -11,4 +11,5 @@ language-tool-python
 spectralcluster
 Resemblyzer
 git+https://github.com/openai/whisper.git
+sv_ttk
 
