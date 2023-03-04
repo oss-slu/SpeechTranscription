@@ -2,7 +2,6 @@ from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, 
 from functions import addConventions
 from functions import diarizationAndTranscription
 import tkinter as tk
-import tkinter.ttk as ttk
 from tkinter import *
 from tkinter.ttk import *
 import sv_ttk
