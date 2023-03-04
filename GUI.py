@@ -358,13 +358,13 @@ class GUI:
                 "Date of Birth",
                 "Date of Sample",
                 "Examiner Name",
-                "Sampling Context" 
+                "Sampling Context"
                 ]
 
         # Allows user to select a sampling attribute, type the relevant information, and submit it
         self.clicked = StringVar()
         self.clicked.set("Name")
-        infoDropdown = OptionMenu(self.master, self.clicked, *clientOptions)
+        infoDropdown = OptionMenu(self.master, self.clicked, clientOptions[0], *clientOptions)
         infoDropdown.grid(row=1, column=1, padx=2, pady=2)
         self.infoEntryBox = Entry(self.master)
         self.infoEntryBox.grid(row=1, column=2, padx=2, pady=2)
