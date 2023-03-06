@@ -1,10 +1,10 @@
 from resemblyzer import VoiceEncoder
 from resemblyzer.audio import sampling_rate
-from spectralcluster import SpectralClusterer, RefinementOptions
-from speechrecog.recogtest import recog
+from spectralcluster import SpectralClusterer
 from pydub import AudioSegment
-import numpy as np
+import speech_recognition
 import librosa
+import whisper
 
 # Adapted from https://github.com/raotnameh/Trim_audio
 # start: start time (s) of segment to be trimmed
@@ -50,9 +50,22 @@ def create_labelling(labels, wav_splits):
 
     return labelling
 
+def transcribeAudio(audioFile):
+    model = whisper.load_model("base.en")
+    transcribedAudio = model.transcribe(audioFile, fp16=False, language='English')
+    # recognizer = speech_recognition.Recognizer()
+    # formattedAudio = speech_recognition.AudioFile(audioFile)
+    # with formattedAudio as source:
+    #     recording = recognizer.record(source)
+    # transcribedAudio = recognizer.recognize_google(recording, language = 'en-IN')
+    print('Transcribing: ', audioFile)
+    # return transcribedAudio
+    return transcribedAudio["text"]
+
 def diarizeAndTranscribe(audioFile):
 
     # Diarization Process
+    """
     wav = resample(audioFile)
     encoder = VoiceEncoder("cpu")
     _, cont_embeds, wav_splits = encoder.embed_utterance(wav, return_partials=True, rate=16)
@@ -61,14 +74,25 @@ def diarizeAndTranscribe(audioFile):
     labelling = create_labelling(labels, wav_splits)
     print("Labelling: " + str(labelling))
     print("Number of splits found: " + str(len(labelling)))
+    """
 
     # Transcribing Segments
     transcript = ""
+
+    """
     name = audioFile.split(".")[0]
     for i in range(len(labelling)):
         transcript += "Speaker " + labelling[i][0] + ": "
         trim(labelling[i][1], labelling[i][2], audioFile)
         print("Attempting to transcribe: " + audioFile)
-        transcript += recog(name + "_segment.wav").getTranscript() + "\n"
-        
+        transcript += transcribeAudio(name + "_segment.wav") + "\n"
+    """
+    transcript = transcribeAudio(audioFile) + "\n"
+    transcript = transcript.replace('...', '')
+    transcript = transcript.replace('. ', '.\n')
+    transcript = transcript.replace('! ', '!\n')
+    transcript = transcript.replace('? ', '?\n')
+    transcript = transcript.replace('`', "'")
+    transcript = transcript.strip()
+    print(transcript)
     return transcript
