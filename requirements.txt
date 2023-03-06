@@ -10,4 +10,4 @@ fleep
 language-tool-python
 spectralcluster
 Resemblyzer
-
+python-docx
