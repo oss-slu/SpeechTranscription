@@ -14,6 +14,8 @@ import ffprobe
 from pydub import AudioSegment
 from pydub.effects import normalize
 import threading
+from docx import Document
+from datetime import date
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -298,6 +300,13 @@ class GUI:
             self.conventionBox.delete('1.0', "end")
             self.conventionBox.configure(state='disabled')
 
+    def exportToWord(self):
+        outputPath = filedialog.askdirectory()
+        exportDocument = Document()
+        text = self.conventionBox.get("1.0", END)
+        exportDocument.add_paragraph(text)
+        exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')
+
 
     def __init__(self):
         self.master = tk.Tk()
@@ -422,7 +431,7 @@ class GUI:
         # EXPORT-RELATED
 
         # Exports to word
-        exportButton = Button(self.master, text='Export to Word Document')
+        exportButton = Button(self.master, text='Export to Word Document', command=self.exportToWord)
         exportButton.grid(row=8, column=5, padx=2, pady=2)
         # Prints
         printButton = Button(self.master, text='Print')
