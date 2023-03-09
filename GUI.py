@@ -264,26 +264,33 @@ class GUI:
             self.clientInfoBox.grid(row=5, column=0)
         self.infoIsVisible = not self.infoIsVisible
 
+    def toggleTranscriptionBox(self):
+        if self.transcriptionIsVisible:
+            self.transcriptionBox.grid_remove()
+        else:
+            self.transcriptionBox.grid(row=5, column=1, columnspan=3, padx=10, pady=10)
+        self.transcriptionIsVisible = not self.transcriptionIsVisible
+
     def editTranscriptionBox(self):
-        if self.editTranscriptionBoxButton['text'] == 'Save Transcription':
-            self.editTranscriptionBoxButton['text'] = 'Edit Transcription'
+        if self.editTranscriptionBoxButton['text'] == 'Lock':
+            self.editTranscriptionBoxButton['text'] = 'Unlock'
             self.transcriptionBox.configure(state='disabled')
 
         else:
-            self.editTranscriptionBoxButton['text'] = 'Save Transcription'
+            self.editTranscriptionBoxButton['text'] = 'Lock'
             self.transcriptionBox.configure(state='normal')
 
     def editConventionBox(self):
-        if self.editConventionBoxButton['text'] == 'Save Convention Box':
-            self.editConventionBoxButton['text'] = 'Edit Convention Box'
+        if self.editConventionBoxButton['text'] == 'Lock':
+            self.editConventionBoxButton['text'] = 'Unlock'
             self.conventionBox.configure(state='disabled')
 
         else:
-            self.editConventionBoxButton['text'] = 'Save Convention Box'
+            self.editConventionBoxButton['text'] = 'Lock'
             self.conventionBox.configure(state='normal')
 
     def clearTranscriptionBox(self):
-        if self.editTranscriptionBoxButton['text'] == 'Save Transcription':
+        if self.editTranscriptionBoxButton['text'] == 'Lock':
             self.transcriptionBox.delete('1.0', "end")
 
         else:
@@ -292,7 +299,7 @@ class GUI:
             self.transcriptionBox.configure(state='disabled')
 
     def clearConventionBox(self):
-        if self.editConventionBoxButton['text'] == 'Save Convention Box':
+        if self.editConventionBoxButton['text'] == 'Lock':
             self.conventionBox.delete('1.0', "end")
 
         else:
@@ -397,8 +404,14 @@ class GUI:
         self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Everson Mono', 13), spacing1=1)
         self.transcriptionBox.configure(state='disabled', wrap=WORD)
         self.transcriptionBox.grid(row=5, column=1, columnspan=3, padx=10, pady=10)
+
+        # Show/hide button for the box
+        self.transcriptionIsVisible = True
+        self.toggleTranscriptionBoxButton = Button(self.master, text='Toggle Table', command=self.toggleTranscriptionBox)
+        self.toggleTranscriptionBoxButton.grid(row=6, column=3, padx=2, pady=2)
+
         # Permits user to type in transcriptionBox
-        self.editTranscriptionBoxButton = Button(self.master, text='Edit Transcription', command=self.editTranscriptionBox)
+        self.editTranscriptionBoxButton = Button(self.master, text='Unlock', command=self.editTranscriptionBox)
         self.editTranscriptionBoxButton.grid(row=6, column=1, padx=10, pady=10)
         # Clears transcriptionBox
         self.clearTranscriptionBoxButton = Button(self.master, text='Clear', command=self.clearTranscriptionBox)
@@ -408,7 +421,7 @@ class GUI:
         self.conventionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Everson Mono', 13), spacing1=1)
         self.conventionBox.configure(state='disabled', wrap=WORD)
         # Permits user to type in conventionBox
-        self.editConventionBoxButton = Button(self.master, text='Edit Convention Box', command=self.editConventionBox)
+        self.editConventionBoxButton = Button(self.master, text='Unlock', command=self.editConventionBox)
         # Clears conventionBox
         self.clearConventionBoxButton = Button(self.master, text='Clear', command=self.clearConventionBox)
 
@@ -417,7 +430,7 @@ class GUI:
 
         # Initiates grammarCheck process on text in transcriptionBox
         self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
-        self.grammarCheckButton.grid(row=6, column=3, padx=5, pady=2)
+        self.grammarCheckButton.grid(row=7, column=2, padx=5, pady=2)
         # Manually edit sentences caught during grammarCheck process
         self.correctionEntryBox = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Everson Mono', 13), spacing1=1)
         self.correctionEntryBox.configure(wrap=WORD)
@@ -425,7 +438,7 @@ class GUI:
         self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection)
         # Applies inflectional morphemes to text in right-hand box
         self.addMorphemesButton = Button(self.master, text='Add Morphemes', command=self.inflectionalMorphemes)
-        self.addMorphemesButton.grid(row=8, column=3, padx=2, pady=2)
+        self.addMorphemesButton.grid(row=7, column=3, padx=2, pady=2)
 
 
         # EXPORT-RELATED
