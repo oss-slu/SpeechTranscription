@@ -8,9 +8,18 @@ tool = language_tool_python.LanguageTool("en-US")
 def removeErrorCoding(x):
     words = x.split()
     sentence = ""
+    repeatedWordFlag = False
     for word in words:
+        # Currently handling repeated words
+        if (repeatedWordFlag == True):
+            # Ends handling of repeated words (')' indicates the end)
+            if (")" in word):
+                repeatedWordFlag = False
+            # Continues handling of repeated words (')' has not yet been reached)
+            else:
+                pass       
         # Handles all cases where there is error coding with a bracket
-        if ("[" in word):
+        elif ("[" in word):
             # This case handles bracketed error codes that also have a suggestion by getting the substring between : and ]
             # ex: "are[EW:is]"" returns "is"
             if (":" in word):
@@ -24,11 +33,16 @@ def removeErrorCoding(x):
         # Handles missing word case (*)
         elif ("*" in word):
             sentence += word.replace("*", "") + " "
+        # Begins handling of repeated word case
+        elif ("(" in word):
+            repeatedWordFlag = True
         # Word has no error coding, can be appended as normal
         else:
             sentence += word + " "
 
-    sentence = sentence[:-1]
+    # Removes final space
+    if (sentence[-1] == " "):
+        sentence = sentence[:-1]
     return sentence
 
 # Splits transcription into sentences first, then sends each sentence to addInflectionalMorphemesToSentence()
@@ -39,14 +53,14 @@ def addInflectionalMorphemes(x):
     converting = "" # Will contain entire transcript fully corrected at end of function
     for sentence in sentences:
         # There is error coding in the sentence
-        if ("[" in sentence or "*" in sentence):
+        if ("[" in sentence or "*" in sentence or "(" in sentence):
             # First, removes error coding then applies morphemes to clean sentence
             errorCodingRemoved = removeErrorCoding(sentence)
             morphemesOnCorrectedSentence = addInflectionalMorphemesToSentence(errorCodingRemoved)
             # Splits both forms of sentence into words
             originalWords = sentence.split()
             correctedWords = morphemesOnCorrectedSentence.split()
-            # Forms final sentence by combining morphemes from corrected sentence and 
+            # Forms final sentence by combining morphemes from corrected sentence and error coding from original sentence
             finalSentence = ""
             originalWordIndex = 0
             correctedWordIndex = 0
@@ -60,6 +74,18 @@ def addInflectionalMorphemes(x):
                     finalSentence += originalWords[originalWordIndex] + " "
                     originalWordIndex += 1
                     correctedWordIndex += 1
+                # Word contains marker for beginning of repeated words; preserve it from original sentence
+                elif ("(" in originalWords[originalWordIndex]):
+                    finalSentence += originalWords[originalWordIndex] + " "
+                    correctedWordIndex += 1
+                    repeatedWord = originalWords[originalWordIndex][1:] # Remove parenthesis
+                    originalWordIndex += 1
+                    if (originalWordIndex < len(originalWords)):
+                        # While words are repeating, preserve from original
+                        potentialRepeat = originalWords[originalWordIndex].lower().replace('.', '').replace('?', '').replace('!', '').replace(',', '')
+                        while ((originalWordIndex < len(originalWords)) and (potentialRepeat == repeatedWord.lower() or potentialRepeat == repeatedWord.lower() + ")")):
+                            finalSentence += originalWords[originalWordIndex] + " "
+                            originalWordIndex += 1
                 # Original word has no error coding; get word from saltified sentence 
                 else:
                     finalSentence += correctedWords[correctedWordIndex] + " "
@@ -134,12 +160,11 @@ def addInflectionalMorphemesToSentence(x):
 
 # Takes a sentence x and returns the correct form in SALT standard with error coding
 def correctSentence(x) :
-    is_bad_rule = lambda rule: rule.category == 'PUNCTUATION' or rule.message == 'This word is normally spelled with a hyphen.'
+    is_bad_rule = lambda rule: rule.category == 'PUNCTUATION' or rule.message == 'This word is normally spelled with a hyphen.' or rule.message == 'Possible typo: you repeated a word'
     matches = tool.check(x)
     matches = [rule for rule in matches if not is_bad_rule(rule)]
-    print(matches)
+    # print(matches) # Can be used to identify what error the tool is recognizing
     corrected = language_tool_python.utils.correct(x, matches)
-    print(corrected)
     originalWords = x.split()
     correctedWords = corrected.split()
     originalIndex = 0
@@ -157,34 +182,43 @@ def correctSentence(x) :
                 saltSentence += originalWords[originalIndex] + "* "
                 originalIndex += 1
         # The current word in each sentence is the same
-        # WARNING - THESE LINES ARE NOT YET RELEVANT - Check if the original sentence repeated the word several times,
-        # WARNING - THESE LINES ARE NOT YET RELEVANT - if so provide correct coding "(And and) and" and increment accordingly
+        # Check if the original sentence repeated the word several times,
+        # if so provide correct coding "(And and) and" and increment accordingly
         # Otherwise, simply append and increment both sentences by one
         elif (originalWords[originalIndex] == correctedWords[correctedIndex]):
-            """ # Code that would process repeats, not ready to be implemented
-            repeatCounter = 0;
-            while (originalIndex + 1 < len(correctedWords) - 1 and originalWords[originalIndex + repeatCounter + 1] == correctedWords[correctedIndex]):
+            repeatCounter = 0
+            punctuationFlag = False
+            punctuation = ['.', '?', '!', ',']
+            foundPunctuation = ""
+            while (originalIndex + repeatCounter + 1 < len(correctedWords) and originalWords[originalIndex + repeatCounter + 1].lower().replace('.', '').replace('?', '').replace('!', '').replace(',', '') == correctedWords[correctedIndex].lower()):
+                if any(x in originalWords[originalIndex + repeatCounter + 1] for x in punctuation):
+                    punctuationFlag = True
+                    # Get final character, which should be punctuation
+                    foundPunctuation = originalWords[originalIndex + repeatCounter + 1][-1]
                 repeatCounter += 1
             if (repeatCounter > 0):
-                saltSentence += "(" + originalWords[originalIndex]
-                for i in range(repeatCounter)
-                    saltSentence += " " + originalWords[originalIndex]
-                saltSentence += ")"
+                repeatedWord = originalWords[originalIndex]
+                saltSentence += "(" + repeatedWord
+                for i in range(repeatCounter-1):
+                    saltSentence += " " + repeatedWord
+                saltSentence += ") " + repeatedWord + " "
+                if (punctuationFlag == True):
+                    saltSentence = saltSentence[:-1]
+                    saltSentence += foundPunctuation + " "
                 originalIndex += repeatCounter + 1
-                correctedIndex += 1
+                correctedIndex += repeatCounter + 1
             else:
-            """
-            saltSentence += originalWords[originalIndex] + " "
-            originalIndex += 1
-            correctedIndex += 1
+                saltSentence += originalWords[originalIndex] + " "
+                originalIndex += 1
+                correctedIndex += 1
         # The current word in the original sentence matches the next word in the corrected one, append word in corrected with asterisk
         # (Checks to make sure index won't go out of bounds)
-        elif (correctedIndex < len(correctedWords) - 1 and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
+        elif (correctedIndex < len(correctedWords) and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
             saltSentence += correctedWords[correctedIndex] + "* "
             correctedIndex += 1
         # The current word in the corrected sentence matches the next word in the original one, append word in original with [EW]
         # (Checks to make sure index won't go out of bounds)
-        elif (originalIndex < len(originalWords) - 1 and originalWords[originalIndex+1] == correctedWords[correctedIndex]):
+        elif (originalIndex < len(originalWords) and originalWords[originalIndex+1] == correctedWords[correctedIndex]):
             saltSentence += originalWords[originalIndex] + "[EW] "
             originalIndex += 1
         # If either index is at the last element, default to word-level error
