@@ -3,7 +3,7 @@
 # from resemblyzer.audio import sampling_rate
 # from spectralcluster import SpectralClusterer
 # import librosa
-from pydub import AudioSegment
+# from pydub import AudioSegment
 import whisper
 
 # Adapted from https://github.com/raotnameh/Trim_audio
