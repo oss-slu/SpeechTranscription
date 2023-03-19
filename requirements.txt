@@ -1,6 +1,5 @@
 pyaudio
 wave
-SpeechRecognition
 nltk
 ffmpeg
 ffprobe

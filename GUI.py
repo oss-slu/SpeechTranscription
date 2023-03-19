@@ -1,16 +1,13 @@
-from tkinter import Button, Checkbutton, IntVar, Label, Text, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
+from tkinter import Button, Label, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
 from functions import addConventions
 from functions import diarizationAndTranscription
 import tkinter as tk
-from tkinter import *
-from tkinter.ttk import *
+from tkinter.ttk import Button, Entry, OptionMenu
 import sv_ttk
 from tkinter.filedialog import asksaveasfile
 import pyaudio
 import wave
 import nltk
-import ffmpeg
-import ffprobe
 from pydub import AudioSegment
 from pydub.effects import normalize
 import threading
