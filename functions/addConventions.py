@@ -4,6 +4,13 @@ import language_tool_python
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")
 
+def isToBeVerb(verb):
+    toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been"]
+    if (verb in toBeVerbs):
+        return True
+    else:
+        return False
+
 # This function removes error coding from a sentence, leaving us with a grammatically correct sentence so NLTK can process it
 def removeErrorCoding(x):
     words = x.split()
@@ -101,7 +108,15 @@ def addInflectionalMorphemesToSentence(x):
     # Creates tuples for each word or contraction with their part of speech
     tokens = pos_tag(word_tokenize(x))
     converted = ""
+    mostRecentVerbIsToBe = False
     for tuple in tokens:
+        # Updates mostRecentVerbIsToBe to be used to distinguish later potential gerunds from participles
+        # (Participles should be given /ing convention while gerunds should not, so this flag is used for that)
+        if (tuple[1] == "VB" or tuple[1] == "VBD" or tuple[1] == "VBP" or tuple[1] == "VBZ" or tuple[0] == "been"):
+            if (isToBeVerb(tuple[0])):
+                mostRecentVerbIsToBe = True 
+            else:
+                mostRecentVerbIsToBe = False
         # Token is C or E for child/examiner
         if (tuple[0] == "C" or tuple[0] == "E"):
             converted += "\n" + tuple[0] + " "
@@ -121,7 +136,7 @@ def addInflectionalMorphemesToSentence(x):
         elif (tuple[1] == "VBZ" and tuple[0] != "is" and tuple[0] != "has"):
             converted += wnl.lemmatize(tuple[0], "v") + "/3s "
         # Token is present participle
-        elif (tuple[1] == "VBG"):
+        elif (tuple[1] == "VBG" and mostRecentVerbIsToBe):
             if wnl.lemmatize(tuple[0], "v") == tuple[0]:
                 converted += wnl.lemmatize(tuple[0], "v") + " "
             else:
