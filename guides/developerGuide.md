@@ -12,4 +12,16 @@
 - To contribute to the project, first either pick an issue or create a new issue, then create a new branch off of main that will be dedicated to that issue. For example, if I wanted to make a new branch, I would do "git checkout main", "git pull", "git branch (new branch name)", and "git checkout (new branch name)". Then, make changes you want to the code, commit them to the branch, and push them upstream. Once you believe your branch is ready to be merged to main, make a pull request.
 
 ## Creating an Executable
-- TODO
+1. **Install requirements** - To run pyinstaller a couple of installations are necessary. These can be done with:
+   *  pip install pyinstaller
+   *  pip install importlib-metadata
+   *  pip install sacremoses
+
+2. **Arguments and .spec Creation** - To create the windows exe we ran:
+
+   *  'pyinstaller --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk "C:/Users/drewh/Documents/SALT Speech Tagging/SpeechTranscription/GUI.py"'
+
+   This uses pyinstaller to create a directory containing an executable for the software. We had to specify --onedir instead of --onefile which would have been much nicer but this command was not able to work for windows. We also were not able to hide the console popup as this would also crash the exe. Runnin this command will propmt the user to add a line to the GUI.spec file that was created. We then add that line under the first line of code. Then you will run ‘pyinstaller GUI.spec’ to create the exe and required files.
+
+3. **Ease of Access** - There is also a gui version of pyinstaller which is very helpful. You can get this via:
+   *  pip install auto-py-to-exe
