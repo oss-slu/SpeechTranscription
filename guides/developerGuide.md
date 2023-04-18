@@ -10,6 +10,7 @@
 
 - Use the [issues](https://github.com/oss-slu/SpeechTranscription/issues) page to keep track of changes that need to be made regarding features, documentation, and bugs. There is also a [board](https://github.com/orgs/oss-slu/projects/11) page which displays the issues in an easier to read manner.
 - To contribute to the project, first either pick an issue or create a new issue, then create a new branch off of main that will be dedicated to that issue. For example, if I wanted to make a new branch, I would do "git checkout main", "git pull", "git branch (new branch name)", and "git checkout (new branch name)". Then, make changes you want to the code, commit them to the branch, and push them upstream. Once you believe your branch is ready to be merged to main, make a pull request.
+   *  If you decide to add a dependency, add it to [requirements.txt](https://github.com/oss-slu/SpeechTranscription/blob/userGuides/requirements.txt) and to the [dependency spreadsheet](https://docs.google.com/spreadsheets/d/1rF7BZ1AXOtmjdwhdSJLrg7la8HMRzAXMdA9WOwaqiew/edit?usp=sharing) (if you don't have access to the spreadsheet, request for someone with authorization to add it.)
 
 ## Creating an Executable
 1. **Install requirements** - To run pyinstaller a couple of installations are necessary. These can be done with:
