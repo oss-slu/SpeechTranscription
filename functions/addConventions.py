@@ -6,7 +6,8 @@ wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")
 
 def isToBeVerb(verb):
-    toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been"]
+    toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been",
+                 "'m", "'s", "'re"]
     if (verb in toBeVerbs):
         return True
     else:
@@ -119,13 +120,6 @@ def addInflectionalMorphemesToSentence(x):
     converted = ""
     mostRecentVerbIsToBe = False
     for tuple in tokens:
-        # Updates mostRecentVerbIsToBe to be used to distinguish later potential gerunds from participles
-        # (Participles should be given /ing convention while gerunds should not, so this flag is used for that)
-        if (tuple[1] == "VB" or tuple[1] == "VBD" or tuple[1] == "VBP" or tuple[1] == "VBZ" or tuple[0] == "been"):
-            if (isToBeVerb(tuple[0])):
-                mostRecentVerbIsToBe = True 
-            else:
-                mostRecentVerbIsToBe = False
         # Token is C or E for child/examiner
         if (tuple[0] == "C" or tuple[0] == "E"):
             converted += "\n" + tuple[0] + " "
@@ -174,6 +168,13 @@ def addInflectionalMorphemesToSentence(x):
         # Token is a word with no changes needed
         else:
             converted += tuple[0] + " "
+        # Updates mostRecentVerbIsToBe to be used to distinguish later potential gerunds from participles
+        # (Participles should be given /ing convention while gerunds should not, so this flag is used for that)
+        if (tuple[1] == "VB" or tuple[1] == "VBD" or tuple[1] == "VBP" or tuple[1] == "VBZ" or tuple[0] == "been"):
+            if (isToBeVerb(tuple[0])):
+                mostRecentVerbIsToBe = True 
+            else:
+                mostRecentVerbIsToBe = False
 
     # Manual replacements for irregular cases
     converted = converted.replace("ca/n't", "can/'t")
