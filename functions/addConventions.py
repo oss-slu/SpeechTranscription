@@ -1,5 +1,6 @@
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
+from pattern.text.en import conjugate
 
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")
@@ -37,6 +38,14 @@ def removeErrorCoding(x):
             # ex: "at[EW]" returns ""
             else:
                 pass
+        elif("/*3s" in word):
+            # This try-catch block is NECESSARY. The "pattern" library is not being maintained and slightly broke with Python 3.7. This bypasses the problem.
+            try:
+                conjugate(word.replace("/*3s", ""))
+            except:
+                pass
+            sentence += conjugate(word.replace("/*3s", ""), tense = "present", person = 3, number = "singular", mood = "indicative", aspect = "imperfective", negated = False)
+            sentence += " "
         # Handles missing word case (*)
         elif ("*" in word):
             sentence += word.replace("*", "") + " "
