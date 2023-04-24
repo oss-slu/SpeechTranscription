@@ -182,7 +182,6 @@ def addInflectionalMorphemesToSentence(x):
 
     return converted
 
-
 # Takes a sentence x and returns the correct form in SALT standard with error coding
 def correctSentence(x) :
     is_bad_rule = lambda rule: rule.category == 'PUNCTUATION' or rule.message == 'This word is normally spelled with a hyphen.' or rule.message == 'Possible typo: you repeated a word'

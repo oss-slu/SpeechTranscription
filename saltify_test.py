@@ -10,6 +10,9 @@ class Test_isToBeVerb:
     def test_three(self):
         x = "been"
         assert addConventions.isToBeVerb(x) == True
+    def test_four(self):
+        x = "'m"
+        assert addConventions.isToBeVerb(x) == True
 
 class Test_removeErrorCoding:
     def test_one(self):
@@ -53,5 +56,22 @@ class Test_addInflectionalMorphemesToSentence:
     def test_six(self):
         x = "I'd like to go to Disneyland; it's famous for a reason."
         assert addConventions.addInflectionalMorphemesToSentence(x) == "I/'d like to go to Disneyland; it/'s famous for a reason."
-
+    def test_seven(self):
+        x = "I've been working for a long time."
+        assert addConventions.addInflectionalMorphemesToSentence(x) == "I/'ve been work/ing for a long time."
     
+class Test_correctSentence:
+    def test_one(self):
+        x = "He walk to school."
+        assert addConventions.correctSentence(x) == "He walk/*3s to school."
+    def test_two(self):
+        x = "I I I telled a lie."
+        assert addConventions.correctSentence(x) == "(I I) I telled[EW:told] a lie."
+
+class Test_addInflectionalMorphemes:
+    def test_one(self):
+        x = "He liked his[EP:her] shoes."
+        assert addConventions.addInflectionalMorphemes(x) == "He like/ed his[EP:her] shoe/s. \n"
+    def test_two(self):
+        x = "He looked at[EW] sad."
+        assert addConventions.addInflectionalMorphemes(x) == "He look/ed at[EW] sad. \n"
