@@ -160,8 +160,8 @@ def addInflectionalMorphemesToSentence(x):
         elif (tuple[0] == "'ve"):  
             converted = converted[:-1] + "/'ve "
         # Token is punctuation
-        elif (tuple[0] == "," or tuple[0] == "." or tuple[0] == "?" or tuple[0] == "!"):
-            if (tuple[0] != ","):
+        elif (tuple[0] == "," or tuple[0] == "." or tuple[0] == "?" or tuple[0] == "!" or tuple[0] == ";"):
+            if (tuple[0] != "," and tuple[0] != ";"):
                 converted = converted[:-1] + tuple[0]
             else:
                 converted = converted[:-1] + tuple[0] + " "

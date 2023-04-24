@@ -50,4 +50,8 @@ class Test_addInflectionalMorphemesToSentence:
     def test_five(self):
         x = "I'll finish my homework after we're done with this."
         assert addConventions.addInflectionalMorphemesToSentence(x) == "I/'ll finish my homework after we/'re done with this."
+    def test_six(self):
+        x = "I'd like to go to Disneyland; it's famous for a reason."
+        assert addConventions.addInflectionalMorphemesToSentence(x) == "I/'d like to go to Disneyland; it/'s famous for a reason."
+
     
