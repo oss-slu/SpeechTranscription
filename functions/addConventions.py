@@ -1,11 +1,13 @@
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
+from pattern.text.en import conjugate
 
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")
 
 def isToBeVerb(verb):
-    toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been"]
+    toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been",
+                 "'m", "'s", "'re"]
     if (verb in toBeVerbs):
         return True
     else:
@@ -37,6 +39,14 @@ def removeErrorCoding(x):
             # ex: "at[EW]" returns ""
             else:
                 pass
+        elif("/*3s" in word):
+            # This try-catch block is NECESSARY. The "pattern" library is not being maintained and slightly broke with Python 3.7. This bypasses the problem.
+            try:
+                conjugate(word.replace("/*3s", ""))
+            except:
+                pass
+            sentence += conjugate(word.replace("/*3s", ""), tense = "present", person = 3, number = "singular", mood = "indicative", aspect = "imperfective", negated = False)
+            sentence += " "
         # Handles missing word case (*)
         elif ("*" in word):
             sentence += word.replace("*", "") + " "
@@ -110,13 +120,6 @@ def addInflectionalMorphemesToSentence(x):
     converted = ""
     mostRecentVerbIsToBe = False
     for tuple in tokens:
-        # Updates mostRecentVerbIsToBe to be used to distinguish later potential gerunds from participles
-        # (Participles should be given /ing convention while gerunds should not, so this flag is used for that)
-        if (tuple[1] == "VB" or tuple[1] == "VBD" or tuple[1] == "VBP" or tuple[1] == "VBZ" or tuple[0] == "been"):
-            if (isToBeVerb(tuple[0])):
-                mostRecentVerbIsToBe = True 
-            else:
-                mostRecentVerbIsToBe = False
         # Token is C or E for child/examiner
         if (tuple[0] == "C" or tuple[0] == "E"):
             converted += "\n" + tuple[0] + " "
@@ -157,21 +160,27 @@ def addInflectionalMorphemesToSentence(x):
         elif (tuple[0] == "'ve"):  
             converted = converted[:-1] + "/'ve "
         # Token is punctuation
-        elif (tuple[0] == "," or tuple[0] == "." or tuple[0] == "?" or tuple[0] == "!"):
-            if (tuple[0] != ","):
+        elif (tuple[0] == "," or tuple[0] == "." or tuple[0] == "?" or tuple[0] == "!" or tuple[0] == ";"):
+            if (tuple[0] != "," and tuple[0] != ";"):
                 converted = converted[:-1] + tuple[0]
             else:
                 converted = converted[:-1] + tuple[0] + " "
         # Token is a word with no changes needed
         else:
             converted += tuple[0] + " "
+        # Updates mostRecentVerbIsToBe to be used to distinguish later potential gerunds from participles
+        # (Participles should be given /ing convention while gerunds should not, so this flag is used for that)
+        if (tuple[1] == "VB" or tuple[1] == "VBD" or tuple[1] == "VBP" or tuple[1] == "VBZ" or tuple[0] == "been"):
+            if (isToBeVerb(tuple[0])):
+                mostRecentVerbIsToBe = True 
+            else:
+                mostRecentVerbIsToBe = False
 
     # Manual replacements for irregular cases
     converted = converted.replace("ca/n't", "can/'t")
     converted = converted.replace("do/n't", "don't")
 
     return converted
-
 
 # Takes a sentence x and returns the correct form in SALT standard with error coding
 def correctSentence(x) :
