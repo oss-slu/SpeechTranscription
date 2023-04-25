@@ -19,7 +19,7 @@
    *  pip install importlib-metadata
    *  pip install sacremoses
 
-2. **Arguments and .spec Creation** - To create the windows exe we ran:
+2. **Arguments and .spec Creation** - To create the windows exe, we ran this command while located in the directory with GUI.py:
 
    *  pyinstaller --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
 

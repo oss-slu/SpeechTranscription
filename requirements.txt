@@ -1,6 +1,6 @@
 pyaudio
 wave
-nltk (see Issue 55 https://github.com/oss-slu/SpeechTranscription/issues/55 for instructions on installing nltk - it is more than just 'pip install nltk')
+nltk # (see Issue 55 https://github.com/oss-slu/SpeechTranscription/issues/55 for instructions on installing nltk - it is more than just 'pip install nltk')
 ffmpeg
 ffprobe
 ffprobe-python
@@ -12,9 +12,9 @@ git+https://github.com/openai/whisper.git
 sv_ttk
 pattern
 
-// For testing purposes
+# For testing purposes
 pytest
 
-// Not currently in use - diarization related
+# Not currently in use - could be used for diarization in the future
 spectralcluster
 Resemblyzer
