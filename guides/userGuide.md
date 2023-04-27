@@ -11,12 +11,12 @@
 
 ## **Audio-Related Functionality**
 ### _The five buttons along the top row all contain audio-related functionality._
-1. **Upload** - This button will allow you to choose a file from your file system to be uploaded as audio, which can later be transcribed to text using speech recognition via the **Transcibe** button.
+1. **Upload** - This button will allow you to choose a file from your file system to be uploaded as audio, which can later be transcribed to text using speech recognition via the **Transrcibe** button.
 2. **Record** - This button will begin recording audio from your computer's default microphone. During recording, this button is replaced with a **Stop** button, which will end your recording.
 3. **Play** - This button will play back the currently selected audio file, whether manually uploaded or recorded within the program. During playback, this button is replaced with a **Stop** button that allows you to stop playback.
     * Note that we currently recommend for the user to play back audio using their computer's default media player program, as we are still developing functions for pausing, scrubbing, and skipping, and rewinding audio. We eventually hope to have the program in a state where this isn't necessary!
 4. **Download** - This button allows the user to download the currently uploaded audio to their file system. If you recorded a session within the application, this is what would allow you to download that audio as a .wav file.
-5. **Transcribe** - This button converted the currently selected audio into text using speech recognition, which will be placed in the large box in the center of the application.
+5. **Transcribe** - This button converts the currently selected audio into text using speech recognition, which will be placed in the large box in the center of the application.
     * Note that the quality of recording and the quality of speaking will affect the results of this functionality. In some cases, it may be advisable to still manually transcribe the audio.
 
 ## **Providing Session Information**
@@ -31,7 +31,7 @@
 ## **Editing the Raw Transcript**
 ### _The large box in the center of the application is used to handle the raw transcript before any conventions are applied to the text. If manually transcribing audio, please enter text in this box such that each sentence starts on a new line._
 
-1. **Transcription Box** - This box should hold the text of the raw trancript.
+1. **Transcription Box** - This box should hold the text of the raw transcript.
 2. **Unlock/Lock** - To avoid editing text accidentally, the user may lock the box at any time so that changes cannot be made to it. 
 3. **Clear** - This button clears the transcription box. Be careful, as this action cannot be undone.
 4. **Toggle Table** - This button allows the user to hide the transcription box.
@@ -45,7 +45,7 @@
 3. **Grammar Correction Box** - Below the convention box, this box will hold sentences that are caught as incorrect during the grammar check process. The user can edit the sentence in the box to correct the error coding.
     * Note that inflectional morphemes should not be added during this step.
 4. **Submit** - This button appends the sentence within the grammar correction box to the convention box. Click this when you are finished editing a sentence within the grammar correction box.
-5. **Add Morphemes** - After finishing the grammar check procress (all sentences from the raw transcript should be in the convention box), the user may select this button to add inflectional morphemes to the text.
+5. **Add Morphemes** - After finishing the grammar check process (all sentences from the raw transcript should be in the convention box), the user may select this button to add inflectional morphemes to the text.
     * Note that not all inflectional morphemes will be added perfectly. We hope to resolve bugs of this type as quickly as possible.
 6. **Lock/Unlock** and **Clear** - These buttons work similarly for the convention box as they did for the transcription box.
 
