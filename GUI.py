@@ -49,6 +49,7 @@ class GUI:
     def stop(self):
         self.isRecording = False
         self.filePath = 'session_output.wav'
+        print("filepath IS:", self.filePath )
         self.audioPlaceholder.config(text='Audio Recorded Here!')
 
     def recordAudio(self):
@@ -176,6 +177,7 @@ class GUI:
 
     # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
+        print("this is the filepath:", self.filePath)
         name = self.filePath.split('.')[0]
         extension = self.filePath.split('.')[1]
         if (extension == "MP3"):
@@ -194,7 +196,7 @@ class GUI:
         normalized_audio = normalize(pre_normalized_audio)
         # transcribed audio is now using normalized audiofile
         self.convertToWAV(normalized_audio)
-        transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav")
+        transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("SpeechTranscription\converted.wav")
         #normal_wav.close()
         self.transcriptionBox.configure(state='normal')
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
@@ -342,6 +344,8 @@ class GUI:
         self.examinerName = ''
         self.samplingContext = ''
         self.infoArray = ['','','','','','','']
+
+        self.filePath = ''
 
 
         uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
