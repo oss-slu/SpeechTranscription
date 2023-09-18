@@ -311,7 +311,7 @@ class GUI:
         exportDocument.add_paragraph(text)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')
 
-
+    #Function to create Interface Visuals
     def __init__(self):
         self.master = tk.Tk()
         sv_ttk.set_theme("light")
@@ -355,8 +355,11 @@ class GUI:
         self.playButton = Button(self.master, text='Play', command=lambda: self.playback_click())
         self.playButton.grid(row=0, column=3, padx=2, pady=2)
 
+        self.pauseButton = Button(self.master, text='Pause', command=lambda: self.pause())
+        self.pauseButton.grid(row=0, column=4, padx=2, pady=2)
+
         downloadButton = Button(self.master, text='Download', command=lambda: self.download_recorded_audio())
-        downloadButton.grid(row=0, column=4, padx=2, pady=2)
+        downloadButton.grid(row=1, column=5, padx=2, pady=2)
 
         transcribeButton = Button(self.master, text='Transcribe', command=self.transcribe)
         transcribeButton.grid(row=0, column=5, padx=2, pady=2)
