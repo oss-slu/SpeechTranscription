@@ -310,7 +310,8 @@ class GUI:
     def exportToWord(self):
         outputPath = filedialog.askdirectory()
         exportDocument = Document()
-        text = self.conventionBox.get("1.0", "end")
+        #text = self.conventionBox.get("1.0", "end")
+        text = self.transcriptionBox.get("1.0", "end")
         exportDocument.add_paragraph(text)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
 
