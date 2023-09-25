@@ -76,6 +76,9 @@ class GUI:
         while output != b'' and self.playing:
             out_stream.write(output)
             output = audio_file.readframes(self.CHUNK)
+        self.playing = False
+        self.playButton['text'] = 'Play'
+        print('audio ended')
 
     def pause(self):
         self.playing = False
@@ -309,7 +312,7 @@ class GUI:
         exportDocument = Document()
         text = self.conventionBox.get("1.0", "end")
         exportDocument.add_paragraph(text)
-        exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')
+        exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
 
 
     def __init__(self):
