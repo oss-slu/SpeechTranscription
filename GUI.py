@@ -80,8 +80,9 @@ class GUI:
             if not self.paused:
                 out_stream.write(dat)
                 dat = audio_file.readframes(self.CHUNK)
-            
+        self.playing = False
         self.playButton['text'] = 'Play'
+        print('audio ended')
         out_stream.close()
     
     def pause_playback(self):
@@ -319,9 +320,10 @@ class GUI:
     def exportToWord(self):
         outputPath = filedialog.askdirectory()
         exportDocument = Document()
-        text = self.conventionBox.get("1.0", "end")
+        #text = self.conventionBox.get("1.0", "end")
+        text = self.transcriptionBox.get("1.0", "end")
         exportDocument.add_paragraph(text)
-        exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')
+        exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
 
 
     def __init__(self):
