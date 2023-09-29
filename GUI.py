@@ -63,6 +63,7 @@ class GUI:
     
     def play(self):
         self.playing = True
+        self.paused = False
         audio_file = wave.open(self.filePath, 'rb')
         #code to create seperate output audio stream so audio can be played
         out_p = pyaudio.PyAudio()
@@ -72,25 +73,34 @@ class GUI:
             rate = audio_file.getframerate(),
             output = True
         )
-        output = audio_file.readframes(self.CHUNK)
-        while output != b'' and self.playing:
-            out_stream.write(output)
-            output = audio_file.readframes(self.CHUNK)
+
+        dat = audio_file.readframes(self.CHUNK)
+        while dat != b'' and self.playing:
+
+            if not self.paused:
+                out_stream.write(dat)
+                dat = audio_file.readframes(self.CHUNK)
         self.playing = False
         self.playButton['text'] = 'Play'
         print('audio ended')
-
-    def pause(self):
-        self.playing = False
-
-    def playback_click(self):
-        play_thread = threading.Thread(target=self.play)
-        if self.playButton['text'] == 'Play':
-            self.playButton['text'] = 'Stop'
-            play_thread.start()
+        out_stream.close()
+    
+    def pause_playback(self):
+        if self.paused:
+            self.paused = False
+            self.pauseButton['text'] = 'Pause'
         else:
+            self.paused = True
+            self.pauseButton['text'] = 'Unpause'
+        
+    def playback_click(self):
+        if not self.playing:
+            threading.Thread(target = self.play).start()
+            self.playButton['text'] = 'Stop'
+            print("Play")
+        else:
+            self.playing = False
             self.playButton['text'] = 'Play'
-            self.pause()
 
     def download_recorded_audio(self):
         print('downloading')
@@ -332,6 +342,7 @@ class GUI:
         self.frames = []
         self.isRecording = False
         self.playing = False
+        self.paused = True
         self.stream = self.p.open(format = self.FORMAT,
                                 channels = self.CHANNELS,
                                 rate = self.RATE,
@@ -356,11 +367,14 @@ class GUI:
         self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
         self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
 
+        self.pauseButton = Button(self.master, text='Pause', command=lambda: self.pause_playback())
+        self.pauseButton.grid(row=0, column=4, padx=2, pady=2)
+        
         self.playButton = Button(self.master, text='Play', command=lambda: self.playback_click())
         self.playButton.grid(row=0, column=3, padx=2, pady=2)
 
         downloadButton = Button(self.master, text='Download', command=lambda: self.download_recorded_audio())
-        downloadButton.grid(row=0, column=4, padx=2, pady=2)
+        downloadButton.grid(row=1, column=5, padx=2, pady=2)
 
         transcribeButton = Button(self.master, text='Transcribe', command=self.transcribe)
         transcribeButton.grid(row=0, column=5, padx=2, pady=2)
