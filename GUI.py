@@ -13,6 +13,8 @@ from pydub.effects import normalize
 import threading
 from docx import Document
 from datetime import date
+import customtkinter
+import tkinterDnD
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -49,7 +51,7 @@ class GUI:
     def stop(self):
         self.isRecording = False
         self.filePath = 'session_output.wav'
-        self.audioPlaceholder.config(text='Audio Recorded Here!')
+        self.audioPlaceholder.configure(text='Audio Recorded Here!')
 
     def recordAudio(self):
         if self.recordButton['text'] == 'Record':
@@ -124,7 +126,7 @@ class GUI:
     def uploadAudio(self):
         self.filePath = filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
-        self.audioPlaceholder.config(text='Audio Uploaded Here!')
+        self.audioPlaceholder.configure(text='Audio Uploaded Here!')
 
 
     # Sends client info submitted by user to the transciption box
@@ -327,8 +329,12 @@ class GUI:
 
 
     def __init__(self):
-        self.master = tk.Tk()
-        sv_ttk.set_theme("light")
+        #customtkinter.set_ctk_parent_class(tkinterDnd.tk)
+        
+        customtkinter.set_appearance_mode("dark")
+        customtkinter.set_default_color_theme("green")
+        
+        self.master = customtkinter.CTk()
         self.master.title('Speech Transcription')
         self.master.geometry('1400x700')
 
@@ -359,24 +365,24 @@ class GUI:
         self.infoArray = ['','','','','','','']
 
 
-        uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
+        uploadButton = customtkinter.CTkButton(self.master, text='Upload', command=lambda: self.uploadAudio())
         uploadButton.grid(row=0, column=0, padx=2, pady=2)
-        self.recordButton = Button(self.master, text='Record', command=lambda: self.recordAudio())
+        self.recordButton = customtkinter.CTkButton(self.master, text='Record', command=lambda: self.recordAudio())
         self.recordButton.grid(row=0, column=1, padx=2, pady=2)
 
-        self.audioPlaceholder = Label(self.master, text='(This is where the audio would be)')
+        self.audioPlaceholder = customtkinter.CTkLabel(self.master, text='(This is where the audio would be)')
         self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
 
-        self.pauseButton = Button(self.master, text='Pause', command=lambda: self.pause_playback())
+        self.pauseButton = customtkinter.CTkButton(self.master, text='Pause', command=lambda: self.pause_playback())
         self.pauseButton.grid(row=0, column=4, padx=2, pady=2)
         
-        self.playButton = Button(self.master, text='Play', command=lambda: self.playback_click())
+        self.playButton = customtkinter.CTkButton(self.master, text='Play', command=lambda: self.playback_click())
         self.playButton.grid(row=0, column=3, padx=2, pady=2)
 
-        downloadButton = Button(self.master, text='Download', command=lambda: self.download_recorded_audio())
+        downloadButton = customtkinter.CTkButton(self.master, text='Download', command=lambda: self.download_recorded_audio())
         downloadButton.grid(row=1, column=5, padx=2, pady=2)
 
-        transcribeButton = Button(self.master, text='Transcribe', command=self.transcribe)
+        transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=self.transcribe)
         transcribeButton.grid(row=0, column=5, padx=2, pady=2)
 
         # CLIENT INFORMATION-RELATED BUTTONS/BOXES
@@ -395,11 +401,11 @@ class GUI:
         # Allows user to select a sampling attribute, type the relevant information, and submit it
         self.clicked = StringVar()
         self.clicked.set("Name")
-        infoDropdown = OptionMenu(self.master, self.clicked, clientOptions[0], *clientOptions)
+        infoDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.clicked, values =clientOptions)
         infoDropdown.grid(row=1, column=1, padx=2, pady=2)
-        self.infoEntryBox = Entry(self.master)
+        self.infoEntryBox = customtkinter.CTkEntry(self.master)
         self.infoEntryBox.grid(row=1, column=2, padx=2, pady=2)
-        infoSubmitButton = Button(self.master, text="Submit", command=self.submitClientInfo)
+        infoSubmitButton = customtkinter.CTkButton(self.master, text="Submit", command=self.submitClientInfo)
         infoSubmitButton.grid(row=1, column=3, padx=2, pady=2)
 
 
@@ -412,7 +418,7 @@ class GUI:
 
         # Show/hide button for the box
         self.infoIsVisible = True
-        self.toggleClientInfoBoxButton = Button(self.master, text='Toggle Table', command=self.toggleClientInfoBox)
+        self.toggleClientInfoBoxButton = customtkinter.CTkButton(self.master, text='Toggle Table', command=self.toggleClientInfoBox)
         self.toggleClientInfoBoxButton.grid(row=6, column=0, padx=2, pady=2)
 
         # transcriptionBox is the left-hand box used for editing speech-recognized text
@@ -422,47 +428,47 @@ class GUI:
 
         # Show/hide button for the box
         self.transcriptionIsVisible = True
-        self.toggleTranscriptionBoxButton = Button(self.master, text='Toggle Table', command=self.toggleTranscriptionBox)
+        self.toggleTranscriptionBoxButton = customtkinter.CTkButton(self.master, text='Toggle Table', command=self.toggleTranscriptionBox)
         self.toggleTranscriptionBoxButton.grid(row=6, column=3, padx=2, pady=2)
 
         # Permits user to type in transcriptionBox
-        self.editTranscriptionBoxButton = Button(self.master, text='Unlock', command=self.editTranscriptionBox)
+        self.editTranscriptionBoxButton = customtkinter.CTkButton(self.master, text='Unlock', command=self.editTranscriptionBox)
         self.editTranscriptionBoxButton.grid(row=6, column=1, padx=10, pady=10)
         # Clears transcriptionBox
-        self.clearTranscriptionBoxButton = Button(self.master, text='Clear', command=self.clearTranscriptionBox)
+        self.clearTranscriptionBoxButton = customtkinter.CTkButton(self.master, text='Clear', command=self.clearTranscriptionBox)
         self.clearTranscriptionBoxButton.grid(row=6, column=2, padx=10, pady=10)
 
         # conventionBox is the right-hand box used for adding all types of conventions
         self.conventionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Everson Mono', 13), spacing1=1)
         self.conventionBox.configure(state='disabled', wrap=WORD)
         # Permits user to type in conventionBox
-        self.editConventionBoxButton = Button(self.master, text='Unlock', command=self.editConventionBox)
+        self.editConventionBoxButton = customtkinter.CTkButton(self.master, text='Unlock', command=self.editConventionBox)
         # Clears conventionBox
-        self.clearConventionBoxButton = Button(self.master, text='Clear', command=self.clearConventionBox)
+        self.clearConventionBoxButton = customtkinter.CTkButton(self.master, text='Clear', command=self.clearConventionBox)
 
 
         # CONVENTION-RELATED BUTTONS/BOXES
 
         # Initiates grammarCheck process on text in transcriptionBox
-        self.grammarCheckButton = Button(self.master, text='Grammar Check', command=self.grammarCheck)
+        self.grammarCheckButton = customtkinter.CTkButton(self.master, text='Grammar Check', command=self.grammarCheck)
         self.grammarCheckButton.grid(row=7, column=2, padx=5, pady=2)
         # Manually edit sentences caught during grammarCheck process
         self.correctionEntryBox = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Everson Mono', 13), spacing1=1)
         self.correctionEntryBox.configure(wrap=WORD)
         # Appends sentence within correctionEntryBox to right-hand box, continues grammarCheck process
-        self.submitCorrectionButton = Button(self.master, text='Submit', command=self.applyCorrection)
+        self.submitCorrectionButton = customtkinter.CTkButton(self.master, text='Submit', command=self.applyCorrection)
         # Applies inflectional morphemes to text in right-hand box
-        self.addMorphemesButton = Button(self.master, text='Add Morphemes', command=self.inflectionalMorphemes)
+        self.addMorphemesButton = customtkinter.CTkButton(self.master, text='Add Morphemes', command=self.inflectionalMorphemes)
         self.addMorphemesButton.grid(row=7, column=3, padx=2, pady=2)
 
 
         # EXPORT-RELATED
 
         # Exports to word
-        exportButton = Button(self.master, text='Export to Word Document', command=self.exportToWord)
+        exportButton = customtkinter.CTkButton(self.master, text='Export to Word Document', command=self.exportToWord)
         exportButton.grid(row=8, column=5, padx=2, pady=2)
         # Prints
-        printButton = Button(self.master, text='Print')
+        printButton = customtkinter.CTkButton(self.master, text='Print')
         printButton.grid(row=9, column=5, padx=2, pady=2)
 
 
