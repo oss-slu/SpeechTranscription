@@ -224,7 +224,8 @@ class GUI:
         self.correctionEntryBox.delete('1.0', "end")
         self.submitCorrectionButton.grid(row=6, column=6)
         # Get raw transcription and tokenize into sentences for processing
-        text = self.transcriptionBox.get("1.0", "end")
+        text = self.transcriptionBox.get("1.0", "end") 
+        # perhaps above and below is the state he was talking about, but it already gets assigned to a variable called 'text'
         self.tokenizedSentences = nltk.sent_tokenize(text)
         self.getNextCorrection()
     
@@ -266,7 +267,7 @@ class GUI:
             self.transcriptionBox.grid_remove()
         else:
             self.transcriptionBox.grid(row=5, column=1, columnspan=3, padx=10, pady=10)
-        self.transcriptionIsVisible = not self.transcriptionIsVisible
+        self.transcriptionIsVisible = not self.transcriptionIsVisible 
 
     def editTranscriptionBox(self):
         if self.editTranscriptionBoxButton['text'] == 'Lock':
@@ -278,9 +279,9 @@ class GUI:
             self.transcriptionBox.configure(state='normal')
 
     def editConventionBox(self):
-        if self.editConventionBoxButton['text'] == 'Lock':
+        if self.editConventionBoxButton['text'] == 'Lock': 
             self.editConventionBoxButton['text'] = 'Unlock'
-            self.conventionBox.configure(state='disabled')
+            self.conventionBox.configure(state='disabled') 
 
         else:
             self.editConventionBoxButton['text'] = 'Lock'
@@ -307,8 +308,7 @@ class GUI:
     def exportToWord(self):
         outputPath = filedialog.askdirectory()
         exportDocument = Document()
-        #text = self.conventionBox.get("1.0", "end")
-        text = self.transcriptionBox.get("1.0", "end")
+        text = self.transcriptionBox.get("1.0", "end") # changed from conventionBox.get since that was the wrong call
         exportDocument.add_paragraph(text)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')
 
