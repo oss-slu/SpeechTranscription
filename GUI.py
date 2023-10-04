@@ -417,7 +417,7 @@ class GUI:
         self.clientInfoBox.configure(state= 'disabled')
         self.clientInfoBox.grid(row=5, column=0, padx=10, pady=10)
 
-        # Show/hide button for the box
+        # Show/hide button for the box 
         self.infoIsVisible = True
         self.toggleClientInfoBoxButton = customtkinter.CTkButton(self.master, text='Toggle Table', command=self.toggleClientInfoBox)
         self.toggleClientInfoBoxButton.grid(row=6, column=0, padx=2, pady=2)
