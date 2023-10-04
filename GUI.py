@@ -54,8 +54,8 @@ class GUI:
         self.audioPlaceholder.configure(text='Audio Recorded Here!')
 
     def recordAudio(self):
-        if self.recordButton['text'] == 'Record':
-            self.recordButton['text'] = 'Stop'
+        if self.recordButton.cget("text") == "Record":
+            self.recordButton.configure(text == 'Stop')
             self.record()
             print('*recording*')
         else:
@@ -157,10 +157,12 @@ class GUI:
             self.infoArray[6] = self.samplingContext
         # Clears the entry box
         self.infoEntryBox.delete(0, "end")
+        #self.infoEntryBox.forget_pack()
 
         # Updates Table
-        self.clientInfoBox.configure(state='normal')
+        #self.clientInfoBox.configure(state='normal')
         self.clientInfoBox.delete('1.0', "end")
+        #self.clientInfoBox.forget_pack()
         for x in range(7):
             if self.infoArray[x] != '':
                 if x == 0:
@@ -179,7 +181,7 @@ class GUI:
                     self.clientInfoBox.insert("end", "Sampling Context: ")
 
                 self.clientInfoBox.insert("end", self.infoArray[x] + "\n")
-        self.clientInfoBox.configure(state='disabled')
+        #self.clientInfoBox.configure(state='disabled')
 
     def mp3towav(self, audiofile):
         dst = self.filePath
@@ -211,19 +213,20 @@ class GUI:
         self.convertToWAV(normalized_audio)
         transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav")
         #normal_wav.close()
-        self.transcriptionBox.configure(state='normal')
+        #self.transcriptionBox.configure(state='normal')
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
-        self.transcriptionBox.configure(state='disabled')
+        #self.transcriptionBox.configure(state='disabled')
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
     def inflectionalMorphemes(self):
-        self.conventionBox.configure(state='normal')
+        #self.conventionBox.configure(state='normal')
         converting = self.conventionBox.get("1.0", "end")
         # My name is Jake. My name are Jake. (this is a relic of debugging, DO NOT DELETE)
         converting = addConventions.addInflectionalMorphemes(converting)
         self.conventionBox.delete('1.0', "end")
+        #self.conventionBox.forget_pack()
         self.conventionBox.insert("end", converting)
-        self.conventionBox.configure(state='disabled')
+        #self.conventionBox.configure(state='disabled')
 
     # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
@@ -233,10 +236,12 @@ class GUI:
         # Configuring right-hand box, correction box, and submit button
         self.conventionBox.grid(row=5, column=4, columnspan=3)
         self.conventionBox.delete('1.0', "end")
+        #self.conventionBox.forget_pack()
         self.editConventionBoxButton.grid(row=7, column=5)
         self.clearConventionBoxButton.grid(row=7, column=6)
         self.correctionEntryBox.grid(row=6, column=4, columnspan=2)
         self.correctionEntryBox.delete('1.0', "end")
+        #self.correctionEntryBox.forget_pack()
         self.submitCorrectionButton.grid(row=6, column=6)
         # Get raw transcription and tokenize into sentences for processing
         text = self.transcriptionBox.get("1.0", "end")
@@ -254,18 +259,19 @@ class GUI:
                 del self.tokenizedSentences[0]
                 break
             else:
-                self.conventionBox.configure(state='normal')
+                #self.conventionBox.configure(state='normal')
                 self.conventionBox.insert("end", self.tokenizedSentences[0] + "\n")
-                self.conventionBox.configure(state='disabled')
+                #self.conventionBox.configure(state='disabled')
                 del self.tokenizedSentences[0]
 
     def applyCorrection(self):
         # Append sentence in correctionEntryBox to right-hand box
-        self.conventionBox.configure(state='normal')
+        #self.conventionBox.configure(state='normal')
         self.conventionBox.insert("end", self.correctionEntryBox.get("1.0", "end"))
-        self.conventionBox.configure(state='disabled')
+        #self.conventionBox.configure(state='disabled')
         # Remove previously worked-on sentence
         self.correctionEntryBox.delete('1.0', "end")
+        #self.correctionEntryBox.forget_pack()
         # Queue up the next correction for the user
         self.getNextCorrection()
 
@@ -286,38 +292,42 @@ class GUI:
     def editTranscriptionBox(self):
         if self.editTranscriptionBoxButton['text'] == 'Lock':
             self.editTranscriptionBoxButton['text'] = 'Unlock'
-            self.transcriptionBox.configure(state='disabled')
+            #self.transcriptionBox.configure(state='disabled')
 
         else:
             self.editTranscriptionBoxButton['text'] = 'Lock'
-            self.transcriptionBox.configure(state='normal')
+            #self.transcriptionBox.configure(state='normal')
 
     def editConventionBox(self):
         if self.editConventionBoxButton['text'] == 'Lock':
             self.editConventionBoxButton['text'] = 'Unlock'
-            self.conventionBox.configure(state='disabled')
+            #self.conventionBox.configure(state='disabled')
 
         else:
             self.editConventionBoxButton['text'] = 'Lock'
-            self.conventionBox.configure(state='normal')
+            #self.conventionBox.configure(state='normal')
 
     def clearTranscriptionBox(self):
         if self.editTranscriptionBoxButton['text'] == 'Lock':
             self.transcriptionBox.delete('1.0', "end")
+            #self.transcriptionBox.forget_pack()
 
         else:
-            self.transcriptionBox.configure(state='normal')
+            #self.transcriptionBox.configure(state='normal')
             self.transcriptionBox.delete('1.0', "end")
-            self.transcriptionBox.configure(state='disabled')
+            #self.transcriptionBox.forget_pack()
+            #self.transcriptionBox.configure(state='disabled')
 
     def clearConventionBox(self):
         if self.editConventionBoxButton['text'] == 'Lock':
             self.conventionBox.delete('1.0', "end")
+            #self.convectionBox.forget_pack()
 
         else:
-            self.conventionBox.configure(state='normal')
+            #self.conventionBox.configure(state='normal')
             self.conventionBox.delete('1.0', "end")
-            self.conventionBox.configure(state='disabled')
+            #self.conventionBox.forget_pack()
+            #self.conventionBox.configure(state='disabled')
 
     def exportToWord(self):
         outputPath = filedialog.askdirectory()
@@ -399,9 +409,9 @@ class GUI:
                 ]
 
         # Allows user to select a sampling attribute, type the relevant information, and submit it
-        self.clicked = StringVar()
+        self.clicked = customtkinter.StringVar()
         self.clicked.set("Name")
-        infoDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.clicked, values =clientOptions)
+        infoDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.clicked, values = clientOptions)
         infoDropdown.grid(row=1, column=1, padx=2, pady=2)
         self.infoEntryBox = customtkinter.CTkEntry(self.master)
         self.infoEntryBox.grid(row=1, column=2, padx=2, pady=2)
@@ -412,8 +422,9 @@ class GUI:
         # LARGE BOXES AND RELATED BUTTONS
         
         # Client Information Box on the far left
-        self.clientInfoBox = scrolledtext.ScrolledText(self.master, width = 20, height = 20, font=('Everson Mono', 13), spacing1=1)
-        self.clientInfoBox.configure(state='disabled', wrap=WORD)
+        #self.clientInfoBox = customtkinter.CTkScrollableFrame(self.master, width = 100, height = 20)
+        self.clientInfoBox = customtkinter.CTkTextbox(self.master, width = 200, height = 200)
+        #self.clientInfoBox.configure(state= 'disabled')
         self.clientInfoBox.grid(row=5, column=0, padx=10, pady=10)
 
         # Show/hide button for the box
@@ -422,8 +433,9 @@ class GUI:
         self.toggleClientInfoBoxButton.grid(row=6, column=0, padx=2, pady=2)
 
         # transcriptionBox is the left-hand box used for editing speech-recognized text
-        self.transcriptionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Everson Mono', 13), spacing1=1)
-        self.transcriptionBox.configure(state='disabled', wrap=WORD)
+        #self.transcriptionBox = customtkinter.CTkScrollableFrame(self.master, width = 50, height = 20)
+        self.transcriptionBox = customtkinter.CTkTextbox(self.master, width = 200, height = 200)
+        #self.transcriptionBox.config(state='disabled', wrap=WORD)
         self.transcriptionBox.grid(row=5, column=1, columnspan=3, padx=10, pady=10)
 
         # Show/hide button for the box
@@ -439,8 +451,8 @@ class GUI:
         self.clearTranscriptionBoxButton.grid(row=6, column=2, padx=10, pady=10)
 
         # conventionBox is the right-hand box used for adding all types of conventions
-        self.conventionBox = scrolledtext.ScrolledText(self.master, width = 50, height = 20, font=('Everson Mono', 13), spacing1=1)
-        self.conventionBox.configure(state='disabled', wrap=WORD)
+        self.conventionBox = customtkinter.CTkScrollableFrame(self.master, width = 1000, height = 2000)
+        #self.conventionBox.configure(state='disabled', wrap=WORD)
         # Permits user to type in conventionBox
         self.editConventionBoxButton = customtkinter.CTkButton(self.master, text='Unlock', command=self.editConventionBox)
         # Clears conventionBox
@@ -453,8 +465,8 @@ class GUI:
         self.grammarCheckButton = customtkinter.CTkButton(self.master, text='Grammar Check', command=self.grammarCheck)
         self.grammarCheckButton.grid(row=7, column=2, padx=5, pady=2)
         # Manually edit sentences caught during grammarCheck process
-        self.correctionEntryBox = scrolledtext.ScrolledText(self.master, width = 45, height = 1, font=('Everson Mono', 13), spacing1=1)
-        self.correctionEntryBox.configure(wrap=WORD)
+        self.correctionEntryBox = customtkinter.CTkScrollableFrame(self.master, width = 45, height = 1)
+        #self.correctionEntryBox.configure(wrap=WORD)
         # Appends sentence within correctionEntryBox to right-hand box, continues grammarCheck process
         self.submitCorrectionButton = customtkinter.CTkButton(self.master, text='Submit', command=self.applyCorrection)
         # Applies inflectional morphemes to text in right-hand box
