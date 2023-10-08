@@ -198,6 +198,7 @@ class GUI:
         #normal_wav.close()
         self.transcriptionBox.configure(state='normal')
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
+        self.transcriptionText = transcribedAudio
         self.transcriptionBox.configure(state='disabled')
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
@@ -271,12 +272,15 @@ class GUI:
 
     def editTranscriptionBox(self):
         if self.editTranscriptionBoxButton['text'] == 'Lock':
+            self.transcriptionText = self.transcriptionBox.get("1.0", "end")
             self.editTranscriptionBoxButton['text'] = 'Unlock'
             self.transcriptionBox.configure(state='disabled')
 
         else:
             self.editTranscriptionBoxButton['text'] = 'Lock'
             self.transcriptionBox.configure(state='normal')
+
+
 
     def editConventionBox(self):
         if self.editConventionBoxButton['text'] == 'Lock': 
@@ -308,7 +312,7 @@ class GUI:
     def exportToWord(self):
         outputPath = filedialog.askdirectory()
         exportDocument = Document()
-        text = self.transcriptionBox.get("1.0", "end") # changed from conventionBox.get since that was the wrong call
+        text = self.transcriptionText
         exportDocument.add_paragraph(text)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')
 
@@ -343,6 +347,7 @@ class GUI:
         self.examinerName = ''
         self.samplingContext = ''
         self.infoArray = ['','','','','','','']
+        self.transcriptionText = ''
 
 
         uploadButton = Button(self.master, text='Upload', command=lambda: self.uploadAudio())
