@@ -225,7 +225,7 @@ class GUI:
         self.correctionEntryBox.delete('1.0', "end")
         self.submitCorrectionButton.grid(row=6, column=6)
         # Get raw transcription and tokenize into sentences for processing
-        text = self.transcriptionBox.get("1.0", "end") 
+        text = self.transcriptionText 
         # perhaps above and below is the state he was talking about, but it already gets assigned to a variable called 'text'
         self.tokenizedSentences = nltk.sent_tokenize(text)
         self.getNextCorrection()
