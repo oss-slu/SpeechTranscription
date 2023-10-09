@@ -213,7 +213,10 @@ class GUI:
         #normal_wav.close()
         #self.transcriptionBox.configure(state='normal')
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
-        #self.transcriptionBox.configure(state='disabled')
+
+        self.transcriptionText = transcribedAudio
+        self.transcriptionBox.configure(state='disabled')
+
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
     def inflectionalMorphemes(self):
@@ -239,7 +242,8 @@ class GUI:
         self.correctionEntryBox.delete('1.0', "end")
         self.submitCorrectionButton.grid(row=6, column=6)
         # Get raw transcription and tokenize into sentences for processing
-        text = self.transcriptionBox.get("1.0", "end")
+        text = self.transcriptionText 
+        # perhaps above and below is the state he was talking about, but it already gets assigned to a variable called 'text'
         self.tokenizedSentences = nltk.sent_tokenize(text)
         self.getNextCorrection()
     
@@ -281,7 +285,7 @@ class GUI:
             self.transcriptionBox.grid_remove()
         else:
             self.transcriptionBox.grid(row=5, column=1, columnspan=3, padx=10, pady=10)
-        self.transcriptionIsVisible = not self.transcriptionIsVisible
+        self.transcriptionIsVisible = not self.transcriptionIsVisible 
 
     def editTranscriptionBox(self):
         if self.editTranscriptionBoxButton.cget("text") == 'Lock':
@@ -291,6 +295,7 @@ class GUI:
         else:
             self.editTranscriptionBoxButton.configure(text = 'Lock')
             self.transcriptionBox.configure(state='normal')
+            
     def editConventionBox(self):
         if self.editConventionBoxButton.cget("text") ==  'Lock':
             self.editConventionBoxButton.configure(text = 'Unlock')
@@ -321,8 +326,7 @@ class GUI:
     def exportToWord(self):
         outputPath = filedialog.askdirectory()
         exportDocument = Document()
-        #text = self.conventionBox.get("1.0", "end")
-        text = self.transcriptionBox.get("1.0", "end")
+        text = self.transcriptionText
         exportDocument.add_paragraph(text)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
 
@@ -364,6 +368,7 @@ class GUI:
         self.examinerName = ''
         self.samplingContext = ''
         self.infoArray = ['','','','','','','']
+        self.transcriptionText = ''
 
 
         uploadButton = customtkinter.CTkButton(self.master, text='Upload', command=lambda: self.uploadAudio())
