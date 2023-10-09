@@ -53,12 +53,12 @@ class GUI:
         self.audioPlaceholder.configure(text='Audio Recorded Here!')
 
     def recordAudio(self):
-        if self.recordButton.cget("text") == "Record":
+        if self.recordButton.cget("text") == 'Record':
             self.recordButton.configure(text = 'Stop')
             self.record()
             print('*recording*')
         else:
-            self.recordButton['text'] = 'Record'
+            self.recordButton.configure(text = 'Record')
             self.stop()
             print('*recording stopped*')
     
@@ -83,26 +83,26 @@ class GUI:
                 out_stream.write(dat)
                 dat = audio_file.readframes(self.CHUNK)
         self.playing = False
-        self.playButton['text'] = 'Play'
+        self.playButton.configure(text = 'Play')
         print('audio ended')
         out_stream.close()
     
     def pause_playback(self):
         if self.paused:
             self.paused = False
-            self.pauseButton['text'] = 'Pause'
+            self.pauseButton.configure(text = 'Pause')
         else:
             self.paused = True
-            self.pauseButton['text'] = 'Unpause'
+            self.pauseButton.configure(text = 'Unpause')
         
     def playback_click(self):
         if not self.playing:
             threading.Thread(target = self.play).start()
-            self.playButton['text'] = 'Stop'
+            self.playButton.configure(text = 'Stop')
             print("Play")
         else:
             self.playing = False
-            self.playButton['text'] = 'Play'
+            self.playButton.configure(text = 'Play')
 
     def download_recorded_audio(self):
         print('downloading')
@@ -284,25 +284,24 @@ class GUI:
         self.transcriptionIsVisible = not self.transcriptionIsVisible
 
     def editTranscriptionBox(self):
-        if self.editTranscriptionBoxButton['text'] == 'Lock':
-            self.editTranscriptionBoxButton['text'] = 'Unlock'
+        if self.editTranscriptionBoxButton.cget("text") == 'Lock':
+            self.editTranscriptionBoxButton.configure(text = 'Unlock')
             self.transcriptionBox.configure(state='disabled')
 
         else:
-            self.editTranscriptionBoxButton['text'] = 'Lock'
+            self.editTranscriptionBoxButton.configure(text = 'Lock')
             self.transcriptionBox.configure(state='normal')
-
     def editConventionBox(self):
-        if self.editConventionBoxButton['text'] == 'Lock':
-            self.editConventionBoxButton['text'] = 'Unlock'
+        if self.editConventionBoxButton.cget("text") ==  'Lock':
+            self.editConventionBoxButton.configure(text = 'Unlock')
             self.conventionBox.configure(state='disabled')
 
         else:
-            self.editConventionBoxButton['text'] = 'Lock'
+            self.editConventionBoxButton.configure(text = 'Lock')
             self.conventionBox.configure(state='normal')
 
     def clearTranscriptionBox(self):
-        if self.editTranscriptionBoxButton['text'] == 'Lock':
+        if self.editTranscriptionBoxButton.cget("text") ==  'Lock':
             self.transcriptionBox.delete('1.0', "end")
 
         else:
@@ -311,7 +310,7 @@ class GUI:
             self.transcriptionBox.configure(state='disabled')
 
     def clearConventionBox(self):
-        if self.editConventionBoxButton['text'] == 'Lock':
+        if self.editConventionBoxButton.cget("text") ==  'Lock':
             self.conventionBox.delete('1.0', "end")
 
         else:
@@ -332,11 +331,13 @@ class GUI:
         #customtkinter.set_ctk_parent_class(tkinterDnd.tk)
         
         customtkinter.set_appearance_mode("dark")
-        customtkinter.set_default_color_theme("green")
-        
+        customtkinter.set_default_color_theme("blue")
+        self.WIDTH = 1280
+        self.HEIGHT = 720
+
         self.master = customtkinter.CTk()
         self.master.title('Speech Transcription')
-        self.master.geometry('1400x700')
+        self.master.geometry(str(self.WIDTH) + 'x' + str(self.HEIGHT))
 
         #self.recorder = Record(self.master)
         self.CHUNK = CHUNK
@@ -413,7 +414,7 @@ class GUI:
         
         # Client Information Box on the far left
         #self.clientInfoBox = customtkinter.CTkScrollableFrame(self.master, width = 100, height = 20)
-        self.clientInfoBox = customtkinter.CTkTextbox(self.master, width = 200, height = 200)
+        self.clientInfoBox = customtkinter.CTkTextbox(self.master, width = self.WIDTH / 5, height = self.HEIGHT / 2)
         self.clientInfoBox.configure(state= 'disabled')
         self.clientInfoBox.grid(row=5, column=0, padx=10, pady=10)
 
@@ -424,7 +425,7 @@ class GUI:
 
         # transcriptionBox is the left-hand box used for editing speech-recognized text
         #self.transcriptionBox = customtkinter.CTkScrollableFrame(self.master, width = 50, height = 20)
-        self.transcriptionBox = customtkinter.CTkTextbox(self.master, width = 200, height = 200)
+        self.transcriptionBox = customtkinter.CTkTextbox(self.master, width = self.WIDTH / 4, height = self.HEIGHT / 2)
         self.transcriptionBox.configure(state='disabled', wrap=WORD)
         self.transcriptionBox.grid(row=5, column=1, columnspan=3, padx=10, pady=10)
 
@@ -441,7 +442,7 @@ class GUI:
         self.clearTranscriptionBoxButton.grid(row=6, column=2, padx=10, pady=10)
 
         # conventionBox is the right-hand box used for adding all types of conventions
-        self.conventionBox = customtkinter.CTkScrollableFrame(self.master, width = 1000, height = 2000)
+        self.conventionBox = customtkinter.CTkTextbox(self.master, width = self.WIDTH / 4, height = self.HEIGHT / 2)
         self.conventionBox.configure(state='disabled', wrap=WORD)
         # Permits user to type in conventionBox
         self.editConventionBoxButton = customtkinter.CTkButton(self.master, text='Unlock', command=self.editConventionBox)
@@ -455,7 +456,7 @@ class GUI:
         self.grammarCheckButton = customtkinter.CTkButton(self.master, text='Grammar Check', command=self.grammarCheck)
         self.grammarCheckButton.grid(row=7, column=2, padx=5, pady=2)
         # Manually edit sentences caught during grammarCheck process
-        self.correctionEntryBox = customtkinter.CTkScrollableFrame(self.master, width = 45, height = 1)
+        self.correctionEntryBox = customtkinter.CTkTextbox(self.master, width = self.WIDTH / 5, height = self.HEIGHT / 8) 
         #self.correctionEntryBox.configure(wrap=WORD)
         # Appends sentence within correctionEntryBox to right-hand box, continues grammarCheck process
         self.submitCorrectionButton = customtkinter.CTkButton(self.master, text='Submit', command=self.applyCorrection)
