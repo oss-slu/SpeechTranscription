@@ -1,4 +1,4 @@
-Fixes #*issue_number*
+Fixes #issue_number
 
 **What was changed?**
 
