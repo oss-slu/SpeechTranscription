@@ -14,6 +14,7 @@ import threading
 from docx import Document
 from datetime import date
 import customtkinter
+import time
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -212,8 +213,9 @@ class GUI:
         transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav")
         #normal_wav.close()
         #self.transcriptionBox.configure(state='normal')
+        self.transcriptionBox.configure(state='normal') #added this to see
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
-
+        print(transcribedAudio) #transcription info is right in this variable, so needs to be updated properly somewhere else
         self.transcriptionText = transcribedAudio
         self.transcriptionBox.configure(state='disabled')
 
@@ -328,6 +330,20 @@ class GUI:
         exportDocument.add_paragraph(text)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
 
+    def testThread(self):
+        #th = threading.Thread(target=transcribe)
+        threading.Thread(target = self.transcribe).start()
+
+    def progressTest(self):
+        my_progress = customtkinter.CTkProgressBar(self.master,  width = 300, mode = 'indeterminate')
+
+        #my_progress = cTK.progressbar(self.master, orient = HORIZONTAL, length = 300, mode = 'indeterminate')
+        my_progress.grid(row=3, column=3, padx=2, pady=2)
+        print('here')
+        my_progress.start()
+        self.testThread()
+        #my_progress.stop()
+        #my_progress.grid_remove()
 
     def __init__(self):
         #customtkinter.set_ctk_parent_class(tkinterDnd.tk)
@@ -386,7 +402,13 @@ class GUI:
         downloadButton = customtkinter.CTkButton(self.master, text='Download', command=lambda: self.download_recorded_audio())
         downloadButton.grid(row=1, column=5, padx=2, pady=2)
 
-        transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=self.transcribe)
+        #transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=self.transcribe)
+        #transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=testThread)
+        #transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=lambda:[self.progressTest(), self.testThread()])
+        transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=lambda:[self.progressTest()])
+
+
+
         transcribeButton.grid(row=0, column=5, padx=2, pady=2)
 
         # CLIENT INFORMATION-RELATED BUTTONS/BOXES
