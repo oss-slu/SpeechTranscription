@@ -14,6 +14,9 @@ import threading
 from docx import Document
 from datetime import date
 import customtkinter
+import matplotlib.pyplot as plt
+import numpy as np
+import sys
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -50,7 +53,21 @@ class GUI:
     def stop(self):
         self.isRecording = False
         self.filePath = 'session_output.wav'
-        self.audioPlaceholder.configure(text='Audio Recorded Here!')
+
+        self.audioExists = True
+        raw = wave.open(self.filePath)
+        signal = raw.readframes(-1)
+        signal = np.frombuffer(signal, dtype = "int16")
+        f_rate = raw.getframerate()
+        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
+        plt.figure(1)
+        plt.title("Audio Wave")
+        plt.xlabel("Time")
+        plt.plot(time, signal)
+        plt.show()
+
+        self.audioPlaceholder.configure(text=self.filePath) #this is where the audio wave will be
+        #self.audioPlaceholder.configure(text='Audio Recorded Here!')
 
     def recordAudio(self):
         if self.recordButton.cget("text") == 'Record':
@@ -86,6 +103,15 @@ class GUI:
         self.playButton.configure(text = 'Play')
         print('audio ended')
         out_stream.close()
+
+    '''
+    def waveform_audio(self):
+        if self.filePath == 'session_output.wav':
+            #display waveform audio
+            self.audioPlaceholder = customtkinter.CTkLabel(self.master, text=self.filePath)
+            self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
+    '''
+
     
     def pause_playback(self):
         if self.paused:
@@ -126,7 +152,21 @@ class GUI:
     def uploadAudio(self):
         self.filePath = filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
-        self.audioPlaceholder.configure(text='Audio Uploaded Here!')
+        
+        self.audioExists = True
+        raw = wave.open(self.filePath)
+        signal = raw.readframes(-1)
+        signal = np.frombuffer(signal, dtype = "int16")
+        f_rate = raw.getframerate()
+        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
+        plt.figure(1)
+        plt.title("Audio Wave")
+        plt.xlabel("Time")
+        plt.plot(time, signal)
+        plt.show()
+
+        self.audioPlaceholder.configure(text=self.filePath) #this is where the audia wave will be
+        #self.audioPlaceholder.configure(text='Audio Uploaded Here!')
 
 
     # Sends client info submitted by user to the transciption box
@@ -351,6 +391,7 @@ class GUI:
         self.frames = []
         self.isRecording = False
         self.playing = False
+        self.audioExists = False
         self.paused = True
         self.stream = self.p.open(format = self.FORMAT,
                                 channels = self.CHANNELS,
