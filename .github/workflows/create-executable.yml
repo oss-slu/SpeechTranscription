@@ -17,10 +17,10 @@ jobs:
           python-version: 3.11
       - run: brew install mysql pkg-config
         if: ${{ matrix.os == 'macos-latest' }}
-      - run: sudo apt install portaudio19-dev
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - run: sudo apt install portaudio19-dev python-all-dev
+        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest' }}
       - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses
-      - run: pip uninstall typing
+      - run: pip uninstall -y typing
         if: ${{ matrix.os == 'windows-latest' }}
       - run: pyinstaller --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
       - run: ls -R -a
