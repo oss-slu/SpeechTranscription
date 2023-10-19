@@ -23,7 +23,11 @@ jobs:
       - run: robocopy build_assets dist/GUI
         shell: cmd
         if: ${{ matrix.os == 'windows-latest' }}
+      - run: ren dist/GUI/GUI.exe Saltify.exe
+        shell: cmd
+        if: ${{ matrix.os == 'windows-latest' }}
       - uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: SpeechTranscription_${{ matrix.os }}
           path: dist/GUI/*
