@@ -192,9 +192,13 @@ class GUI:
 
     # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
+        my_progress = customtkinter.CTkProgressBar(self.master,  width = 300, mode = 'indeterminate') #creates intederminate progress bar
+        my_progress.grid(row=3, column=3, padx=2, pady=2)
+        my_progress.start()
+
         name = self.filePath.split('.')[0]
         extension = self.filePath.split('.')[1]
-        if (extension == "MP3"):
+        if (extension == "MP3" or extension == 'mp3'):
             mp3 = AudioSegment.from_mp3(self.filePath)
             ret = mp3.export("export.wav", format = "wav")
             print("Attempting to export wav from mp3. ret = " + str(ret))
@@ -218,7 +222,8 @@ class GUI:
         print(transcribedAudio) #transcription info is right in this variable, so needs to be updated properly somewhere else
         self.transcriptionText = transcribedAudio
         self.transcriptionBox.configure(state='disabled')
-
+        my_progress.stop() #stops progress bar
+        my_progress.grid_remove() #removes progress bar
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
     def inflectionalMorphemes(self):
@@ -330,20 +335,11 @@ class GUI:
         exportDocument.add_paragraph(text)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
 
-    def testThread(self):
-        #th = threading.Thread(target=transcribe)
-        threading.Thread(target = self.transcribe).start()
+    # creates thread that executes the transcribe function.
+    def transcriptionThread(self):
+        th = threading.Thread(target = self.transcribe).start()
+        th.join
 
-    def progressTest(self):
-        my_progress = customtkinter.CTkProgressBar(self.master,  width = 300, mode = 'indeterminate')
-
-        #my_progress = cTK.progressbar(self.master, orient = HORIZONTAL, length = 300, mode = 'indeterminate')
-        my_progress.grid(row=3, column=3, padx=2, pady=2)
-        print('here')
-        my_progress.start()
-        self.testThread()
-        #my_progress.stop()
-        #my_progress.grid_remove()
 
     def __init__(self):
         #customtkinter.set_ctk_parent_class(tkinterDnd.tk)
@@ -368,6 +364,7 @@ class GUI:
         self.isRecording = False
         self.playing = False
         self.paused = True
+        self.loading = False#
         self.stream = self.p.open(format = self.FORMAT,
                                 channels = self.CHANNELS,
                                 rate = self.RATE,
@@ -402,10 +399,7 @@ class GUI:
         downloadButton = customtkinter.CTkButton(self.master, text='Download', command=lambda: self.download_recorded_audio())
         downloadButton.grid(row=1, column=5, padx=2, pady=2)
 
-        #transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=self.transcribe)
-        #transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=testThread)
-        #transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=lambda:[self.progressTest(), self.testThread()])
-        transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=lambda:[self.progressTest()])
+        transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=lambda:[self.transcriptionThread()])
 
 
 
