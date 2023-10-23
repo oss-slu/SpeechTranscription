@@ -14,6 +14,9 @@ import threading
 from docx import Document
 from datetime import date
 import customtkinter
+import matplotlib.pyplot as plt
+import numpy as np
+import sys
 import time
 
 #global variables needed to record audio
@@ -51,7 +54,21 @@ class GUI:
     def stop(self):
         self.isRecording = False
         self.filePath = 'session_output.wav'
-        self.audioPlaceholder.configure(text='Audio Recorded Here!')
+
+        # waveform audio added here
+        self.audioExists = True
+        raw = wave.open(self.filePath)
+        signal = raw.readframes(-1)
+        signal = np.frombuffer(signal, dtype = "int16")
+        f_rate = raw.getframerate()
+        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
+        plt.figure(1)
+        plt.title("Audio Wave")
+        plt.xlabel("Time")
+        plt.plot(time, signal)
+        plt.show()
+
+        self.audioPlaceholder.configure(text=self.filePath)
 
     def recordAudio(self):
         if self.recordButton.cget("text") == 'Record':
@@ -127,7 +144,21 @@ class GUI:
     def uploadAudio(self):
         self.filePath = filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
-        self.audioPlaceholder.configure(text='Audio Uploaded Here!')
+        
+        # waveform added audio here
+        self.audioExists = True
+        raw = wave.open(self.filePath)
+        signal = raw.readframes(-1)
+        signal = np.frombuffer(signal, dtype = "int16")
+        f_rate = raw.getframerate()
+        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
+        plt.figure(1)
+        plt.title("Audio Wave")
+        plt.xlabel("Time")
+        plt.plot(time, signal)
+        plt.show()
+
+        self.audioPlaceholder.configure(text=self.filePath)
 
 
     # Sends client info submitted by user to the transciption box
@@ -363,6 +394,7 @@ class GUI:
         self.frames = []
         self.isRecording = False
         self.playing = False
+        self.audioExists = False
         self.paused = True
         self.loading = False#
         self.stream = self.p.open(format = self.FORMAT,
