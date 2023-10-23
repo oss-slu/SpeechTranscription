@@ -103,15 +103,6 @@ class GUI:
         self.playButton.configure(text = 'Play')
         print('audio ended')
         out_stream.close()
-
-    '''
-    def waveform_audio(self):
-        if self.filePath == 'session_output.wav':
-            #display waveform audio
-            self.audioPlaceholder = customtkinter.CTkLabel(self.master, text=self.filePath)
-            self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
-    '''
-
     
     def pause_playback(self):
         if self.paused:
