@@ -54,6 +54,7 @@ class GUI:
         self.isRecording = False
         self.filePath = 'session_output.wav'
 
+        # waveform audio added here
         self.audioExists = True
         raw = wave.open(self.filePath)
         signal = raw.readframes(-1)
@@ -66,8 +67,7 @@ class GUI:
         plt.plot(time, signal)
         plt.show()
 
-        self.audioPlaceholder.configure(text=self.filePath) #this is where the audio wave will be
-        #self.audioPlaceholder.configure(text='Audio Recorded Here!')
+        self.audioPlaceholder.configure(text=self.filePath)
 
     def recordAudio(self):
         if self.recordButton.cget("text") == 'Record':
@@ -153,6 +153,7 @@ class GUI:
         self.filePath = filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
         
+        # waveform added audio here
         self.audioExists = True
         raw = wave.open(self.filePath)
         signal = raw.readframes(-1)
@@ -165,8 +166,7 @@ class GUI:
         plt.plot(time, signal)
         plt.show()
 
-        self.audioPlaceholder.configure(text=self.filePath) #this is where the audia wave will be
-        #self.audioPlaceholder.configure(text='Audio Uploaded Here!')
+        self.audioPlaceholder.configure(text=self.filePath)
 
 
     # Sends client info submitted by user to the transciption box
