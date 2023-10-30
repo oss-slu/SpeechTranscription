@@ -5,6 +5,22 @@
 # import librosa
 # from pydub import AudioSegment
 import whisper
+from pyannote.audio import Model
+model = Model.from_pretrained("pyannote/segmentation", use_auth_token="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")
+from pyannote.audio.pipelines import SpeakerDiarization
+from pyannote.pipeline.parameter import Uniform
+from pyannote.database.util import load_rttm
+
+#access_token = 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
+#Model.from_pretrained('pyannote/segmentation', use_auth_token=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)
+
+# Initialize the diarization pipeline
+pipeline = SpeakerDiarization()
+pipeline.parameters.n_speakers = Uniform(2, 10)  # adjust as per your needs
+
+# adjust parameters (this can be tuned based on the specific audio or requirements)
+pipeline.parameters.n_speakers = Uniform(2, 10)  # possible number of speakers
+pipeline.parameters.speech_turns = Uniform(2, 10)  # number of speech turns
 
 # Adapted from https://github.com/raotnameh/Trim_audio
 # start: start time (s) of segment to be trimmed
@@ -72,6 +88,17 @@ def diarizeAndTranscribe(audioFile):
     print("Number of splits found: " + str(len(labelling)))
     """
 
+    
+    from pyannote.audio import Pipeline
+    pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization", token="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")
+
+    #model = AutoModel.from_pretrained("private/model", token=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)
+
+    diarization = pipeline({'audio': audio_file})
+    # Print the results
+    for segment, _, label in diarization.itertracks(yield_label=True):
+        start, end = segment.start, segment.end
+        print(f"Speaker {label}: {start} to {end}")
     # Transcribing Segments
     transcript = ""
 
