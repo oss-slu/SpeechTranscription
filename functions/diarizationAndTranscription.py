@@ -5,22 +5,15 @@
 # import librosa
 # from pydub import AudioSegment
 import whisper
+import torch
+import torchaudio
+from pydub import AudioSegment
 from pyannote.audio import Model
 model = Model.from_pretrained("pyannote/segmentation", use_auth_token="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")
 from pyannote.audio.pipelines import SpeakerDiarization
 from pyannote.pipeline.parameter import Uniform
 from pyannote.database.util import load_rttm
 
-#access_token = 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
-#Model.from_pretrained('pyannote/segmentation', use_auth_token=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)
-
-# Initialize the diarization pipeline
-pipeline = SpeakerDiarization()
-pipeline.parameters.n_speakers = Uniform(2, 10)  # adjust as per your needs
-
-# adjust parameters (this can be tuned based on the specific audio or requirements)
-pipeline.parameters.n_speakers = Uniform(2, 10)  # possible number of speakers
-pipeline.parameters.speech_turns = Uniform(2, 10)  # number of speech turns
 
 # Adapted from https://github.com/raotnameh/Trim_audio
 # start: start time (s) of segment to be trimmed
@@ -88,19 +81,43 @@ def diarizeAndTranscribe(audioFile):
     print("Number of splits found: " + str(len(labelling)))
     """
 
+    #pyannote version includes diarization and transcription... partially works as is, but doesnt mesh with Whisper library well.
     
+    pipeline = SpeakerDiarization()
     from pyannote.audio import Pipeline
-    pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization", token="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")
+    pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization", use_auth_token="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")
+    diarization = pipeline({'audio': audioFile})
 
-    #model = AutoModel.from_pretrained("private/model", token=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)
+    # Load the Whisper model
+    device = torch.device('cpu')  # or 'cuda' if you have a GPU
+    model, decoder, utils = torch.hub.load(repo_or_dir='snakers4/silero-models',
+                                        model='silero_stt',
+                                        language='en', # Choose your language
+                                        device=device)
+    (read_batch, split_into_batches, read_audio, prepare_model_input) = utils
 
-    diarization = pipeline({'audio': audio_file})
-    # Print the results
+    # Load the entire audio data
+    audio_data = AudioSegment.from_wav(audioFile)
+
     for segment, _, label in diarization.itertracks(yield_label=True):
-        start, end = segment.start, segment.end
-        print(f"Speaker {label}: {start} to {end}")
-    # Transcribing Segments
-    transcript = ""
+        start, end = segment.start * 1000, segment.end * 1000  # Convert to milliseconds
+        snippet = audio_data[start:end]  # Extract the snippet of audio
+        #self.filePath = 'segment.wav'
+        # Convert the snippet to raw audio data and then to tensor for recognition
+        #with snippet.export(format="wav") as exported_snippet:
+        snippet.export('segment.wav', format="wav").close()
+
+        waveform= read_audio('segment.wav')#exported_snippet.name)
+        #inputs = prepare_model_input(waveform, device=device)
+        inputs = prepare_model_input(waveform.unsqueeze(0), device=device)
+
+            
+        # Recognize the audio snippet
+        output = model(inputs)
+        text = decoder(output[0].cpu())
+            
+        print(f"Speaker {label}: {text}")
+    
 
     """
     name = audioFile.split(".")[0]
