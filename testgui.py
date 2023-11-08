@@ -245,7 +245,5 @@ class audioMenu(customtkinter.CTkFrame):
         self.correctionEntryBox = customtkinter.CTkTextbox(self, height=60)
         self.correctionEntryBox.grid(row=4,column=4, padx=10, sticky=E+W)  
 
-class playbackMenu(customtkinter.CTkFrame):
-    return
 
 gui = mainGUI()
