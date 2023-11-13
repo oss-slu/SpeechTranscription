@@ -220,6 +220,12 @@ class GUI:
 
     def convertToWAV(self, audioSeg):
         audioSeg.export(out_f = "converted.wav", format = "wav")
+        
+    def millisec(timeStr):
+        spl = timeStr.split(":")
+        s = (int)((int(spl[0]) * 60 * 60 + int(spl[1]) * 60 + float(spl[2]) )* 1000)
+        return s
+        
 
     # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
@@ -231,10 +237,16 @@ class GUI:
         extension = self.filePath.split('.')[1]
         if (extension == "MP3" or extension == 'mp3'):
             mp3 = AudioSegment.from_mp3(self.filePath)
+            spacermilli = 2000#
+            spacer = AudioSegment.silent(duration=spacermilli)#
+            mp3 = spacer.append(mp3, crossfade=0)#
             ret = mp3.export("export.wav", format = "wav")
             print("Attempting to export wav from mp3. ret = " + str(ret))
         elif (extension == "wav"):
             wav = AudioSegment.from_wav(self.filePath)
+            spacermilli = 2000#
+            spacer = AudioSegment.silent(duration=spacermilli)#
+            wav = spacer.append(wav, crossfade=0)#
             ret = wav.export("export.wav", format = "wav" )
             print("Attempting to export wav from wav. ret = " + str(ret))
         else:
@@ -245,9 +257,28 @@ class GUI:
         normalized_audio = normalize(pre_normalized_audio)
         # transcribed audio is now using normalized audiofile
         self.convertToWAV(normalized_audio)
-        transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav")
+        transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav") #diarizing starts here
         #normal_wav.close()
         #self.transcriptionBox.configure(state='normal')
+        #
+        #from pydub import AudioSegment
+        import re 
+
+        sounds = spacer
+        segments = []
+
+        dz = open('diarization.txt').read().splitlines()
+        for l in dz:
+            start, end =  tuple(re.findall('[0-9]+:[0-9]+:[0-9]+\.[0-9]+', string=l))
+            start = int(millisec(start)) #milliseconds
+            end = int(millisec(end))  #milliseconds
+            
+            segments.append(len(sounds))
+            sounds = sounds.append(audio[start:end], crossfade=0)
+            sounds = sounds.append(spacer, crossfade=0)
+
+        sounds.export("dz.wav", format="wav") #Exports to a wav file in the current path.
+        #
         self.transcriptionBox.configure(state='normal') #added this to see
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
         print(transcribedAudio) #transcription info is right in this variable, so needs to be updated properly somewhere else
@@ -255,6 +286,8 @@ class GUI:
         self.transcriptionBox.configure(state='disabled')
         my_progress.stop() #stops progress bar
         my_progress.grid_remove() #removes progress bar
+
+
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
     def inflectionalMorphemes(self):

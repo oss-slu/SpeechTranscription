@@ -65,10 +65,17 @@ def create_labelling(labels, wav_splits):
 def transcribeAudio(audioFile):
     model = whisper.load_model("base.en")
     transcribedAudio = model.transcribe(audioFile, fp16=False, language='English')
+    print("this is transcribed audio:", transcribedAudio["text"])
     return transcribedAudio["text"]
 
-def diarizeAndTranscribe(audioFile):
 
+def millisec(timeStr):
+    spl = timeStr.split(":")
+    s = (int)((int(spl[0]) * 60 * 60 + int(spl[1]) * 60 + float(spl[2]) )* 1000)
+    return s
+    
+def diarizeAndTranscribe(audioFile):
+    ##no ts = transcribedAudio(audioFile)
     # Diarization Process
     """
     wav = resample(audioFile)
@@ -80,9 +87,37 @@ def diarizeAndTranscribe(audioFile):
     print("Labelling: " + str(labelling))
     print("Number of splits found: " + str(len(labelling)))
     """
+    # new implementation, hopefully works or idk what to do
+    from pyannote.audio import Pipeline
+    pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization')
+
+    DEMO_FILE = {'audio': audioFile}
+    dz = pipeline(DEMO_FILE)
+
+    with open("diarization.txt", "w") as text_file:
+        text_file.write(str(dz))
+
+    print(*list(dz.itertracks(yield_label = True))[:10], sep="\n")
+
+    ###
+    import re
+    spacermilli = 2000#
+    dz = open('diarization.txt').read().splitlines()
+    dzList = []
+    for l in dz:
+        start, end =  tuple(re.findall('[0-9]+:[0-9]+:[0-9]+\.[0-9]+', string=l))
+        start = millisec(start) - spacermilli
+        end = millisec(end)  - spacermilli
+        lex = not re.findall('SPEAKER_01', string=l)
+        dzList.append([start, end, lex])
+
+    print(*dzList[:10], sep='\n')
+
+
+
 
     #pyannote version includes diarization and transcription... partially works as is, but doesnt mesh with Whisper library well.
-    
+    '''
     pipeline = SpeakerDiarization()
     from pyannote.audio import Pipeline
     pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization", use_auth_token="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")
@@ -117,7 +152,7 @@ def diarizeAndTranscribe(audioFile):
         text = decoder(output[0].cpu())
             
         print(f"Speaker {label}: {text}")
-    
+    '''
 
     """
     name = audioFile.split(".")[0]
@@ -126,7 +161,9 @@ def diarizeAndTranscribe(audioFile):
         trim(labelling[i][1], labelling[i][2], audioFile)
         transcript += transcribeAudio(name + "_segment.wav") + "\n"
     """
+    print("HERE")
     transcript = transcribeAudio(audioFile) + "\n"
+    print('Passed line')
     transcript = transcript.replace('...', '')
     transcript = transcript.replace('. ', '.\n')
     transcript = transcript.replace('! ', '!\n')
