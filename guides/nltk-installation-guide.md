@@ -7,7 +7,7 @@ MacOS:
 
         1. Install nltk and ceertifi via pip:
             'pip install nltk'
-            'pip3 install certifi'
+            'pip3 install certifi'  
 
         2. Open Python Interpreter and import/download nltk:
             'python'
@@ -15,7 +15,7 @@ MacOS:
             >>> 'nltk.download()'' 
 
         3. Enter to following commands to avoid SSL Certificate issues:
-            'CERT_PATH=$(python -m certifi)
+            'CERT_PATH=$(python -m certifi)'
             'export SSL_CERT_FILE=${CERT_PATH}'
             'export REQUESTS_CA_BUNDLE=${CERT_PATH}'
 
