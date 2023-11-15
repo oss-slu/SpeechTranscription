@@ -1,7 +1,7 @@
 The 'nltk' library installation is more complex than just doing 'pip install nltk'.
 This guide will show you how to install the 'nltk' library on different opertating systems (OS).
 
-MacOS:
+MacOS: 
 
     Perform the following steps to install nltk on MacOS. Do not include apostrophe's ( ' ' ) in command line:
 
