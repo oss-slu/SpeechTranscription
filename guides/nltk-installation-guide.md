@@ -12,7 +12,7 @@ MacOS:
         2. Open Python Interpreter and import/download nltk:
             'python'
             >>> 'import nltk'
-            >>> 'nltk.download()''
+            >>> 'nltk.download()'' 
 
         3. Enter to following commands to avoid SSL Certificate issues:
             'CERT_PATH=$(python -m certifi)
