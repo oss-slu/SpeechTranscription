@@ -25,4 +25,4 @@ Windows:
 - will be completed Wednesday after talk with Logan.
 
 Linux:
-- will be completed after talking with Colin or looking up other guide.
+- will be completed after talking with Colin or looking up other guide. 
