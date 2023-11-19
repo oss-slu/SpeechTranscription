@@ -8,7 +8,7 @@ ffmpeg-python
 pydub
 language-tool-python
 python-docx
-#git+https://github.com/openai/whisper.git
+git+https://github.com/openai/whisper.git
 sv_ttk
 pattern
 customtkinter
@@ -18,4 +18,4 @@ pytest
 
 # Not currently in use - could be used for diarization in the future
 spectralcluster
-#Resemblyzer
+Resemblyzer
