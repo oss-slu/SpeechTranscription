@@ -19,10 +19,17 @@ MacOS:
             'export SSL_CERT_FILE=${CERT_PATH}'
             'export REQUESTS_CA_BUNDLE=${CERT_PATH}'
 
-    The nltk library should now be ready to use on MacOS!
+    The nltk library should now be ready to use on MacOS.
+    
+    However, this is only a temporary fix for your current terminal session.
+    
+    In order to permanently fix this problem, you must add the previous 3 lines (from the temporary fix) to your .bash_profile.
 
-Windows:
-- will be completed Wednesday after talk with Logan.
 
-Linux:
-- will be completed after talking with Colin or looking up other guide. 
+
+Windows & Linux:
+
+    - 'pip install nltk'
+    - 'import nltk'
+    - 'nltk.download()'
+    - Then click on the identifier "all", then click "Download".
