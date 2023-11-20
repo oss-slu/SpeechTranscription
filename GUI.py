@@ -147,18 +147,24 @@ class GUI:
         
         # waveform added audio here
         self.audioExists = True
-        raw = wave.open(self.filePath)
-        signal = raw.readframes(-1)
-        signal = np.frombuffer(signal, dtype = "int16")
-        f_rate = raw.getframerate()
-        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
-        plt.figure(1)
-        plt.title("Audio Wave")
-        plt.xlabel("Time")
-        plt.plot(time, signal)
-        plt.show()
+        try:
+        # Assuming self.filePath is already set to the path of the audio file
+            raw = wave.open(self.filePath)
+            raw = wave.open(self.filePath)
+            signal = raw.readframes(-1)
+            signal = np.frombuffer(signal, dtype = "int16")
+            f_rate = raw.getframerate()
+            time = np.linspace(0, len(signal) / f_rate, num=len(signal))
+            plt.figure(1)
+            plt.title("Audio Wave")
+            plt.xlabel("Time")
+            plt.plot(time, signal)
+            plt.show()
 
-        self.audioPlaceholder.configure(text=self.filePath)
+            self.audioPlaceholder.configure(text=self.filePath)
+        except wave.Error as e:
+            # Handle the specific wave.Error (e.g., file not being a valid WAV file)
+            print(f"Error opening file: {e}. Please ensure the file is a valid WAV file.")
 
 
     # Sends client info submitted by user to the transciption box
@@ -220,12 +226,6 @@ class GUI:
 
     def convertToWAV(self, audioSeg):
         audioSeg.export(out_f = "converted.wav", format = "wav")
-        
-    def millisec(timeStr):
-        spl = timeStr.split(":")
-        s = (int)((int(spl[0]) * 60 * 60 + int(spl[1]) * 60 + float(spl[2]) )* 1000)
-        return s
-        
 
     # Runs recogtest.py (transcribes audio.wav in the current directory) then prints to the transcription box
     def transcribe(self) :
@@ -260,27 +260,10 @@ class GUI:
         transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav") #diarizing starts here
         #normal_wav.close()
         #self.transcriptionBox.configure(state='normal')
-        #
-        #from pydub import AudioSegment
-        import re 
 
-        sounds = spacer
-        segments = []
-
-        dz = open('diarization.txt').read().splitlines()
-        for l in dz:
-            start, end =  tuple(re.findall('[0-9]+:[0-9]+:[0-9]+\.[0-9]+', string=l))
-            start = int(millisec(start)) #milliseconds
-            end = int(millisec(end))  #milliseconds
-            
-            segments.append(len(sounds))
-            sounds = sounds.append(audio[start:end], crossfade=0)
-            sounds = sounds.append(spacer, crossfade=0)
-
-        sounds.export("dz.wav", format="wav") #Exports to a wav file in the current path.
-        #
         self.transcriptionBox.configure(state='normal') #added this to see
-        self.transcriptionBox.insert("end", transcribedAudio + "\n")
+        self.transcriptionBox.insert("end", transcribedAudio[0] + "\n")
+        self.transcriptionBox.insert("end", transcribedAudio[1] + "\n")
         print(transcribedAudio) #transcription info is right in this variable, so needs to be updated properly somewhere else
         self.transcriptionText = transcribedAudio
         self.transcriptionBox.configure(state='disabled')
