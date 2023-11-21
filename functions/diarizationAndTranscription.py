@@ -3,10 +3,19 @@
 # from resemblyzer.audio import sampling_rate
 # from spectralcluster import SpectralClusterer
 # import librosa
-# from pydub import AudioSegment
+from pydub import AudioSegment
 import whisper
+import torch
+import torchaudio
+import os
+import tempfile
+import soundfile as sf
+from simple_diarizer.diarizer import Diarizer
+from simple_diarizer.utils import (check_wav_16khz_mono, convert_wavfile,
+                                   waveplot, combined_waveplot, waveplot_perspeaker)
 
-# Adapted from https://github.com/raotnameh/Trim_audio
+
+# Adapted from https://github.com/raotnameh/Trim_audio"
 # start: start time (s) of segment to be trimmed
 # end: end time (s) of segment to be trimmed
 # filename: name of wav file
@@ -56,37 +65,92 @@ def create_labelling(labels, wav_splits):
 def transcribeAudio(audioFile):
     model = whisper.load_model("base.en")
     transcribedAudio = model.transcribe(audioFile, fp16=False, language='English')
+    print("this is transcribed audio:", transcribedAudio["text"])
     return transcribedAudio["text"]
 
+ 
+def transcribe_audio(audio_file_path: str, output_file_path: str):
+    """
+    Transcribes an audio file and saves the transcript into a text file.
+ 
+    Parameters:
+    - audio_file_path: str
+        Path to the audio file to be transcribed.
+    - output_file_path: str
+        Path to the output text file where the transcript will be saved.
+ 
+    Returns:
+    - None
+ 
+    Raises:
+    - FileNotFoundError:
+        If the audio file does not exist at the specified path.
+    """
 def diarizeAndTranscribe(audioFile):
-
     # Diarization Process
-    """
-    wav = resample(audioFile)
-    encoder = VoiceEncoder("cpu")
-    _, cont_embeds, wav_splits = encoder.embed_utterance(wav, return_partials=True, rate=16)
-    clusterer = SpectralClusterer(min_clusters=1, max_clusters=2)
-    labels = clusterer.predict(cont_embeds)
-    labelling = create_labelling(labels, wav_splits)
-    print("Labelling: " + str(labelling))
-    print("Number of splits found: " + str(len(labelling)))
-    """
 
-    # Transcribing Segments
-    transcript = ""
+    with tempfile.TemporaryDirectory() as outdir:
+        diarization = Diarizer(embed_model='xvec', cluster_method='sc')
+        NUM_SPEAKERS = 2
+        segments = diarization.diarize(audioFile, num_speakers=NUM_SPEAKERS)
 
-    """
-    name = audioFile.split(".")[0]
-    for i in range(len(labelling)):
-        transcript += "Speaker " + labelling[i][0] + ": "
-        trim(labelling[i][1], labelling[i][2], audioFile)
-        transcript += transcribeAudio(name + "_segment.wav") + "\n"
-    """
+        signal, fs = sf.read(audioFile)
+
+        
+        diar = Diarizer(
+            embed_model='ecapa', # supported types: ['xvec', 'ecapa']
+            cluster_method='sc', # supported types: ['ahc', 'sc']
+            window=1.5, # size of window to extract embeddings (in seconds)
+            period=0.75 # hop of window (in seconds)
+        )
+
+        segments = diar.diarize(audioFile, 
+                                num_speakers=NUM_SPEAKERS,
+                                outfile="audioFile.rttm")
+
+
+        # Load the original audio file
+        audio = AudioSegment.from_wav(audioFile)
+
+        # Process each segment
+        for segment_info in segments:
+            start = int(float(segment_info['start']) * 1000)  # Convert to milliseconds
+            end = int(float(segment_info['end']) * 1000)      # Convert to milliseconds
+            label = segment_info['label']
+
+            # Extract the segment
+            segment = audio[start:end]
+
+            # Save the segment
+            segment.export(f'speaker_segments/{label}_{start}_{end}.wav', format='wav')
+       
+        output_directory = 'speaker_segments'
+
+        # List and sort all WAV files in the directory
+        audio_files = sorted([f for f in os.listdir(output_directory) if f.endswith('.wav')])
+
+        model = whisper.load_model("base")  # You can choose 'tiny', 'base', 'small', 'medium', or 'large'
+
+        diarizedTranscript ="Diarized Version \n"
+        # Iterate over each file and transcribe
+        for file in audio_files:
+            # Construct full file path
+            file_path = os.path.join(output_directory, file)
+            
+            # Transcribe the audio
+            result = model.transcribe(file_path)
+
+            # Print or save the transcription
+            print(f"Transcription for {file}:\n{result['text']}")
+            diarizedTranscript=diarizedTranscript+ file[0] + result['text']+"\n"
+   
+    print("HERE")
     transcript = transcribeAudio(audioFile) + "\n"
+    print('Passed line')
     transcript = transcript.replace('...', '')
     transcript = transcript.replace('. ', '.\n')
     transcript = transcript.replace('! ', '!\n')
     transcript = transcript.replace('? ', '?\n')
     transcript = transcript.replace('`', "'")
     transcript = transcript.strip()
-    return transcript
+    return transcript, diarizedTranscript

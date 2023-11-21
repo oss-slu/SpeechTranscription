@@ -147,18 +147,24 @@ class GUI:
         
         # waveform added audio here
         self.audioExists = True
-        raw = wave.open(self.filePath)
-        signal = raw.readframes(-1)
-        signal = np.frombuffer(signal, dtype = "int16")
-        f_rate = raw.getframerate()
-        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
-        plt.figure(1)
-        plt.title("Audio Wave")
-        plt.xlabel("Time")
-        plt.plot(time, signal)
-        plt.show()
+        try:
+        # Assuming self.filePath is already set to the path of the audio file
+            raw = wave.open(self.filePath)
+            raw = wave.open(self.filePath)
+            signal = raw.readframes(-1)
+            signal = np.frombuffer(signal, dtype = "int16")
+            f_rate = raw.getframerate()
+            time = np.linspace(0, len(signal) / f_rate, num=len(signal))
+            plt.figure(1)
+            plt.title("Audio Wave")
+            plt.xlabel("Time")
+            plt.plot(time, signal)
+            plt.show()
 
-        self.audioPlaceholder.configure(text=self.filePath)
+            self.audioPlaceholder.configure(text=self.filePath)
+        except wave.Error as e:
+            # Handle the specific wave.Error (e.g., file not being a valid WAV file)
+            print(f"Error opening file: {e}. Please ensure the file is a valid WAV file.")
 
 
     # Sends client info submitted by user to the transciption box
@@ -231,10 +237,16 @@ class GUI:
         extension = self.filePath.split('.')[1]
         if (extension == "MP3" or extension == 'mp3'):
             mp3 = AudioSegment.from_mp3(self.filePath)
+            spacermilli = 2000#
+            spacer = AudioSegment.silent(duration=spacermilli)#
+            mp3 = spacer.append(mp3, crossfade=0)#
             ret = mp3.export("export.wav", format = "wav")
             print("Attempting to export wav from mp3. ret = " + str(ret))
         elif (extension == "wav"):
             wav = AudioSegment.from_wav(self.filePath)
+            spacermilli = 2000#
+            spacer = AudioSegment.silent(duration=spacermilli)#
+            wav = spacer.append(wav, crossfade=0)#
             ret = wav.export("export.wav", format = "wav" )
             print("Attempting to export wav from wav. ret = " + str(ret))
         else:
@@ -245,16 +257,20 @@ class GUI:
         normalized_audio = normalize(pre_normalized_audio)
         # transcribed audio is now using normalized audiofile
         self.convertToWAV(normalized_audio)
-        transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav")
+        transcribedAudio = diarizationAndTranscription.diarizeAndTranscribe("converted.wav") #diarizing starts here
         #normal_wav.close()
         #self.transcriptionBox.configure(state='normal')
+
         self.transcriptionBox.configure(state='normal') #added this to see
-        self.transcriptionBox.insert("end", transcribedAudio + "\n")
+        self.transcriptionBox.insert("end", transcribedAudio[0] + "\n")
+        self.transcriptionBox.insert("end", transcribedAudio[1] + "\n")
         print(transcribedAudio) #transcription info is right in this variable, so needs to be updated properly somewhere else
         self.transcriptionText = transcribedAudio
         self.transcriptionBox.configure(state='disabled')
         my_progress.stop() #stops progress bar
         my_progress.grid_remove() #removes progress bar
+
+
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
     def inflectionalMorphemes(self):
