@@ -29,11 +29,7 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         pylint --errors-only *.py $(git ls-files '*.py')
-    
-    - name: Format with black
-      run: |
-        pip install black
-        black *.py $(git ls-files '*.py')
+
 
     - name: Analysing the code with pylint and exiting with zero
       run: |
