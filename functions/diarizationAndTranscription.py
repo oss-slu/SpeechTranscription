@@ -90,13 +90,13 @@ def diarizeAndTranscribe(audioFile):
     # Diarization Process
 
     with tempfile.TemporaryDirectory() as outdir:
-        diarization = Diarizer(embed_model='xvec', cluster_method='sc')
+        #diarization = Diarizer(embed_model='xvec', cluster_method='sc')
         NUM_SPEAKERS = 2
-        segments = diarization.diarize(audioFile, num_speakers=NUM_SPEAKERS)
+        #segments = diarization.diarize(audioFile, num_speakers=NUM_SPEAKERS)
 
         signal, fs = sf.read(audioFile)
 
-        
+
         diar = Diarizer(
             embed_model='ecapa', # supported types: ['xvec', 'ecapa']
             cluster_method='sc', # supported types: ['ahc', 'sc']
@@ -112,6 +112,17 @@ def diarizeAndTranscribe(audioFile):
         # Load the original audio file
         audio = AudioSegment.from_wav(audioFile)
 
+        if os.path.exists('speaker_segments/'):
+            for filename in os.listdir('speaker_segments/'):
+                file_path = os.path.join('speaker_segments/', filename)
+                # Check if it's a file or a directory
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.remove(file_path)  # Remove the file
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)  # Remove the directory
+            print("Folder contents deleted.")
+        else:
+            print("Folder does not exist.")
         # Process each segment
         for segment_info in segments:
             start = int(float(segment_info['start']) * 1000)  # Convert to milliseconds
@@ -127,7 +138,7 @@ def diarizeAndTranscribe(audioFile):
         output_directory = 'speaker_segments'
 
         # List and sort all WAV files in the directory
-        audio_files = sorted([f for f in os.listdir(output_directory) if f.endswith('.wav')])
+        audio_files = [f for f in os.listdir(output_directory) if f.endswith('.wav')]
 
         model = whisper.load_model("base")  # You can choose 'tiny', 'base', 'small', 'medium', or 'large'
 
