@@ -385,7 +385,6 @@ class GUI:
     # creates thread that executes the transcribe function.
     def transcriptionThread(self):
         th = threading.Thread(target = self.transcribe).start()
-        th.join
 
 
     def __init__(self):
