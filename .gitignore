@@ -4,3 +4,5 @@
 *.docx
 .DS_Store
 ffmpeg
+.env
+diarization.txt

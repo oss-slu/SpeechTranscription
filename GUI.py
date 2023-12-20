@@ -262,8 +262,7 @@ class GUI:
         #self.transcriptionBox.configure(state='normal')
 
         self.transcriptionBox.configure(state='normal') #added this to see
-        self.transcriptionBox.insert("end", transcribedAudio[0] + "\n")
-        self.transcriptionBox.insert("end", transcribedAudio[1] + "\n")
+        self.transcriptionBox.insert("end", transcribedAudio + "\n")
         print(transcribedAudio) #transcription info is right in this variable, so needs to be updated properly somewhere else
         self.transcriptionText = transcribedAudio
         self.transcriptionBox.configure(state='disabled')
@@ -280,7 +279,7 @@ class GUI:
         converting = addConventions.addInflectionalMorphemes(converting)
         self.conventionBox.delete('1.0', "end")
         self.conventionBox.insert("end", converting)
-        #self.conventionBox.configure(state='disabled')
+        self.conventionBox.configure(state='disabled')
 
     # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
@@ -385,7 +384,6 @@ class GUI:
     # creates thread that executes the transcribe function.
     def transcriptionThread(self):
         th = threading.Thread(target = self.transcribe).start()
-        th.join
 
 
     def __init__(self):
