@@ -68,7 +68,6 @@ def create_labelling(labels, wav_splits):
 def transcribeAudio(audioFile):
     model = whisper.load_model("base.en")
     transcribedAudio = model.transcribe(audioFile, fp16=False, language='English')
-    # print("this is transcribed audio:", transcribedAudio["text"])
     return transcribedAudio
 
 def millisec(timeStr):
@@ -77,16 +76,16 @@ def millisec(timeStr):
   return s
 
 def diarizeAndTranscribe(audioFile):
-    # Diarization Process
+    # Diarize and transcribe the audio
+    
+    # Diarization
+    print("Starting diarization")
     
     load_dotenv()
     token = os.getenv("ACCESS_TOKEN")
     pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization', use_auth_token=token)
     DEMO_FILE = {'uri': 'blabal', 'audio': audioFile}
     dz = pipeline(DEMO_FILE)  
-
-    # with open("diarization.txt", "w") as text_file:
-    #     text_file.write(str(dz))
         
     audio = AudioSegment.from_wav(audioFile)
     spacer = AudioSegment.silent(duration=2000)
@@ -104,53 +103,36 @@ def diarizeAndTranscribe(audioFile):
         sounds = sounds.append(audio[start:end], crossfade=0)
         sounds = sounds.append(spacer, crossfade=0)
 
-    print(dzList)
-    print("Diarized")
+    print("Finished diarization")
+    
+    # Transcription
+    print("Starting transcription")
     result = transcribeAudio(audioFile)
     captions = [[(int)(caption["start"] * 1000), (int)(caption["end"] * 1000), caption["text"]] for caption in result["segments"]]
-    print(*captions, sep='\n')
-    print("Transcribed")
-    for i in range(len(segments)):
-        x = 0
-        for x in range(len(captions)):
-            if ((segments[i] - 2000) >= captions[x][0]) and ((segments[i] - 2000) <= captions[x][1])  :
-                break
-        c = captions[x]  
+    print("Finished transcription")
+    
+    transcriptionText = ""
+    for i in range(len(captions)):
+        caption = captions[i]
+        startTime = caption[0]
+        endTime = caption[1]
+        timeRange = -1
+        speaker = "UNKNOWN"
+        for x in range(len(dzList)):
+            duration = dzList[x][1] - dzList[x][0]
+            start = dzList[x][0]
+            end = dzList[x][1]
+            if (((start >= startTime) and (start < endTime)) or ((end >= startTime) and (end < endTime)) or ((start <= startTime) and (startTime <= end))) and (timeRange < duration):
+                timeRange = duration
+                speaker = dzList[x][2]
             
-        start = dzList[i][0] + (c[0] -segments[i])
-
-        if start < 0: 
-            start = 0
-
-        start = start / 1000.0
-        startStr = '{0:02d}:{1:02d}:{2:02.2f}'.format((int)(start // 3600), (int)(start % 3600 // 60), start % 60)
-        print(startStr, dzList[i][2], c[2])
-    for i in range(len(segments)):
-        idx = 0
-        for idx in range(len(captions)):
-            if captions[idx][0] >= (segments[i] - 2000):
-                break
-        
-        while (idx < (len(captions))) and ((i == len(segments) - 1) or (captions[idx][1] < segments[i+1])):
-            c = captions[idx]  
+        transcriptionText += speaker + " - " + caption[2] + "\n"
             
-            start = dzList[i][0] + (c[0] -segments[i])
-
-            if start < 0: 
-                start = 0
-            idx += 1
-
-            start = start / 1000.0
-            startStr = '{0:02d}:{1:02d}:{2:02.2f}'.format((int)(start // 3600), 
-                                                    (int)(start % 3600 // 60), 
-                                                    start % 60)
-            print(startStr, dzList[i][2], c[2])
-            
-    transcript = result["text"] + "\n"
+    transcript = transcriptionText + "\n"
     transcript = transcript.replace('...', '')
     transcript = transcript.replace('. ', '.\n')
     transcript = transcript.replace('! ', '!\n')
     transcript = transcript.replace('? ', '?\n')
     transcript = transcript.replace('`', "'")
     transcript = transcript.strip()
-    return transcript, ""
+    return transcript

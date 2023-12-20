@@ -262,10 +262,9 @@ class GUI:
         #self.transcriptionBox.configure(state='normal')
 
         self.transcriptionBox.configure(state='normal') #added this to see
-        self.transcriptionBox.insert("end", transcribedAudio[0] + "\n")
-        self.transcriptionBox.insert("end", transcribedAudio[1] + "\n")
+        self.transcriptionBox.insert("end", transcribedAudio + "\n")
         print(transcribedAudio) #transcription info is right in this variable, so needs to be updated properly somewhere else
-        self.transcriptionText = transcribedAudio[0]
+        self.transcriptionText = transcribedAudio
         self.transcriptionBox.configure(state='disabled')
         my_progress.stop() #stops progress bar
         my_progress.grid_remove() #removes progress bar
