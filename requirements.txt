@@ -12,3 +12,6 @@ python-docx
 sv_ttk
 pattern
 customtkinter
+
+# For testing purposes
+pytest
