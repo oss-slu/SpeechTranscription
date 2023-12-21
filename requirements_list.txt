@@ -1,3 +1,5 @@
+#This was added just to keep a list of requirements for the project
+
 pyaudio
 wave
 nltk # (see Issue 55 https://github.com/oss-slu/SpeechTranscription/issues/55 for instructions on installing nltk - it is more than just 'pip install nltk')
@@ -19,3 +21,5 @@ pytest
 # Not currently in use - could be used for diarization in the future
 spectralcluster
 Resemblyzer
+
+E0401,
