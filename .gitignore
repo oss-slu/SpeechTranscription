@@ -6,3 +6,4 @@
 ffmpeg
 .env
 diarization.txt
+requirements_list.txt
