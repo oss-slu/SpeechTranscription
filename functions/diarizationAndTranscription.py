@@ -3,10 +3,22 @@
 # from resemblyzer.audio import sampling_rate
 # from spectralcluster import SpectralClusterer
 # import librosa
-# from pydub import AudioSegment
+from pydub import AudioSegment
+from pyannote.audio import Pipeline
 import whisper
+import torch
+import torchaudio
+import os
+import re
+from dotenv import load_dotenv
+import tempfile
+import soundfile as sf
+from simple_diarizer.diarizer import Diarizer
+from simple_diarizer.utils import (check_wav_16khz_mono, convert_wavfile,
+                                   waveplot, combined_waveplot, waveplot_perspeaker)
 
-# Adapted from https://github.com/raotnameh/Trim_audio
+
+# Adapted from https://github.com/raotnameh/Trim_audio"
 # start: start time (s) of segment to be trimmed
 # end: end time (s) of segment to be trimmed
 # filename: name of wav file
@@ -56,33 +68,67 @@ def create_labelling(labels, wav_splits):
 def transcribeAudio(audioFile):
     model = whisper.load_model("base.en")
     transcribedAudio = model.transcribe(audioFile, fp16=False, language='English')
-    return transcribedAudio["text"]
+    return transcribedAudio
+
+def millisec(timeStr):
+  spl = timeStr.split(":")
+  s = (int)((int(spl[0]) * 60 * 60 + int(spl[1]) * 60 + float(spl[2]) )* 1000)
+  return s
 
 def diarizeAndTranscribe(audioFile):
+    # Diarize and transcribe the audio
+    
+    # Diarization
+    print("Starting diarization")
+    
+    load_dotenv()
+    token = os.getenv("ACCESS_TOKEN")
+    pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization', use_auth_token=token)
+    DEMO_FILE = {'uri': 'blabal', 'audio': audioFile}
+    dz = pipeline(DEMO_FILE)  
+        
+    audio = AudioSegment.from_wav(audioFile)
+    spacer = AudioSegment.silent(duration=2000)
+    sounds = spacer
+    segments = []
+    dzList = []
+    diarization = str(dz).splitlines()
 
-    # Diarization Process
-    """
-    wav = resample(audioFile)
-    encoder = VoiceEncoder("cpu")
-    _, cont_embeds, wav_splits = encoder.embed_utterance(wav, return_partials=True, rate=16)
-    clusterer = SpectralClusterer(min_clusters=1, max_clusters=2)
-    labels = clusterer.predict(cont_embeds)
-    labelling = create_labelling(labels, wav_splits)
-    print("Labelling: " + str(labelling))
-    print("Number of splits found: " + str(len(labelling)))
-    """
+    for l in diarization:
+        start, end =  tuple(re.findall('[0-9]+:[0-9]+:[0-9]+\.[0-9]+', string=l))
+        start = int(millisec(start))
+        end = int(millisec(end))
+        dzList.append([start - 2000, end - 2000, l.split(" ")[-1]])
+        segments.append(len(sounds))
+        sounds = sounds.append(audio[start:end], crossfade=0)
+        sounds = sounds.append(spacer, crossfade=0)
 
-    # Transcribing Segments
-    transcript = ""
-
-    """
-    name = audioFile.split(".")[0]
-    for i in range(len(labelling)):
-        transcript += "Speaker " + labelling[i][0] + ": "
-        trim(labelling[i][1], labelling[i][2], audioFile)
-        transcript += transcribeAudio(name + "_segment.wav") + "\n"
-    """
-    transcript = transcribeAudio(audioFile) + "\n"
+    print("Finished diarization")
+    
+    # Transcription
+    print("Starting transcription")
+    result = transcribeAudio(audioFile)
+    captions = [[(int)(caption["start"] * 1000), (int)(caption["end"] * 1000), caption["text"]] for caption in result["segments"]]
+    print("Finished transcription")
+    
+    transcriptionText = ""
+    for i in range(len(captions)):
+        caption = captions[i]
+        startTime = caption[0]
+        endTime = caption[1]
+        timeRange = -1
+        speaker = "UNKNOWN"
+        for x in range(len(dzList)):
+            duration = dzList[x][1] - dzList[x][0]
+            start = dzList[x][0]
+            end = dzList[x][1]
+            if (((start >= startTime) and (start < endTime)) or ((end >= startTime) and (end < endTime)) or ((start <= startTime) and (startTime <= end))) and (timeRange < duration):
+                timeRange = duration
+                speaker = dzList[x][2]
+            
+        transcriptionText += speaker + " - " + caption[2] + "\n"
+            
+    transcript = transcriptionText + "\n"
     transcript = transcript.replace('...', '')
     transcript = transcript.replace('. ', '.\n')
     transcript = transcript.replace('! ', '!\n')
