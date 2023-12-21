@@ -6,3 +6,4 @@ ffprobe
 ffprobe-python
 ffmpeg-python
 pydub
+language-tool-python
