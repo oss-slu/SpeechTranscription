@@ -26,14 +26,16 @@ jobs:
         pip install pylint
         
     
-    - name: Analysing the code with pylint
+    - name: Analysing the code with pylint and handling exit code
       run: |
         pylint --errors-only *.py $(git ls-files '*.py')
+        pylint_exit=$?
+        if [ $pylint_exit -eq 0 ]; then
+          echo "Pylint exited with code $pylint_exit"
+        else
+          echo "Pylint exited with code $pylint_exit"
+          exit 1
+        fi
 
-
-    - name: Analysing the code with pylint and exiting with zero
-      run: |
-        pylint --errors-only *.py 
-        pylint --exit-zero $(git ls-files '*.py')
 
 
