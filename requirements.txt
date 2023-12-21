@@ -7,3 +7,4 @@ ffprobe-python
 ffmpeg-python
 pydub
 language-tool-python
+python-docx
