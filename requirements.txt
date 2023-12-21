@@ -1,2 +1,3 @@
 pyaudio
 wave
+nltk # (see Issue 55 https://github.com/oss-slu/SpeechTranscription/issues/55 for instructions on installing nltk - it is more than just 'pip install nltk')
