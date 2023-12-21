@@ -28,13 +28,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyaudio-wheels
-        pip install -r requirements.txt 
+        pip install -r requirements.txt -e
         pip install pylint
         
     
     - name: Analysing the code with pylint and handling exit code
       run: |
-        pylint --errors-only --disable=E0401,E1111 *.py $(git ls-files '*.py')
+        pylint --errors-only --disable=E1111 *.py $(git ls-files '*.py')
         pylint_exit=$?
         if [ $pylint_exit -eq 0 ]; then
           echo "Pylint exited with code $pylint_exit"
