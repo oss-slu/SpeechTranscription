@@ -5,3 +5,4 @@ ffmpeg
 ffprobe
 ffprobe-python
 ffmpeg-python
+pydub
