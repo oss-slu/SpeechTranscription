@@ -31,7 +31,6 @@ jobs:
         pip install -r requirements.txt --no-deps
         pip install pylint
         
-    
     - name: Analysing the code with pylint and handling exit code
       run: |
         pylint --errors-only --disable=E1111,E0401  *.py $(git ls-files '*.py')
