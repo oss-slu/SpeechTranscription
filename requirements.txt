@@ -12,6 +12,10 @@ git+https://github.com/openai/whisper.git
 sv_ttk
 pattern
 customtkinter
+pyannote.audio
+matplotlib
+numpy
+simple_diarizer
 
 # For testing purposes
 pytest

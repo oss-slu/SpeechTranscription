@@ -2,4 +2,8 @@
 *.mp3
 *.pyc
 *.docx
+.DS_Store
+ffmpeg
+.env
+diarization.txt
 requirements_list.txt
