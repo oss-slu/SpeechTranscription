@@ -1,10 +1,6 @@
-from tkinter import Button, Label, Entry, StringVar, OptionMenu, filedialog, scrolledtext, WORD
 from functions import addConventions
 from functions import diarizationAndTranscription
-import tkinter as tk
-from tkinter.ttk import Button, Entry, OptionMenu
-import sv_ttk
-from tkinter.filedialog import asksaveasfile
+from audio import Audio
 import pyaudio
 import wave
 import nltk
@@ -16,8 +12,6 @@ from datetime import date
 import customtkinter
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-import time
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -26,96 +20,41 @@ CHANNELS = 1
 RATE = 44100
 p = pyaudio.PyAudio()
 
+def plotAudio(time, signal):
+    plt.figure(1)
+    plt.title("Audio Wave")
+    plt.xlabel("Time")
+    plt.plot(time, signal)
+    plt.show()
 
 class GUI:
-
-    def record(self):
-        self.isRecording = True
-        self.frames = []
-        stream = self.p.open(format = self.FORMAT,
-                            channels = self.CHANNELS,
-                            rate = self.RATE,
-                            input = True,
-                            frames_per_buffer = self.CHUNK)
-        while self.isRecording:
-            data = stream.read(self.CHUNK)
-            self.frames.append(data)
-            self.master.update()
-
-        stream.close()
-
-        wf = wave.open('session_output.wav', 'wb')
-        wf.setnchannels(self.CHANNELS)
-        wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
-        wf.setframerate(self.RATE)
-        wf.writeframes(b''.join(self.frames))
-        wf.close()
-
-    def stop(self):
-        self.isRecording = False
-        self.filePath = 'session_output.wav'
-
-        # waveform audio added here
-        self.audioExists = True
-        raw = wave.open(self.filePath)
-        signal = raw.readframes(-1)
-        signal = np.frombuffer(signal, dtype = "int16")
-        f_rate = raw.getframerate()
-        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
-        plt.figure(1)
-        plt.title("Audio Wave")
-        plt.xlabel("Time")
-        plt.plot(time, signal)
-        plt.show()
-
-        self.audioPlaceholder.configure(text=self.filePath)
 
     def recordAudio(self):
         if self.recordButton.cget("text") == 'Record':
             self.recordButton.configure(text = 'Stop')
-            self.record()
-            print('*recording*')
+            print("*Recording*")
+            self.audio.record()
         else:
             self.recordButton.configure(text = 'Record')
-            self.stop()
-            print('*recording stopped*')
+            values = self.audio.stop()
+            self.audioPlaceholder.configure(text=values[0])
+            plotAudio(values[1], values[2])
+            print("*Recording stopped*")
     
-    def play(self):
-        self.playing = True
-        self.paused = False
-        print(self.filePath)
-        audio_file = wave.open(self.filePath, 'rb')
-        #code to create seperate output audio stream so audio can be played
-        out_p = pyaudio.PyAudio()
-        out_stream = out_p.open(
-            format = out_p.get_format_from_width(audio_file.getsampwidth()),
-            channels = audio_file.getnchannels(),
-            rate = audio_file.getframerate(),
-            output = True
-        )
-
-        dat = audio_file.readframes(self.CHUNK)
-        while dat != b'' and self.playing:
-
-            if not self.paused:
-                out_stream.write(dat)
-                dat = audio_file.readframes(self.CHUNK)
-        self.playing = False
+    def playAudio(self):
+        print("Playing audio...")
+        self.audio.play()
         self.playButton.configure(text = 'Play')
-        print('audio ended')
-        out_stream.close()
+        print("Audio has ended")
     
     def pause_playback(self):
-        if self.paused:
-            self.paused = False
-            self.pauseButton.configure(text = 'Pause')
-        else:
-            self.paused = True
-            self.pauseButton.configure(text = 'Unpause')
+        paused = self.audio.pause()
+        labelText = "Unpause" if paused else "Pause"
+        self.pauseButton.configure(text=labelText)
         
     def playback_click(self):
         if not self.playing:
-            threading.Thread(target = self.play).start()
+            threading.Thread(target = self.playAudio).start()
             self.playButton.configure(text = 'Stop')
             print("Play")
         else:
@@ -124,9 +63,8 @@ class GUI:
 
     def download_recorded_audio(self):
         print('downloading')
-        #self.filePath = filedialog.asksaveasfile(filetypes = files, defaultextension = files)
         #create a copy of audio that is saved to computer
-        download_file = filedialog.asksaveasfile(defaultextension = '.wav',
+        download_file = customtkinter.filedialog.asksaveasfile(defaultextension = '.wav',
                                         filetypes = [("Wave File", '.wav'),
                                                     ("All Files", '.*')],
                                         #initialdir = self.filePath,
@@ -142,7 +80,7 @@ class GUI:
         download.close() 
 
     def uploadAudio(self):
-        self.filePath = filedialog.askopenfilename()
+        self.filePath = customtkinter.filedialog.askopenfilename()
         print('File uploaded: ', self.filePath)
         
         # waveform added audio here
@@ -375,7 +313,7 @@ class GUI:
             #self.conventionBox.configure(state='disabled')
 
     def exportToWord(self):
-        outputPath = filedialog.askdirectory()
+        outputPath = customtkinter.filedialog.askdirectory()
         exportDocument = Document()
         text = self.transcriptionText
         exportDocument.add_paragraph(text)
@@ -388,7 +326,6 @@ class GUI:
 
     def __init__(self):
         #customtkinter.set_ctk_parent_class(tkinterDnd.tk)
-        
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("blue")
         self.WIDTH = 1280
@@ -397,6 +334,8 @@ class GUI:
         self.master = customtkinter.CTk()
         self.master.title('Speech Transcription')
         self.master.geometry(str(self.WIDTH) + 'x' + str(self.HEIGHT))
+        
+        self.audio = Audio(self.master)
 
         #self.recorder = Record(self.master)
         self.CHUNK = CHUNK
@@ -541,6 +480,7 @@ class GUI:
 
 
         self.master.mainloop()
+
 
 if __name__ == "__main__":
     myGui = GUI()

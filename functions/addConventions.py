@@ -137,7 +137,7 @@ def addInflectionalMorphemesToSentence(x):
             converted += wnl.lemmatize(tuple[0], "v") + "/ed "
         # Token is third-person singular present verb
         elif (tuple[1] == "VBZ" and tuple[0] != "is" and tuple[0] != "has"):
-            converted += wnl.lemmatize(tuple[0], "v") + "/s " #was "/3s"
+            converted += wnl.lemmatize(tuple[0], "v") + "/3s "
         # Token is present participle
         elif (tuple[1] == "VBG" and mostRecentVerbIsToBe):
             if wnl.lemmatize(tuple[0], "v") == tuple[0]:
