@@ -1,6 +1,8 @@
 import customtkinter # Only imported for typing
 import wave
 import pyaudio
+from pydub import AudioSegment
+from pydub.effects import normalize
 import numpy as np
 
 class Audio:
@@ -10,11 +12,14 @@ class Audio:
     RATE = 44100
     p = pyaudio.PyAudio()
     filePath = "session_output.wav"
+    playing = False
+    isRecording = False
+    paused = True
     
     def __init__(self, root: customtkinter.CTk):
         self.root = root
-        file = open(self.filePath, "w+")
-        file.close()
+        # file = open(self.filePath, "w+")
+        # file.close()
 
     def record(self):
         self.filePath = 'session_output.wav'
@@ -28,23 +33,15 @@ class Audio:
             self.root.update()
             
         stream.close()
-
-        self.createRecordedAudioOutput(self.filePath)
         
     def stop(self):
         self.isRecording = False
-
-        # Create waveform audio
-        self.audioExists = True
-        raw = wave.open(self.filePath)
-        signal = raw.readframes(-1)
-        signal = np.frombuffer(signal, dtype = "int16")
-        f_rate = raw.getframerate()
-        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
-        
+        self.saveAudioFile(self.filePath)
+        time, signal = self.createWaveformFile()
         return (self.filePath, time, signal)
         
     def play(self):
+        print("Playing audio...")
         self.playing = True
         self.paused = False
         audio_file = wave.open(self.filePath, 'rb')
@@ -60,12 +57,41 @@ class Audio:
 
         self.playing = False
         out_stream.close()
+        print("Audio has ended")
         
     def pause(self):
         self.paused = not self.paused
         return self.paused
+    
+    def upload(self, filename: str):
+        self.filePath = filename
+        name = filename.split(".")[0]
+        extension = filename.split(".")[1].lower()
+        if extension in ["mp3", "wav"]:
+            if extension == "mp3":
+                segment = AudioSegment.from_mp3(self.filePath)
+                print("Attempting to convert mp3 to wav")
+            else:
+                segment = AudioSegment.from_wav(self.filePath)
+            spacer = AudioSegment.silent(duration=2000)
+            segment = spacer.append(segment, crossfade=0)
+            segment.export("export.wav", format="wav")
+            self.filePath = "export.wav"
+            time, signal = self.createWaveformFile()
+            return (time, signal)
+        else:
+            raise wave.Error("The format is not valid. Name: " + name + "; Extension: " + extension)
+            
+    def createWaveformFile(self):
+        self.audioExists = True
+        raw = wave.open(self.filePath)
+        signal = raw.readframes(-1)
+        signal = np.frombuffer(signal, dtype = "int16")
+        f_rate = raw.getframerate()
+        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
+        return (time, signal)
         
-    def createRecordedAudioOutput(self, filename: str):
+    def saveAudioFile(self, filename: str):
         wf = wave.open(filename, 'wb')
         wf.setnchannels(self.CHANNELS)
         wf.setsampwidth(self.p.get_sample_size(self.FORMAT))

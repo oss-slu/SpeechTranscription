@@ -11,7 +11,6 @@ from docx import Document
 from datetime import date
 import customtkinter
 import matplotlib.pyplot as plt
-import numpy as np
 
 #global variables needed to record audio
 CHUNK = 1024
@@ -36,126 +35,60 @@ class GUI:
             self.audio.record()
         else:
             self.recordButton.configure(text = 'Record')
-            values = self.audio.stop()
-            self.audioPlaceholder.configure(text=values[0])
-            plotAudio(values[1], values[2])
+            filename, time, signal = self.audio.stop()
+            self.audioPlaceholder.configure(text=filename)
+            plotAudio(time, signal)
             print("*Recording stopped*")
     
     def playAudio(self):
-        print("Playing audio...")
         self.audio.play()
         self.playButton.configure(text = 'Play')
-        print("Audio has ended")
     
-    def pause_playback(self):
+    def pausePlayback(self):
         paused = self.audio.pause()
         labelText = "Unpause" if paused else "Pause"
         self.pauseButton.configure(text=labelText)
         
-    def playback_click(self):
-        if not self.playing:
+    def playbackClick(self):
+        if not self.audio.playing:
             threading.Thread(target = self.playAudio).start()
             self.playButton.configure(text = 'Stop')
-            print("Play")
         else:
-            self.playing = False
+            self.audio.playing = False
             self.playButton.configure(text = 'Play')
 
-    def download_recorded_audio(self):
-        print('downloading')
-        #create a copy of audio that is saved to computer
-        download_file = customtkinter.filedialog.asksaveasfile(defaultextension = '.wav',
-                                        filetypes = [("Wave File", '.wav'),
-                                                    ("All Files", '.*')],
-                                        #initialdir = self.filePath,
-                                        initialfile = "downloaded_audio.wav"         
-                                        )
-        #print(download_file)
-        #print(self.filePath)
-        download = wave.open(download_file.name, 'wb')
-        download.setnchannels(self.CHANNELS)
-        download.setsampwidth(self.p.get_sample_size(self.FORMAT))
-        download.setframerate(self.RATE)
-        download.writeframes(b''.join(self.frames))
-        download.close() 
+    def downloadRecordedAudio(self):
+        print('Downloading audio')
+        
+        # Create a copy of audio that is saved to computer
+        download_file = customtkinter.filedialog.asksaveasfile(defaultextension = '.wav', filetypes = [("Wave File", '.wav'), ("All Files", '.*')], initialfile = "downloaded_audio.wav")
+        self.audio.saveAudioFile(download_file.name)
 
     def uploadAudio(self):
-        self.filePath = customtkinter.filedialog.askopenfilename()
-        print('File uploaded: ', self.filePath)
+        filename = customtkinter.filedialog.askopenfilename()
+        print('File uploaded: ', filename)
         
-        # waveform added audio here
-        self.audioExists = True
         try:
-        # Assuming self.filePath is already set to the path of the audio file
-            raw = wave.open(self.filePath)
-            raw = wave.open(self.filePath)
-            signal = raw.readframes(-1)
-            signal = np.frombuffer(signal, dtype = "int16")
-            f_rate = raw.getframerate()
-            time = np.linspace(0, len(signal) / f_rate, num=len(signal))
-            plt.figure(1)
-            plt.title("Audio Wave")
-            plt.xlabel("Time")
-            plt.plot(time, signal)
-            plt.show()
-
-            self.audioPlaceholder.configure(text=self.filePath)
+            time, signal = self.audio.upload(filename)
+            plotAudio(time, signal)
+            self.audioPlaceholder.configure(text=filename)
         except wave.Error as e:
             # Handle the specific wave.Error (e.g., file not being a valid WAV file)
             print(f"Error opening file: {e}. Please ensure the file is a valid WAV file.")
 
-
     # Sends client info submitted by user to the transciption box
     def submitClientInfo(self) :
-        # Gets the current text in the entry box
         infoEntryText = self.infoEntryBox.get()
-        # Sets the relevant variable
-        if (self.clicked.get() == "Name"):
-            self.name = infoEntryText;
-            self.infoArray[0] = self.name
-        elif (self.clicked.get() == "Age"):
-            self.age = infoEntryText;
-            self.infoArray[1] = self.age
-        elif (self.clicked.get() == "Gender"):
-            self.gender = infoEntryText;
-            self.infoArray[2] = self.gender
-        elif (self.clicked.get() == "Date of Birth"):
-            self.dateOfBirth = infoEntryText;
-            self.infoArray[3] = self.dateOfBirth
-        elif (self.clicked.get() == "Date of Sample"):
-            self.dateOfSample = infoEntryText;
-            self.infoArray[4] = self.dateOfSample
-        elif (self.clicked.get() == "Examiner Name"):
-            self.examinerName = infoEntryText;
-            self.infoArray[5] = self.examinerName
-        elif (self.clicked.get() == "Sampling Context"):
-            self.samplingContext = infoEntryText;
-            self.infoArray[6] = self.samplingContext
-        # Clears the entry box
+        for i, option in enumerate(self.clientOptions):
+            if self.clicked.get() == option:
+                self.infoArray[i] = infoEntryText
         self.infoEntryBox.delete(0, "end")
 
-        # Updates Table
-        #self.clientInfoBox.configure(state='normal')
         self.clientInfoBox.delete('1.0', "end")
         for x in range(7):
             if self.infoArray[x] != '':
-                if x == 0:
-                    self.clientInfoBox.insert("end", "Name: ")
-                if x == 1:
-                    self.clientInfoBox.insert("end", "Age: ")
-                if x == 2:
-                    self.clientInfoBox.insert("end", "Gender: ")
-                if x == 3:
-                    self.clientInfoBox.insert("end", "Date of Birth: ")
-                if x == 4:
-                    self.clientInfoBox.insert("end", "Date of Sample: ")
-                if x == 5:
-                    self.clientInfoBox.insert("end", "Examiner Name: ")
-                if x == 6:
-                    self.clientInfoBox.insert("end", "Sampling Context: ")
-
-                self.clientInfoBox.insert("end", self.infoArray[x] + "\n")
-        #self.clientInfoBox.configure(state='disabled')
+                infoText = self.clientOptions[x] + ": " + self.infoArray[x] + "\n"
+                self.clientInfoBox.insert("end", infoText)
 
     def mp3towav(self, audiofile):
         dst = self.filePath
@@ -319,13 +252,11 @@ class GUI:
         exportDocument.add_paragraph(text)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
 
-    # creates thread that executes the transcribe function.
+    # Creates thread that executes the transcribe function
     def transcriptionThread(self):
         th = threading.Thread(target = self.transcribe).start()
 
-
     def __init__(self):
-        #customtkinter.set_ctk_parent_class(tkinterDnd.tk)
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("blue")
         self.WIDTH = 1280
@@ -337,32 +268,6 @@ class GUI:
         
         self.audio = Audio(self.master)
 
-        #self.recorder = Record(self.master)
-        self.CHUNK = CHUNK
-        self.FORMAT = FORMAT
-        self.CHANNELS = CHANNELS
-        self.RATE = RATE
-        self.p = p
-
-        self.frames = []
-        self.isRecording = False
-        self.playing = False
-        self.audioExists = False
-        self.paused = True
-        self.loading = False#
-        self.stream = self.p.open(format = self.FORMAT,
-                                channels = self.CHANNELS,
-                                rate = self.RATE,
-                                input = True,
-                                frames_per_buffer = self.CHUNK)
-
-        self.name = ''
-        self.age = ''
-        self.gender = ''
-        self.dateOfBirth = ''
-        self.dateOfSample = ''
-        self.examinerName = ''
-        self.samplingContext = ''
         self.infoArray = ['','','','','','','']
         self.transcriptionText = ''
 
@@ -375,38 +280,24 @@ class GUI:
         self.audioPlaceholder = customtkinter.CTkLabel(self.master, text='(This is where the audio would be)')
         self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
 
-        self.pauseButton = customtkinter.CTkButton(self.master, text='Pause', command=lambda: self.pause_playback())
+        self.pauseButton = customtkinter.CTkButton(self.master, text='Pause', command=lambda: self.pausePlayback())
         self.pauseButton.grid(row=0, column=4, padx=2, pady=2)
         
-        self.playButton = customtkinter.CTkButton(self.master, text='Play', command=lambda: self.playback_click())
+        self.playButton = customtkinter.CTkButton(self.master, text='Play', command=lambda: self.playbackClick())
         self.playButton.grid(row=0, column=3, padx=2, pady=2)
 
-        downloadButton = customtkinter.CTkButton(self.master, text='Download', command=lambda: self.download_recorded_audio())
+        downloadButton = customtkinter.CTkButton(self.master, text='Download', command=lambda: self.downloadRecordedAudio())
         downloadButton.grid(row=1, column=5, padx=2, pady=2)
 
         transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=lambda:[self.transcriptionThread()])
-
-
-
         transcribeButton.grid(row=0, column=5, padx=2, pady=2)
 
-        # CLIENT INFORMATION-RELATED BUTTONS/BOXES
-
-        # Attributes of sample to be selected and submitted by user
-        clientOptions = [
-                "Name",
-                "Age",
-                "Gender",
-                "Date of Birth",
-                "Date of Sample",
-                "Examiner Name",
-                "Sampling Context"
-                ]
-
         # Allows user to select a sampling attribute, type the relevant information, and submit it
+        self.clientOptions = ["Name", "Age", "Gender", "Date of Birth", "Date of Sample", "Examiner Name", "Sampling Context"]
+        self.clientInfo = {}
         self.clicked = customtkinter.StringVar()
         self.clicked.set("Name")
-        infoDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.clicked, values = clientOptions)
+        infoDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.clicked, values = self.clientOptions)
         infoDropdown.grid(row=1, column=1, padx=2, pady=2)
         self.infoEntryBox = customtkinter.CTkEntry(self.master)
         self.infoEntryBox.grid(row=1, column=2, padx=2, pady=2)
