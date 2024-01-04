@@ -18,8 +18,6 @@ class Audio:
     
     def __init__(self, root: customtkinter.CTk):
         self.root = root
-        # file = open(self.filePath, "w+")
-        # file.close()
 
     def record(self):
         self.filePath = 'session_output.wav'

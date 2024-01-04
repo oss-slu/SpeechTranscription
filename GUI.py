@@ -1,6 +1,7 @@
 from functions import addConventions
 from functions import diarizationAndTranscription
 from audio import Audio
+from client_info import ClientInfo
 import nltk
 import threading
 from docx import Document
@@ -27,6 +28,7 @@ class GUI:
         self.master.geometry(str(self.WIDTH) + 'x' + str(self.HEIGHT))
         
         self.audio = Audio(self.master)
+        self.clientInfo = ClientInfo()
 
         self.audioPlaceholder = customtkinter.CTkLabel(self.master, text='')
         self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
@@ -39,11 +41,9 @@ class GUI:
         self.createButton("Download", 1, 5, self.downloadRecordedAudio)
 
         # Allows user to select a sampling attribute, type the relevant information, and submit it
-        self.clientOptions = ["Name", "Age", "Gender", "Date of Birth", "Date of Sample", "Examiner Name", "Sampling Context"]
-        self.infoArray = ['','','','','','','']
         self.clicked = customtkinter.StringVar()
         self.clicked.set("Name")
-        infoDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.clicked, values = self.clientOptions)
+        infoDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.clicked, values = self.clientInfo.clientOptions)
         infoDropdown.grid(row=1, column=1, padx=2, pady=2)
         self.infoEntryBox = customtkinter.CTkEntry(self.master)
         self.infoEntryBox.grid(row=1, column=2, padx=2, pady=2)
@@ -133,18 +133,11 @@ class GUI:
         self.audioPlaceholder.configure(text=filename)
 
     # Sends client info submitted by user to the transciption box
-    def submitClientInfo(self) :
-        infoEntryText = self.infoEntryBox.get()
-        for i, option in enumerate(self.clientOptions):
-            if self.clicked.get() == option:
-                self.infoArray[i] = infoEntryText
+    def submitClientInfo(self):
+        self.clientInfo.submitInfo(self.infoEntryBox.get(), self.clicked.get())
         self.infoEntryBox.delete(0, "end")
-
         self.clientInfoBox.delete('1.0', "end")
-        for x in range(7):
-            if self.infoArray[x] != '':
-                infoText = self.clientOptions[x] + ": " + self.infoArray[x] + "\n"
-                self.clientInfoBox.insert("end", infoText)
+        self.clientInfoBox.insert("end", str(self.clientInfo))
 
     # Transcribes audio, then prints to the transcription box
     def transcribe(self):
@@ -227,37 +220,29 @@ class GUI:
         self.transcriptionIsVisible = not self.transcriptionIsVisible 
 
     def editTranscriptionBox(self):
-        if self.editTranscriptionBoxButton.cget("text") == 'Lock':
-            self.editTranscriptionBoxButton.configure(text = 'Unlock')
-            self.transcriptionBox.configure(state='disabled')
-        else:
-            self.editTranscriptionBoxButton.configure(text = 'Lock')
-            self.transcriptionBox.configure(state='normal')
+        self.toggleLockButton(self.editTranscriptionBoxButton, self.transcriptionBox)
             
     def editConventionBox(self):
-        if self.editConventionBoxButton.cget("text") ==  'Lock':
-            self.editConventionBoxButton.configure(text = 'Unlock')
-            self.conventionBox.configure(state='disabled')
-
-        else:
-            self.editConventionBoxButton.configure(text = 'Lock')
-            self.conventionBox.configure(state='normal')
+        self.toggleLockButton(self.editConventionBoxButton, self.conventionBox)
 
     def clearTranscriptionBox(self):
-        if self.editTranscriptionBoxButton.cget("text") == 'Lock':
-            self.transcriptionBox.delete('0.0', "end")
-        else:
-            #self.transcriptionBox.configure(state='normal')
-            self.transcriptionBox.delete('0.0', "end")
-            #self.transcriptionBox.configure(state='disabled')
+        self.clearTextbox(self.editTranscriptionBoxButton, self.transcriptionBox)
 
     def clearConventionBox(self):
-        if self.editConventionBoxButton.cget("text") == 'Lock':
-            self.conventionBox.delete('0.0', "end")
+        self.clearTextbox(self.editConventionBoxButton, self.conventionBox)
+            
+    def toggleLockButton(self, button: customtkinter.CTkButton, textbox: customtkinter.CTkTextbox):
+        if button.cget("text") == "Lock":
+            button.configure(text = "Unlock")
+            textbox.configure(state = "disabled")
         else:
-            #self.conventionBox.configure(state='normal')
-            self.conventionBox.delete('0.0', "end")
-            #self.conventionBox.configure(state='disabled')
+            button.configure(text = "Lock")
+            textbox.configure(state = "normal")
+            
+    def clearTextbox(self, button: customtkinter.CTkButton, textbox: customtkinter.CTkTextbox):
+        # textbox.configure(state = "normal") if button.cget("text") == "Lock"
+        textbox.delete('0.0', "end")
+        # textbox.configure(state = "disabled") if button.cget("text") == "Lock"
 
     def exportToWord(self):
         outputPath = customtkinter.filedialog.askdirectory()
