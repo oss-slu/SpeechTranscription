@@ -54,6 +54,12 @@ class Audio:
             rate = audio_file.getframerate(),
             output = True
         )
+        
+        dat = audio_file.readframes(self.CHUNK)
+        while dat != b'' and self.playing:
+            if not self.paused:
+                out_stream.write(dat)
+                dat = audio_file.readframes(self.CHUNK)
 
         self.playing = False
         out_stream.close()
@@ -80,8 +86,16 @@ class Audio:
             time, signal = self.createWaveformFile()
             return (time, signal)
         else:
-            raise wave.Error("The format is not valid. Name: " + name + "; Extension: " + extension)
+            print("The file format is not valid. Name: " + name + "; Extension: " + extension)
             
+    def normalizeUploadedFile(self):
+        # Create copy of file as AudioSegment for pydub normalize function
+        print("The audio file is attempting to be normalized")
+        pre_normalized_audio = AudioSegment.from_file(self.filePath, format="wav")
+        normalized_audio = normalize(pre_normalized_audio)
+        normalized_audio.export(out_f=self.filePath, format="wav")
+        return self.filePath
+        
     def createWaveformFile(self):
         self.audioExists = True
         raw = wave.open(self.filePath)
