@@ -28,69 +28,49 @@ class GUI:
         
         self.audio = Audio(self.master)
 
-        self.infoArray = ['','','','','','','']
-        self.transcriptionText = ''
-
-        uploadButton = customtkinter.CTkButton(self.master, text='Upload', command=lambda: self.uploadAudio())
-        uploadButton.grid(row=0, column=0, padx=2, pady=2)
-        self.recordButton = customtkinter.CTkButton(self.master, text='Record', command=lambda: self.recordAudio())
-        self.recordButton.grid(row=0, column=1, padx=2, pady=2)
-
         self.audioPlaceholder = customtkinter.CTkLabel(self.master, text='')
         self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
 
-        self.pauseButton = customtkinter.CTkButton(self.master, text='Pause', command=lambda: self.pausePlayback())
-        self.pauseButton.grid(row=0, column=4, padx=2, pady=2)
-        
-        self.playButton = customtkinter.CTkButton(self.master, text='Play', command=lambda: self.playbackClick())
-        self.playButton.grid(row=0, column=3, padx=2, pady=2)
-
-        downloadButton = customtkinter.CTkButton(self.master, text='Download', command=lambda: self.downloadRecordedAudio())
-        downloadButton.grid(row=1, column=5, padx=2, pady=2)
-
-        transcribeButton = customtkinter.CTkButton(self.master, text='Transcribe', command=lambda:[self.transcriptionThread()])
-        transcribeButton.grid(row=0, column=5, padx=2, pady=2)
+        # Buttons for managing audio
+        self.createButton("Upload", 0, 0, self.uploadAudio)
+        self.recordButton = self.createButton("Record", 0, 1, self.recordAudio)
+        self.playButton = self.createButton("Play", 0, 3, self.playbackClick)
+        self.pauseButton = self.createButton("Pause", 0, 4, self.pausePlayback)
+        self.createButton("Download", 1, 5, self.downloadRecordedAudio)
 
         # Allows user to select a sampling attribute, type the relevant information, and submit it
         self.clientOptions = ["Name", "Age", "Gender", "Date of Birth", "Date of Sample", "Examiner Name", "Sampling Context"]
-        self.clientInfo = {}
+        self.infoArray = ['','','','','','','']
         self.clicked = customtkinter.StringVar()
         self.clicked.set("Name")
         infoDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.clicked, values = self.clientOptions)
         infoDropdown.grid(row=1, column=1, padx=2, pady=2)
         self.infoEntryBox = customtkinter.CTkEntry(self.master)
         self.infoEntryBox.grid(row=1, column=2, padx=2, pady=2)
-        infoSubmitButton = customtkinter.CTkButton(self.master, text="Submit", command=self.submitClientInfo)
-        infoSubmitButton.grid(row=1, column=3, padx=2, pady=2)
+        self.createButton("Submit", 1, 3, self.submitClientInfo)
 
         # Client Information Box (left-hand side)
         self.clientInfoBox = customtkinter.CTkTextbox(self.master, width = self.WIDTH / 5, height = self.HEIGHT / 2)
         self.clientInfoBox.grid(row=5, column=0, padx=10, pady=10)
-
         self.infoIsVisible = True
-        self.toggleClientInfoBoxButton = customtkinter.CTkButton(self.master, text='Toggle Table', command=self.toggleClientInfoBox)
-        self.toggleClientInfoBoxButton.grid(row=6, column=0, padx=2, pady=2)
+        self.createButton("Toggle Table", 6, 0, self.toggleClientInfoBox)
 
         # Transcription Box (middle)
+        self.transcriptionText = ""
         self.transcriptionBox = customtkinter.CTkTextbox(self.master, width = self.WIDTH / 4, height = self.HEIGHT / 2)
         self.transcriptionBox.grid(row=5, column=1, columnspan=3, padx=10, pady=10)
 
-        # Show/hide button for the box
+        ## Buttons for the transcription
+        self.createButton("Transcribe", 0, 5, self.transcriptionThread)
         self.transcriptionIsVisible = True
-        self.toggleTranscriptionBoxButton = customtkinter.CTkButton(self.master, text='Toggle Table', command=self.toggleTranscriptionBox)
-        self.toggleTranscriptionBoxButton.grid(row=6, column=3, padx=2, pady=2)
+        self.createButton("Toggle Table", 6, 3, self.toggleTranscriptionBox)
+        self.editTranscriptionBoxButton = self.createButton("Unlock", 6, 1, self.editTranscriptionBox, 10, 10)
+        self.clearTranscriptionBoxButton = self.createButton("Clear", 6, 2, self.clearTranscriptionBox, 10, 10)
 
-        # Permits user to type in transcriptionBox
-        self.editTranscriptionBoxButton = customtkinter.CTkButton(self.master, text='Unlock', command=self.editTranscriptionBox)
-        self.editTranscriptionBoxButton.grid(row=6, column=1, padx=10, pady=10)
-        # Clears transcriptionBox
-        self.clearTranscriptionBoxButton = customtkinter.CTkButton(self.master, text='Clear', command=self.clearTranscriptionBox)
-        self.clearTranscriptionBoxButton.grid(row=6, column=2, padx=10, pady=10)
-
-        # conventionBox is the right-hand box used for adding all types of conventions
+        # Buttons and textbox for conventions
         self.conventionBox = customtkinter.CTkTextbox(self.master, width = self.WIDTH / 4, height = self.HEIGHT / 2)
-        self.editConventionBoxButton = customtkinter.CTkButton(self.master, text='Unlock', command=self.editConventionBox)
-        self.clearConventionBoxButton = customtkinter.CTkButton(self.master, text='Clear', command=self.clearConventionBox)
+        self.editConventionBoxButton = self.createButton("Unlock", None, None, self.editConventionBox)
+        self.clearConventionBoxButton = self.createButton("Clear", None, None, self.clearConventionBox)
 
         # Buttons and textbox for grammar checking
         self.correctionEntryBox = customtkinter.CTkTextbox(self.master, width = self.WIDTH / 5, height = self.HEIGHT / 8) 
@@ -106,7 +86,7 @@ class GUI:
     
     def createButton(self, text: str, row: int, column: int, command = None, padx = 2, pady = 2):
         button = customtkinter.CTkButton(self.master, text = text, command = command)
-        if row and column:
+        if row is not None and column is not None:
             button.grid(row = row, column = column, padx = padx, pady = pady)
         return button
     
@@ -139,7 +119,7 @@ class GUI:
             self.audio.playing = False
             self.playButton.configure(text = 'Play')
 
-    # Create a copy of audio that is saved to computer
+    # Download file of recorded audio
     def downloadRecordedAudio(self):
         print('Downloading audio')
         download_file = customtkinter.filedialog.asksaveasfile(defaultextension = '.wav', filetypes = [("Wave File", '.wav'), ("All Files", '.*')], initialfile = "downloaded_audio.wav")
