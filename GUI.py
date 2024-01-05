@@ -164,7 +164,7 @@ class GUI:
         
     # Creates thread that executes the transcribe function
     def transcriptionThread(self):
-        th = threading.Thread(target = self.transcribe).start()
+        threading.Thread(target = self.transcribe).start()
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
     def inflectionalMorphemes(self):

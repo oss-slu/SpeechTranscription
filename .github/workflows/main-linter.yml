@@ -29,7 +29,7 @@ jobs:
 
       - name: Analysing the code with pylint and handling exit code
         run: |
-          pylint --errors-only --disable=E1111,E0401  *.py $(git ls-files '*.py')
+          pylint --errors-only  *.py $(git ls-files '*.py')
           pylint_exit=$?
           if [ $pylint_exit -eq 0 ]; then
             echo "Pylint exited with code $pylint_exit"
