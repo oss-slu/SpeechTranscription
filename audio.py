@@ -20,7 +20,7 @@ class AudioManager:
         self.root = root
 
     def record(self):
-        self.filePath = 'session_output.wav'
+        self.filePath = "session_output.wav"
         self.isRecording = True
         self.frames = []
         stream = self.p.open(format = self.FORMAT, channels = self.CHANNELS, rate = self.RATE, input = True, frames_per_buffer = self.CHUNK)
@@ -42,7 +42,7 @@ class AudioManager:
         print("Playing audio...")
         self.playing = True
         self.paused = False
-        audio_file = wave.open(self.filePath, 'rb')
+        audio_file = wave.open(self.filePath, "rb")
         
         # Code to create seperate output audio stream so audio can be played
         out_p = pyaudio.PyAudio()
@@ -54,7 +54,7 @@ class AudioManager:
         )
         
         dat = audio_file.readframes(self.CHUNK)
-        while dat != b'' and self.playing:
+        while dat != b"" and self.playing:
             if not self.paused:
                 out_stream.write(dat)
                 dat = audio_file.readframes(self.CHUNK)
@@ -104,9 +104,9 @@ class AudioManager:
         return (time, signal)
         
     def saveAudioFile(self, filename: str):
-        wf = wave.open(filename, 'wb')
+        wf = wave.open(filename, "wb")
         wf.setnchannels(self.CHANNELS)
         wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
         wf.setframerate(self.RATE)
-        wf.writeframes(b''.join(self.frames))
+        wf.writeframes(b"".join(self.frames))
         wf.close()

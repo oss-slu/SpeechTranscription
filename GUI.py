@@ -1,15 +1,13 @@
-from functions import addConventions
 from functions import diarizationAndTranscription
 from audio import AudioManager
 from client_info import ClientInfo
 from grammar import GrammarChecker
-import nltk
+from export import Exporter
 import threading
-from docx import Document
-from datetime import date
 import customtkinter
 import matplotlib.pyplot as plt
 
+# Plots the waveform of audio
 def plotAudio(time, signal):
     plt.figure(1)
     plt.title("Audio Wave")
@@ -25,14 +23,15 @@ class GUI:
         self.HEIGHT = 720
 
         self.master = customtkinter.CTk()
-        self.master.title('Speech Transcription')
-        self.master.geometry(str(self.WIDTH) + 'x' + str(self.HEIGHT))
+        self.master.title("Speech Transcription")
+        self.master.geometry(str(self.WIDTH) + "x" + str(self.HEIGHT))
         
         self.audio = AudioManager(self.master)
         self.clientInfo = ClientInfo()
         self.grammar = GrammarChecker()
+        self.exporter = Exporter()
 
-        self.audioPlaceholder = customtkinter.CTkLabel(self.master, text='')
+        self.audioPlaceholder = customtkinter.CTkLabel(self.master, text="")
         self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
 
         # Buttons for managing audio
@@ -86,50 +85,56 @@ class GUI:
 
         self.master.mainloop()
     
+    # Creates button to be displayed
     def createButton(self, text: str, row: int, column: int, command = None, padx = 2, pady = 2):
         button = customtkinter.CTkButton(self.master, text = text, command = command)
         if row is not None and column is not None:
             button.grid(row = row, column = column, padx = padx, pady = pady)
         return button
     
+    # Record audio
     def recordAudio(self):
-        if self.recordButton.cget("text") == 'Record':
-            self.recordButton.configure(text = 'Stop')
+        if self.recordButton.cget("text") == "Record":
+            self.recordButton.configure(text = "Stop")
             print("*Recording*")
             self.audio.record()
         else:
-            self.recordButton.configure(text = 'Record')
+            self.recordButton.configure(text = "Record")
             filename, time, signal = self.audio.stop()
             self.audioPlaceholder.configure(text=filename)
             plotAudio(time, signal)
             print("*Recording stopped*")
     
+    # Play the selected audio
     def playAudio(self):
         self.audio.play()
-        self.playButton.configure(text = 'Play')
+        self.playButton.configure(text = "Play")
     
+    # Pause the audio that is currently playing
     def pausePlayback(self):
         paused = self.audio.pause()
         labelText = "Unpause" if paused else "Pause"
         self.pauseButton.configure(text=labelText)
         
+    # Creates thread that executes the playAudio function
     def playbackClick(self):
         if not self.audio.playing:
             threading.Thread(target = self.playAudio).start()
-            self.playButton.configure(text = 'Stop')
+            self.playButton.configure(text = "Stop")
         else:
             self.audio.playing = False
-            self.playButton.configure(text = 'Play')
+            self.playButton.configure(text = "Play")
 
     # Download file of recorded audio
     def downloadRecordedAudio(self):
-        print('Downloading audio')
-        download_file = customtkinter.filedialog.asksaveasfile(defaultextension = '.wav', filetypes = [("Wave File", '.wav'), ("All Files", '.*')], initialfile = "downloaded_audio.wav")
+        print("Downloading audio")
+        download_file = customtkinter.filedialog.asksaveasfile(defaultextension = ".wav", filetypes = [("Wave File", ".wav"), ("All Files", ".*")], initialfile = "downloaded_audio.wav")
         self.audio.saveAudioFile(download_file.name)
 
+    # Upload user's audio file
     def uploadAudio(self):
         filename = customtkinter.filedialog.askopenfilename()
-        print('File uploaded: ', filename)
+        print("File uploaded: ", filename)
         time, signal = self.audio.upload(filename)
         plotAudio(time, signal)
         self.audioPlaceholder.configure(text=filename)
@@ -138,22 +143,22 @@ class GUI:
     def submitClientInfo(self):
         self.clientInfo.submitInfo(self.infoEntryBox.get(), self.clicked.get())
         self.infoEntryBox.delete(0, "end")
-        self.clientInfoBox.delete('1.0', "end")
+        self.clientInfoBox.delete("1.0", "end")
         self.clientInfoBox.insert("end", str(self.clientInfo))
 
     # Transcribes audio, then prints to the transcription box
     def transcribe(self):
-        my_progress = customtkinter.CTkProgressBar(self.master,  width = 300, mode = 'indeterminate') #creates intederminate progress bar
+        my_progress = customtkinter.CTkProgressBar(self.master,  width = 300, mode = "indeterminate") #creates intederminate progress bar
         my_progress.grid(row=3, column=3, padx=2, pady=2)
         my_progress.start()
 
         filename = self.audio.normalizeUploadedFile()        
         transcribedAudio = diarizationAndTranscription.transcribe(filename)
 
-        self.transcriptionBox.configure(state='normal')
+        self.transcriptionBox.configure(state="normal")
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
         self.transcriptionText = transcribedAudio
-        self.transcriptionBox.configure(state='disabled')
+        self.transcriptionBox.configure(state="disabled")
         my_progress.stop()
         my_progress.grid_remove() 
         
@@ -163,20 +168,19 @@ class GUI:
 
     # Adds conventions to text from transcription box and puts output in conventionBox box
     def inflectionalMorphemes(self):
-        converting = self.conventionBox.get("1.0", "end")
-        converting = addConventions.addInflectionalMorphemes(converting)
-        self.conventionBox.delete('1.0', "end")
+        converting = self.grammar.getInflectionalMorphemes(self.conventionBox.get("1.0", "end"))
+        self.conventionBox.delete("1.0", "end")
         self.conventionBox.insert("end", converting)
-        self.conventionBox.configure(state='disabled')
+        self.conventionBox.configure(state="disabled")
 
     # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
         self.conventionBox.grid(row=5, column=4, columnspan=3)
-        self.conventionBox.delete('1.0', "end")
+        self.conventionBox.delete("1.0", "end")
         self.editConventionBoxButton.grid(row=7, column=5)
         self.clearConventionBoxButton.grid(row=7, column=6)
         self.correctionEntryBox.grid(row=6, column=4, columnspan=2)
-        self.correctionEntryBox.delete('1.0', "end")
+        self.correctionEntryBox.delete("1.0", "end")
         self.submitCorrectionButton.grid(row=6, column=6)
         
         self.grammar.checkGrammar(self.transcriptionText, False)
@@ -185,7 +189,7 @@ class GUI:
     # Apply's the user's grammar correction
     def applyCorrection(self):
         self.conventionBox.insert("end", self.correctionEntryBox.get("1.0", "end"))
-        self.correctionEntryBox.delete('1.0', "end")
+        self.correctionEntryBox.delete("1.0", "end")
         self.manageGrammarCorrection()
         
     def manageGrammarCorrection(self):
@@ -229,14 +233,12 @@ class GUI:
             
     def clearTextbox(self, button: customtkinter.CTkButton, textbox: customtkinter.CTkTextbox):
         # textbox.configure(state = "normal") if button.cget("text") == "Lock"
-        textbox.delete('0.0', "end")
+        textbox.delete("0.0", "end")
         # textbox.configure(state = "disabled") if button.cget("text") == "Lock"
 
     def exportToWord(self):
         outputPath = customtkinter.filedialog.askdirectory()
-        exportDocument = Document()
-        exportDocument.add_paragraph(self.transcriptionText)
-        exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
+        self.exporter.exportToWord(self.transcriptionText, outputPath)
 
 if __name__ == "__main__":
     myGui = GUI()

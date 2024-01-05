@@ -14,7 +14,7 @@ class ClientInfo:
     def __str__(self):
         string = ""
         for x in range(len(self.clientOptions)):
-            if self.infoArray[x] != '':
+            if self.infoArray[x] != "":
                 infoText = self.clientOptions[x] + ": " + self.infoArray[x] + "\n"
                 string += infoText
         return string

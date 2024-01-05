@@ -22,3 +22,6 @@ class GrammarChecker:
                 corrected += str(self.tokenizedSentences[0]) + "\n"
                 del self.tokenizedSentences[0]
         return (corrected, None)
+    
+    def getInflectionalMorphemes(self, converting: str):
+        return addConventions.addInflectionalMorphemes(converting)
