@@ -1,7 +1,8 @@
 from functions import addConventions
 from functions import diarizationAndTranscription
-from audio import Audio
+from audio import AudioManager
 from client_info import ClientInfo
+from grammar import GrammarChecker
 import nltk
 import threading
 from docx import Document
@@ -27,8 +28,9 @@ class GUI:
         self.master.title('Speech Transcription')
         self.master.geometry(str(self.WIDTH) + 'x' + str(self.HEIGHT))
         
-        self.audio = Audio(self.master)
+        self.audio = AudioManager(self.master)
         self.clientInfo = ClientInfo()
+        self.grammar = GrammarChecker()
 
         self.audioPlaceholder = customtkinter.CTkLabel(self.master, text='')
         self.audioPlaceholder.grid(row=0, column=2, padx=2, pady=2)
@@ -169,10 +171,6 @@ class GUI:
 
     # Sends individual sentences to addWordLevelErrors to check for correction, if there is a corrected version, add squiggles
     def grammarCheck(self):
-        self.tokenizedSentences = []
-        # Flag for if user wants to manually submit each sentence
-        self.checkAllSentences = False
-        # Configuring right-hand box, correction box, and submit button
         self.conventionBox.grid(row=5, column=4, columnspan=3)
         self.conventionBox.delete('1.0', "end")
         self.editConventionBoxButton.grid(row=7, column=5)
@@ -180,30 +178,20 @@ class GUI:
         self.correctionEntryBox.grid(row=6, column=4, columnspan=2)
         self.correctionEntryBox.delete('1.0', "end")
         self.submitCorrectionButton.grid(row=6, column=6)
-        # Get raw transcription and tokenize into sentences for processing
-        text = self.transcriptionText 
-        # perhaps above and below is the state he was talking about, but it already gets assigned to a variable called 'text'
-        self.tokenizedSentences = nltk.sent_tokenize(text)
-        self.getNextCorrection()
-    
-    # Loops through tokenizedSentences until one needs to be corrected, sending it to correctionEntryBox
-    def getNextCorrection(self):
-        if (len(self.tokenizedSentences) == 0):
-            return
-        while (len(self.tokenizedSentences)):
-            if ((self.tokenizedSentences[0] != addConventions.correctSentence(self.tokenizedSentences[0])) or self.checkAllSentences):
-                self.correctionEntryBox.insert("end", addConventions.correctSentence(self.tokenizedSentences[0]))
-                del self.tokenizedSentences[0]
-                break
-            else:
-                self.conventionBox.insert("end", self.tokenizedSentences[0] + "\n")
-                del self.tokenizedSentences[0]
-
+        
+        self.grammar.checkGrammar(self.transcriptionText, False)
+        self.manageGrammarCorrection()
+        
     # Apply's the user's grammar correction
     def applyCorrection(self):
         self.conventionBox.insert("end", self.correctionEntryBox.get("1.0", "end"))
         self.correctionEntryBox.delete('1.0', "end")
-        self.getNextCorrection()
+        self.manageGrammarCorrection()
+        
+    def manageGrammarCorrection(self):
+        corrected, sentenceToCorrect = self.grammar.getNextCorrection()
+        if corrected: self.conventionBox.insert("end", corrected)
+        if sentenceToCorrect: self.correctionEntryBox.insert("end", sentenceToCorrect)
 
     def toggleClientInfoBox(self):
         if self.infoIsVisible:
@@ -247,10 +235,8 @@ class GUI:
     def exportToWord(self):
         outputPath = customtkinter.filedialog.askdirectory()
         exportDocument = Document()
-        text = self.transcriptionText
-        exportDocument.add_paragraph(text)
+        exportDocument.add_paragraph(self.transcriptionText)
         exportDocument.save(outputPath + '/' + str(date.today())+'_SALT_Transcription.docx')      
-
 
 if __name__ == "__main__":
     myGui = GUI()

@@ -5,7 +5,7 @@ from pydub import AudioSegment
 from pydub.effects import normalize
 import numpy as np
 
-class Audio:
+class AudioManager:
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
