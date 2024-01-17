@@ -3,6 +3,7 @@ on:
     branches:
       - main
       - fix-exe
+      - fix-mac-exe
 
 jobs:
   build:
