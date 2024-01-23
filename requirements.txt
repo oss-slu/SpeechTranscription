@@ -16,6 +16,7 @@ pyannote.audio
 matplotlib
 numpy
 simple_diarizer
+python-dotenv
 
 # For testing purposes
 pytest
