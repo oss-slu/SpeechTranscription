@@ -6,6 +6,7 @@ from export import Exporter
 import threading
 import customtkinter
 import matplotlib.pyplot as plt
+import pygame
 
 # Plots the waveform of audio
 def plotAudio(time, signal):
@@ -83,6 +84,15 @@ class GUI:
         self.createButton("Export to Word Document", 8, 5, self.exportToWord)
         self.createButton("Print", 9, 5)
 
+        #self.audioSlider = customtkinter.Scale(root, from_0, to=100, orient=HORIZONTAL, value=0, command=slide)
+        #self.audioSlider.pack(pady=20)
+        pygame.mixer.init()
+        pygame.mixer.init('audioFile')
+        audioLength=pygame.mixer.music.get_length()
+        self.slider = customtkinter.CTkSlider(self.master, from_=0, to=music_length, command=onPositionChange)
+        #self.slider.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
+        self.audioSlider.pack(pady=20)
+
         self.master.mainloop()
     
     # Creates button to be displayed
@@ -91,7 +101,13 @@ class GUI:
         if row is not None and column is not None:
             button.grid(row = row, column = column, padx = padx, pady = pady)
         return button
-    
+
+    # Creates slider to be displayed
+    def on_PositionChange():
+        position = int(value)
+        pygame.mixer.msic.rewind()
+        pygame.mixer.music.set_pos(position)
+
     # Record audio
     def recordAudio(self):
         if self.recordButton.cget("text") == "Record":
