@@ -28,10 +28,10 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           robocopy build_assets dist/Saltify
-          mkdir dist\Saltify\_internal\pattern\text\en\
-          move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
           mkdir dist\Saltify\_internal\lightning_fabric
           robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal/lightning_fabric
+          mkdir dist\Saltify\_internal\pattern\text\en\
+          move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
       - uses: actions/upload-artifact@v2
         if: always()
         with:
