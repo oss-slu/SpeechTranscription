@@ -214,7 +214,7 @@ def correctSentence(x) :
             punctuationFlag = False
             punctuation = ['.', '?', '!', ',']
             foundPunctuation = ""
-            while (originalIndex + repeatCounter + 1 < len(correctedWords) and originalWords[originalIndex + repeatCounter + 1].lower().replace('.', '').replace('?', '').replace('!', '').replace(',', '') == correctedWords[correctedIndex].lower()):
+            while (originalIndex + repeatCounter + 1 < len(originalWords) and originalWords[originalIndex + repeatCounter + 1].lower().replace('.', '').replace('?', '').replace('!', '').replace(',', '') == correctedWords[correctedIndex].lower()):
                 if any(x in originalWords[originalIndex + repeatCounter + 1] for x in punctuation):
                     punctuationFlag = True
                     # Get final character, which should be punctuation

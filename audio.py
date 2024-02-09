@@ -69,22 +69,25 @@ class AudioManager:
     
     def upload(self, filename: str):
         self.filePath = filename
-        name = filename.split(".")[0]
-        extension = filename.split(".")[1].lower()
-        if extension in ["mp3", "wav"]:
-            if extension == "mp3":
-                segment = AudioSegment.from_mp3(self.filePath)
-                print("Attempting to convert mp3 to wav")
+        try:
+            name = filename.split(".")[0]
+            extension = filename.split(".")[1].lower()
+            if extension in ["mp3", "wav"]:
+                if extension == "mp3":
+                    segment = AudioSegment.from_mp3(self.filePath)
+                    print("Attempting to convert mp3 to wav")
+                else:
+                    segment = AudioSegment.from_wav(self.filePath)
+                spacer = AudioSegment.silent(duration=2000)
+                segment = spacer.append(segment, crossfade=0)
+                segment.export("export.wav", format="wav")
+                self.filePath = "export.wav"
+                time, signal = self.createWaveformFile()
+                return (time, signal)
             else:
-                segment = AudioSegment.from_wav(self.filePath)
-            spacer = AudioSegment.silent(duration=2000)
-            segment = spacer.append(segment, crossfade=0)
-            segment.export("export.wav", format="wav")
-            self.filePath = "export.wav"
-            time, signal = self.createWaveformFile()
-            return (time, signal)
-        else:
-            print("The file format is not valid. Name: " + name + "; Extension: " + extension)
+                raise Exception()
+        except Exception as e:
+            print("The file format is not valid. Please try a file with extension .wav or .mp3")
             
     def normalizeUploadedFile(self):
         # Create copy of file as AudioSegment for pydub normalize function
