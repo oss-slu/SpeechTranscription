@@ -17,6 +17,7 @@ matplotlib
 numpy
 simple_diarizer
 python-dotenv
+lightning_fabric
 
 # For testing purposes
 pytest
