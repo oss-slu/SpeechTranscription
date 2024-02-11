@@ -17,6 +17,11 @@ def plotAudio(time, signal):
     plt.show()
 
 class GUI:
+    '''
+    # Creates slider to be displayed
+    def sliding(value):
+        sliderLabel.configure(text=int(value))
+    '''
     def __init__(self):
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("blue")
@@ -84,29 +89,76 @@ class GUI:
         self.createButton("Export to Word Document", 8, 5, self.exportToWord)
         self.createButton("Print", 9, 5)
 
-        #self.audioSlider = customtkinter.Scale(root, from_0, to=100, orient=HORIZONTAL, value=0, command=slide)
-        #self.audioSlider.pack(pady=20)
-        pygame.mixer.init()
-        pygame.mixer.init('audioFile')
-        audioLength=pygame.mixer.music.get_length()
-        self.slider = customtkinter.CTkSlider(self.master, from_=0, to=music_length, command=onPositionChange)
+        #slider stuff
+        self.audioLength=100
+        self.sliderLabel = customtkinter.CTkLabel(self.master, text = "", font=('Helvetica', 10))
+        self.sliderLabel.grid(row= 2, column  = 4, padx =2 , pady=20, sticky="w")
+        self.audioSlider = customtkinter.CTkSlider(self.master, from_=0, to=self.audioLength, command=self.adjustPlayback)
+        self.audioSlider.set(0)
+        self.audioSlider.grid(row = 2, column=3, padx= 0, pady=20, sticky='we')
+
+        #filename = customtkinter.filedialog.askopenfilename()
+
+        #2self.createSlider(0, 100)
+        #2self.createSliderLabel()
+        ###self.audioSlider = customtkinter.CTkSlider(self.master, from_=0, to=100, command=slide) #.Scale(root, from_0, to=100, orient=HORIZONTAL, value=0, command=slide)
+        ###self.audioSlider.pack(pady=20)
+        ##pygame.mixer.init()
+        ##pygame.mixer.init('audioFile')
+        ##audioLength=pygame.mixer.music.get_length()
+        ##self.slider = customtkinter.CTkSlider(self.master, from_=0, to=music_length, command=onPositionChange)
         #self.slider.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
-        self.audioSlider.pack(pady=20)
+        ##self.audioSlider.pack(pady=20)
 
         self.master.mainloop()
     
+    def updateSlider(self):
+        self.audioSlider = customtkinter.CTkSlider(self.master, from_=0, to=self.audioLength, command=self.adjustPlayback)
+        self.audioSlider.set(0)
+        self.audioSlider.grid(row = 2, column=3, padx= 0, pady=20, sticky='we')
+        self.sliderLabel.configure(text=f"Seconds: 0")
+
     # Creates button to be displayed
     def createButton(self, text: str, row: int, column: int, command = None, padx = 2, pady = 2):
         button = customtkinter.CTkButton(self.master, text = text, command = command)
         if row is not None and column is not None:
             button.grid(row = row, column = column, padx = padx, pady = pady)
         return button
+         
+    def adjustPlayback(self, seconds):
+        print(f"Adjusting playback to: {seconds}%")
+        self.sliderLabel.configure(text=f"Seconds: {int(seconds)}")
 
+        position_in_seconds = float(seconds)
+
+        #self.audio.pause()  # Pause current playback
+        self.audio.seek(position_in_seconds) #seek to new position
+        #self.audio.play()  # Resume playback
+        '''
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.pause()
+
+        pygame.mixer.music.set_pos(position) # Seek to the new position
+
+        if not pygame.mixer.music.get_busy():
+        pygame.mixer.music.unpause()  # Resume playback if it was paused
+        '''
+    '''
     # Creates slider to be displayed
-    def on_PositionChange():
-        position = int(value)
-        pygame.mixer.msic.rewind()
-        pygame.mixer.music.set_pos(position)
+    def createSliderLabel(self, row = 2, column = 3, padx = 0, pady = 40):
+        sliderLabel = customtkinter.CTkLabel(self.master, text='', font = ("Helvetica", 10))
+        sliderLabel.grid(row = row, column = column, padx = padx, pady = pady)
+        sliding(sliderLabel)
+    #def on_PositionChange():
+    #    position = int(value)
+    #    pygame.mixer.msic.rewind()
+    #    pygame.mixer.music.set_pos(position)
+
+    def createSlider(self, start: int, end: int, command = sliding, row = 2, column = 3, padx = 0, pady = 20):
+        audioSlider = customtkinter.CTkSlider(self.master, from_=start, to=end, command=command) #.Scale(root, from_0, to=100, orient=HORIZONTAL, value=0, command=slide)
+        audioSlider.grid(row = row, column = column, padx = padx, pady = pady)
+        audioSlider.set(0)
+    '''
 
     # Record audio
     def recordAudio(self):
@@ -154,6 +206,8 @@ class GUI:
         time, signal = self.audio.upload(filename)
         plotAudio(time, signal)
         self.audioPlaceholder.configure(text=filename)
+        self.audioLength = self.audio.getAudioDuration(filename) #change the length of slider when audio is uploaded
+        self.updateSlider()
 
     # Sends client info submitted by user to the transciption box
     def submitClientInfo(self):
