@@ -6,7 +6,6 @@ from export import Exporter
 import threading
 import customtkinter
 import matplotlib.pyplot as plt
-import pygame
 
 # Plots the waveform of audio
 def plotAudio(time, signal):
@@ -17,11 +16,6 @@ def plotAudio(time, signal):
     plt.show()
 
 class GUI:
-    '''
-    # Creates slider to be displayed
-    def sliding(value):
-        sliderLabel.configure(text=int(value))
-    '''
     def __init__(self):
         customtkinter.set_appearance_mode("dark")
         customtkinter.set_default_color_theme("blue")
@@ -97,19 +91,6 @@ class GUI:
         self.audioSlider.set(0)
         self.audioSlider.grid(row = 2, column=3, padx= 0, pady=20, sticky='we')
 
-        #filename = customtkinter.filedialog.askopenfilename()
-
-        #2self.createSlider(0, 100)
-        #2self.createSliderLabel()
-        ###self.audioSlider = customtkinter.CTkSlider(self.master, from_=0, to=100, command=slide) #.Scale(root, from_0, to=100, orient=HORIZONTAL, value=0, command=slide)
-        ###self.audioSlider.pack(pady=20)
-        ##pygame.mixer.init()
-        ##pygame.mixer.init('audioFile')
-        ##audioLength=pygame.mixer.music.get_length()
-        ##self.slider = customtkinter.CTkSlider(self.master, from_=0, to=music_length, command=onPositionChange)
-        #self.slider.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
-        ##self.audioSlider.pack(pady=20)
-
         self.master.mainloop()
     
     def updateSlider(self):
@@ -134,31 +115,6 @@ class GUI:
         #self.audio.pause()  # Pause current playback
         self.audio.seek(position_in_seconds) #seek to new position
         #self.audio.play()  # Resume playback
-        '''
-        if pygame.mixer.music.get_busy():
-            pygame.mixer.music.pause()
-
-        pygame.mixer.music.set_pos(position) # Seek to the new position
-
-        if not pygame.mixer.music.get_busy():
-        pygame.mixer.music.unpause()  # Resume playback if it was paused
-        '''
-    '''
-    # Creates slider to be displayed
-    def createSliderLabel(self, row = 2, column = 3, padx = 0, pady = 40):
-        sliderLabel = customtkinter.CTkLabel(self.master, text='', font = ("Helvetica", 10))
-        sliderLabel.grid(row = row, column = column, padx = padx, pady = pady)
-        sliding(sliderLabel)
-    #def on_PositionChange():
-    #    position = int(value)
-    #    pygame.mixer.msic.rewind()
-    #    pygame.mixer.music.set_pos(position)
-
-    def createSlider(self, start: int, end: int, command = sliding, row = 2, column = 3, padx = 0, pady = 20):
-        audioSlider = customtkinter.CTkSlider(self.master, from_=start, to=end, command=command) #.Scale(root, from_0, to=100, orient=HORIZONTAL, value=0, command=slide)
-        audioSlider.grid(row = row, column = column, padx = padx, pady = pady)
-        audioSlider.set(0)
-    '''
 
     # Record audio
     def recordAudio(self):
