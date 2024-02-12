@@ -31,4 +31,4 @@
 ## Python Version
    * Currently, our project is only able to be ran on specific versions of Python. 
    * Working Python versions: 3.10.x - 3.11.x
-   * Before running 'python GUI.py', check that you are using one of the above listed Python versions by running 'python --version'. 
+   * Before running 'python GUI.py', check that you are using one of the above listed Python versions by running 'python --version'.  
