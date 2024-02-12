@@ -40,7 +40,7 @@ class AudioManager:
         return (self.filePath, time, signal)
     
     def play(self, startPosition=0):
-        '''
+        
         self.stopPlayback()
 
         print("Playing audio...from", startPosition)
@@ -71,34 +71,6 @@ class AudioManager:
         self.playing = False
         out_stream.close()
         print("Audio has ended")
-        '''
-    def play(self, startPosition=0):
-        self.stopPlayback()  # Ensure any previous playback is stopped
-
-        print("Playing audio...from", startPosition)
-        self.playing = True
-        self.paused = False
-        audio_file = wave.open(self.filePath, "rb")
-        
-        startFrame = int(startPosition * audio_file.getframerate())
-        audio_file.setpos(startFrame)  # Seek to the start position
-
-        self.out_stream = self.p.open(
-            format = self.p.get_format_from_width(audio_file.getsampwidth()),
-            channels = audio_file.getnchannels(),
-            rate = audio_file.getframerate(),
-            output = True
-        )
-        
-        data = audio_file.readframes(self.CHUNK)
-        while data != b"" and self.playing:
-            if not self.paused:
-                self.out_stream.write(data)
-                data = audio_file.readframes(self.CHUNK)
-
-        audio_file.close()  # Close the file after playback is finished
-        self.stopPlayback()  # Stop and clean up the stream
-
         
     def pause(self):
         self.paused = not self.paused
@@ -166,10 +138,8 @@ class AudioManager:
         #    self.play(startPosition=position)
         #    self.pause()  # Immediately pause since we're only updating the position
 
-    def stopPlayback(self):
-        '''        
+    def stopPlayback(self):     
         if self.playing:
-            #self.playing = False
             # Stop playback and close the stream
             if self.out_stream is not None:
                 print("out stream", self.out_stream)
@@ -178,14 +148,8 @@ class AudioManager:
                 self.out_stream.close()
                 self.playing = False
                 self.paused = True
-            # Reset the PyAudio instance if needed
+            # Try to reset the PyAudio instance
             self.p.terminate()
             self.p = pyaudio.PyAudio()  # Reinitialize PyAudio instance
-        '''
-        self.playing = False  # Stop the playback loop
-        if self.out_stream is not None:
-            self.out_stream.stop_stream()
-            self.out_stream.close()
-            self.out_stream = None  # Reset out_stream to None after closing
-        self.p.terminate()
-        self.p = pyaudio.PyAudio()  # Reinitialize PyAudio instance
+        
+ 
