@@ -27,3 +27,8 @@
 
 3. **Ease of Access** - There is also a gui version of pyinstaller which is very helpful. You can get this via:
    *  pip install auto-py-to-exe
+   
+## Python Version
+   * Currently, our project is only able to be ran on specific versions of Python. 
+   * Working Python versions: 3.10.x - 3.11.x
+   * Before running 'python GUI.py', check that you are using one of the above listed Python versions by running 'python --version'.   
