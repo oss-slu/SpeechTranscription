@@ -83,15 +83,39 @@ class GUI:
         self.createButton("Export to Word Document", 8, 5, self.exportToWord)
         self.createButton("Print", 9, 5)
 
+        #slider stuff
+        self.audioLength=100
+        self.sliderLabel = customtkinter.CTkLabel(self.master, text = "", font=('Helvetica', 10))
+        self.sliderLabel.grid(row= 2, column  = 4, padx =2 , pady=20, sticky="w")
+        self.audioSlider = customtkinter.CTkSlider(self.master, from_=0, to=self.audioLength, command=self.adjustPlayback)
+        self.audioSlider.set(0)
+        self.audioSlider.grid(row = 2, column=3, padx= 0, pady=20, sticky='we')
+
         self.master.mainloop()
     
+    def updateSlider(self):
+        self.audioSlider = customtkinter.CTkSlider(self.master, from_=0, to=self.audioLength, command=self.adjustPlayback)
+        self.audioSlider.set(0)
+        self.audioSlider.grid(row = 2, column=3, padx= 0, pady=20, sticky='we')
+        self.sliderLabel.configure(text=f"Seconds: 0")
+
     # Creates button to be displayed
     def createButton(self, text: str, row: int, column: int, command = None, padx = 2, pady = 2):
         button = customtkinter.CTkButton(self.master, text = text, command = command)
         if row is not None and column is not None:
             button.grid(row = row, column = column, padx = padx, pady = pady)
         return button
-    
+         
+    def adjustPlayback(self, seconds):
+        print(f"Adjusting playback to: {seconds}%")
+        self.sliderLabel.configure(text=f"Seconds: {int(seconds)}")
+
+        position_in_seconds = float(seconds)
+
+        #self.audio.pause()  # Pause current playback
+        self.audio.seek(position_in_seconds) #seek to new position
+        #self.audio.play()  # Resume playback
+
     # Record audio
     def recordAudio(self):
         if self.recordButton.cget("text") == "Record":
@@ -138,6 +162,8 @@ class GUI:
         time, signal = self.audio.upload(filename)
         plotAudio(time, signal)
         self.audioPlaceholder.configure(text=filename)
+        self.audioLength = self.audio.getAudioDuration(filename) #change the length of slider when audio is uploaded
+        self.updateSlider()
 
     # Sends client info submitted by user to the transciption box
     def submitClientInfo(self):
