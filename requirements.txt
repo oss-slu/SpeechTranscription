@@ -24,4 +24,4 @@ pytest
 
 # Not currently in use - could be used for diarization in the future
 spectralcluster
-Resemblyzer
+Resemblyzer 
