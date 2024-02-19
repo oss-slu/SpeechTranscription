@@ -208,7 +208,10 @@ class GUI:
         self.correctionEntryBox.grid(row=6, column=4, columnspan=2)
         self.correctionEntryBox.delete("1.0", "end")
         self.submitCorrectionButton.grid(row=6, column=6)
-        
+
+        #self.transcriptionText = transcriptionText # get way to grab from box, maybe conventions. need to look in functions, should work
+        # need to grab from customtkinter.CTkTextbox maybe the following line
+        self.transcriptionText = self.transcriptionBox.get('1.0', "end")
         self.grammar.checkGrammar(self.transcriptionText, False)
         self.manageGrammarCorrection()
         
