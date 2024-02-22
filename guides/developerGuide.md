@@ -14,6 +14,13 @@
 - Create a test if applicable in saltify_test.py to allow for quick testing of your code. This will be very helpful in the future if any code breaks.
 
 ## Creating an Executable
+
+- Note: How to access executable:
+   1. Click on the 'Actions' tab in GitHub
+   2. On the left-hand side under 'Workflows', click on '.github/workflows/create-executable.yml'
+   3. Find your desired version (check title and branch name to find th eone you want) and then click on it
+   4. Scroll down to the 'Artifacts' section and download the MacOS or Windows version (depending on what OS you have)
+
 1. **Install requirements** - To run pyinstaller a couple of installations are necessary. These can be done with:
    *  pip install pyinstaller
    *  pip install importlib-metadata
