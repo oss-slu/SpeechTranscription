@@ -195,6 +195,7 @@ def correctSentence(x) :
     correctedIndex = 0
     saltSentence = ""
     while (originalIndex < len(originalWords) or correctedIndex < len(correctedWords)):
+        #print('original words:', originalWords)
         # Words only remain in the corrected sentence, append all with asterisk (missing word)
         if (originalIndex >= len(originalWords)):
             while (correctedIndex < len(correctedWords)):
@@ -237,7 +238,9 @@ def correctSentence(x) :
                 correctedIndex += 1
         # The current word in the original sentence matches the next word in the corrected one, append word in corrected with asterisk
         # (Checks to make sure index won't go out of bounds)
-        elif (correctedIndex < len(correctedWords) and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
+        elif (correctedIndex < len(correctedWords)-1 and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
+            #print('corrected Index:', correctedIndex)
+            #print('corrected Words len:', len(correctedWords))
             saltSentence += correctedWords[correctedIndex] + "* "
             correctedIndex += 1
         # The current word in the corrected sentence matches the next word in the original one, append word in original with [EW]
