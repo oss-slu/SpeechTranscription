@@ -239,8 +239,8 @@ def correctSentence(x) :
         # The current word in the original sentence matches the next word in the corrected one, append word in corrected with asterisk
         # (Checks to make sure index won't go out of bounds)
         elif (correctedIndex < len(correctedWords)-1 and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
-            print('corrected Index:', correctedIndex)
-            print('corrected Words len:', len(correctedWords))
+            #print('corrected Index:', correctedIndex)
+            #print('corrected Words len:', len(correctedWords))
             saltSentence += correctedWords[correctedIndex] + "* "
             correctedIndex += 1
         # The current word in the corrected sentence matches the next word in the original one, append word in original with [EW]
