@@ -22,7 +22,7 @@ Requirements include:
 
 ## Development Environment
 1. **Clone the Repository** - [This link](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) details how you can create a local clone of the repository. To do this, you need to have Git installed. Information for installing Git can be found [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
-2. **Requirements** - This project uses Python, which can be downloaded [here](https://www.python.org/downloads/). Before attempting to run GUI.py with "python GUI.py" in your command line interface, you should install all the packages found in [requirements.txt](https://github.com/oss-slu/SpeechTranscription/blob/userGuides/requirements.txt). For example, typing "pip install git+https://github.com/openai/whisper.git" will install the whisper package, which we use for speech recognition.
+2. **Requirements** - This project uses Python, which can be downloaded [here](https://www.python.org/downloads/). Before attempting to run GUI.py with "python GUI.py" in your command line interface, you should install all the packages found in [requirements.txt](https://github.com/oss-slu/SpeechTranscription/blob/userGuides/requirements.txt). Look at the first line of requirements.txt to see instructions for how to install all of the packages at once.
     *   It may be beneficial to create a python virtual environment that contains only the packages required for this project. This allows you to isolate your development environment to be specialized for this project.
 3. **Running the Program** - Simply type "python GUI.py" in the command line while in the repository to start the program.
 
