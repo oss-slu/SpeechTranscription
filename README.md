@@ -39,7 +39,12 @@ Requirements include:
    1. Click on the 'Actions' tab in GitHub
    2. On the left-hand side under 'Workflows', click on '.github/workflows/create-executable.yml'
    3. Find your desired version (check title and branch name to find th eone you want) and then click on it
-   4. Scroll down to the 'Artifacts' section and download the MacOS or Windows version (depending on what OS you have)
+   4. Scroll down to the 'Artifacts' section and download Windows version.
+
+-Note: For MacOS, follow the above instructions and then follow these below instructions:
+   1. Unzip the now downloaded folder
+   2. Go to winebottler.kronenberg.org and download the most recent version of WineBottler (4.x)
+   3. 
 
 1. **Install requirements** - To run pyinstaller a couple of installations are necessary. These can be done with:
    *  pip install pyinstaller
