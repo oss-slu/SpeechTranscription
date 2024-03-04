@@ -24,14 +24,22 @@ class AudioManager:
         self.filePath = "session_output.wav"
         self.isRecording = True
         self.frames = []
-        stream = self.p.open(format = self.FORMAT, channels = self.CHANNELS, rate = self.RATE, input = True, frames_per_buffer = self.CHUNK)
-        
-        while self.isRecording:
-            data = stream.read(self.CHUNK)
-            self.frames.append(data)
-            self.root.update()
+        try:
+            stream = self.p.open(format = self.FORMAT, channels = self.CHANNELS, rate = self.RATE, input = True, frames_per_buffer = self.CHUNK)
             
-        stream.close()
+            while self.isRecording:
+                data = stream.read(self.CHUNK)
+                self.frames.append(data)
+                self.root.update()
+                
+            stream.close()
+        except OSError as e:
+            if e.errno == -9996:
+                # Handle the specific error, e.g., log it or notify the user
+                print("Warning: No default output device available.")
+            else:
+                # Re-raise the exception if it's not the one we're expecting to handle
+                raise
         
     def stop(self):
         self.isRecording = False
