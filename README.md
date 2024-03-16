@@ -44,11 +44,6 @@ Requirements include:
 -Note: How to access executable for MacOS:
    1. Follow this tutorial until 4:10 in the video: https://youtu.be/5Z_G6QG7xxg?si=zg5MozBv6WrYJtIQ 
    2. Once in the Windows virtual machine, follow the above instructions (steps 1-4) and then you will be able to run the executable on MacOS
-
-For MacOS 10.15 and newer:
-Follow this tutorial until 4:10:
-https://youtu.be/5Z_G6QG7xxg?si=zg5MozBv6WrYJtIQ 
-Then once in the Windows virtual machine, go to the SpeechTranscription git page and download the windows executable and then run it as you would on windows
  
 
 1. **Install requirements** - To run pyinstaller a couple of installations are necessary. These can be done with:
