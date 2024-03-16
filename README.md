@@ -35,16 +35,21 @@ Requirements include:
 
 ## Creating an Executable
 
-- Note: How to access executable:
+- Note: How to access executable for Windows:
    1. Click on the 'Actions' tab in GitHub
    2. On the left-hand side under 'Workflows', click on '.github/workflows/create-executable.yml'
    3. Find your desired version (check title and branch name to find th eone you want) and then click on it
    4. Scroll down to the 'Artifacts' section and download Windows version.
 
--Note: For MacOS, follow the above instructions and then follow these below instructions:
-   1. Unzip the now downloaded folder
-   2. Go to winebottler.kronenberg.org and download the most recent version of WineBottler (4.x)
-   3. 
+-Note: How to access executable for MacOS:
+   1. Follow this tutorial until 4:10 in the video: https://youtu.be/5Z_G6QG7xxg?si=zg5MozBv6WrYJtIQ 
+   2. Once in the Windows virtual machine, follow the above instructions (steps 1-4) and then you will be able to run the executable on MacOS
+
+For MacOS 10.15 and newer:
+Follow this tutorial until 4:10:
+https://youtu.be/5Z_G6QG7xxg?si=zg5MozBv6WrYJtIQ 
+Then once in the Windows virtual machine, go to the SpeechTranscription git page and download the windows executable and then run it as you would on windows
+ 
 
 1. **Install requirements** - To run pyinstaller a couple of installations are necessary. These can be done with:
    *  pip install pyinstaller
