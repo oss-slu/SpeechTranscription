@@ -4,6 +4,7 @@ import pyaudio
 from pydub import AudioSegment
 from pydub.effects import normalize
 import numpy as np
+import tkinter.messagebox as msgbox
 
 class AudioManager:
     CHUNK = 1024
@@ -24,14 +25,23 @@ class AudioManager:
         self.filePath = "session_output.wav"
         self.isRecording = True
         self.frames = []
-        stream = self.p.open(format = self.FORMAT, channels = self.CHANNELS, rate = self.RATE, input = True, frames_per_buffer = self.CHUNK)
-        
-        while self.isRecording:
-            data = stream.read(self.CHUNK)
-            self.frames.append(data)
-            self.root.update()
+        try:
+            stream = self.p.open(format = self.FORMAT, channels = self.CHANNELS, rate = self.RATE, input = True, frames_per_buffer = self.CHUNK)
             
-        stream.close()
+            while self.isRecording:
+                data = stream.read(self.CHUNK)
+                self.frames.append(data)
+                self.root.update()
+                
+            stream.close()
+        except OSError as e:
+            if e.errno == -9996 or e.errno == -9999:
+                # Handle the specific error, e.g., log it or notify the user
+                print("Warning: No default output device available.")
+                self.root.after(0, lambda: msgbox.showerror("Audio Error", "No default audio device available. Please check your audio settings."))
+            else:
+                # Re-raise the exception if it's not the one we're expecting to handle
+                raise
         
     def stop(self):
         self.isRecording = False
