@@ -4,6 +4,7 @@ import pyaudio
 from pydub import AudioSegment
 from pydub.effects import normalize
 import numpy as np
+import tkinter.messagebox as msgbox
 
 class AudioManager:
     CHUNK = 1024
@@ -34,9 +35,10 @@ class AudioManager:
                 
             stream.close()
         except OSError as e:
-            if e.errno == -9996:
+            if e.errno == -9996 or e.errno == -9999:
                 # Handle the specific error, e.g., log it or notify the user
                 print("Warning: No default output device available.")
+                self.root.after(0, lambda: msgbox.showerror("Audio Error", "No default audio device available. Please check your audio settings."))
             else:
                 # Re-raise the exception if it's not the one we're expecting to handle
                 raise
