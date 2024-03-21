@@ -41,7 +41,7 @@ Requirements include:
    3. Find your desired version (check title and branch name to find th eone you want) and then click on it
    4. Scroll down to the 'Artifacts' section and download Windows version.
 
--Note: How to access executable for MacOS:
+- Note: How to access executable for MacOS:
    1. Follow this tutorial until 4:10 in the video: https://youtu.be/5Z_G6QG7xxg?si=zg5MozBv6WrYJtIQ 
    2. Once in the Windows virtual machine, follow the above instructions (steps 1-4) and then you will be able to run the executable on MacOS
  
