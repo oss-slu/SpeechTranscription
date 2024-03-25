@@ -83,6 +83,16 @@ class GUI:
         self.createButton("Export to Word Document", 8, 5, self.exportToWord)
         self.createButton("Print", 9, 5)
 
+        # Button for speaker labeling
+        #self.createButton("")
+        self.nameLabels = customtkinter.StringVar()
+        self.nameLabels.set("Speaker Labels")
+        speakerDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.nameLabels, values = ['speaker1', 'speaker2'])
+        speakerDropdown.grid(row=3, column=3, padx=2, pady=2)
+        self.speakerEntryBox = customtkinter.CTkEntry(self.master)
+        self.speakerEntryBox.grid(row=1, column=2, padx=2, pady=2)
+        self.createButton("Submit", 1, 3, self.submitClientInfo)
+
         #slider stuff
         self.audioLength=100
         self.sliderLabel = customtkinter.CTkLabel(self.master, text = "", font=('Helvetica', 10))
@@ -171,6 +181,13 @@ class GUI:
         self.infoEntryBox.delete(0, "end")
         self.clientInfoBox.delete("1.0", "end")
         self.clientInfoBox.insert("end", str(self.clientInfo))
+
+    # Sends speaker info submitted by user to the client-info box for later use. Maybe just use the name we already have. 
+    def submitSpeakerInfo(self):
+        self.speakerInfo.submitInfo(self.speakerEntryBox.get(), self.nameLabels.get())
+        self.speakerEntryBox.delete(0, "end")
+        self.clientInfoBox.delete("1.0", "end")
+        self.clientInfoBox.insert("end", str(self.speakerInfo))
 
     # Transcribes audio, then prints to the transcription box
     def transcribe(self):
