@@ -1,9 +1,23 @@
 import customtkinter
-import tkinter
 from tkinter import *
+from functions import diarizationAndTranscription
+from audio import AudioManager
+from client_info import ClientInfo
+from grammar import GrammarChecker
+from export import Exporter
+import threading
+import matplotlib.pyplot as plt
 
 WIDTH = 1280
 HEIGHT = 720
+
+# Plots the waveform of audio
+def plotAudio(time, signal):
+    plt.figure(1)
+    plt.title("Audio Wave")
+    plt.xlabel("Time")
+    plt.plot(time, signal)
+    plt.show()
 
 class mainGUI(customtkinter.CTk):
     def new_audio(self):
@@ -190,20 +204,17 @@ class audioMenu(customtkinter.CTkFrame):
         super().__init__(master)
         self.configure(width = WIDTH * .8)
         self.configure(height=HEIGHT)
+        
+        self.audio = AudioManager(master)
 
         # BUTTONS
-
-        self.uploadButton = customtkinter.CTkButton(self, text="Upload", height=60)
-        self.uploadButton.grid(row=1,column=0, padx=10, pady=10, sticky=W+E)
-
-        self.recordButton = customtkinter.CTkButton(self, text="Record", height=60)
-        self.recordButton.grid(row=1,column=1, padx=10, pady=10, sticky=W+E)
+        
+        createButton(self, "Upload", 1, 0, self.uploadAudio)
+        self.recordButton = createButton(self, "Record", 1, 1, self.recordAudio)
+        createButton(self, "Transcribe", 3, 0, self.transcriptionThread, 15, 15, 2, 100, ("Arial", 40))
 
         self.audioPlayback = customtkinter.CTkLabel(self, text="Audio Playback Area", height=175, fg_color="Red", font=("Arial", 30))
-        self.audioPlayback.grid(row=2,column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
-
-        self.transcribeButton = customtkinter.CTkButton(self, text="Transcribe", height=100, font=("Arial", 40))
-        self.transcribeButton.grid(row=3,column=0, columnspan=2, padx=15, pady=15, sticky=W+E)
+        self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
 
         self.downloadButton = customtkinter.CTkButton(self, text="Download Audio", height=60)
         self.downloadButton.grid(row=4,column=0, padx=10, pady=10, sticky=W+E)
@@ -229,8 +240,9 @@ class audioMenu(customtkinter.CTkFrame):
 
         # TRANSCRIPTION BOX
 
+        self.transcriptionText = ""
         self.transcriptionBox = customtkinter.CTkTextbox(self, width=300)
-        self.transcriptionBox.grid(row=0,column=2, columnspan=2, rowspan=4, padx=10, pady= 10, sticky=N+E+S+W)
+        self.transcriptionBox.grid(row=0, column=2, columnspan=2, rowspan=4, padx=10, pady= 10, sticky=N+E+S+W)
         self.transcriptionBox.insert("0.0", text="Transcription Box")
         self.transcriptionBox.configure(state=DISABLED)
 
@@ -244,6 +256,55 @@ class audioMenu(customtkinter.CTkFrame):
 
         self.correctionEntryBox = customtkinter.CTkTextbox(self, height=60)
         self.correctionEntryBox.grid(row=4,column=4, padx=10, sticky=E+W)  
+        
+    # Upload user's audio file
+    def uploadAudio(self):
+        filename = customtkinter.filedialog.askopenfilename()
+        print("File uploaded: ", filename)
+        time, signal = self.audio.upload(filename)
+        plotAudio(time, signal)
+        # self.audioPlaceholder.configure(text=filename)
+        self.audioLength = self.audio.getAudioDuration(filename)
+        # self.updateSlider()
+        
+    def recordAudio(self):
+        if self.recordButton.cget("text") == "Record":
+            self.recordButton.configure(text = "Stop")
+            print("*Recording*")
+            self.audio.record()
+        else:
+            self.recordButton.configure(text = "Record")
+            filename, time, signal = self.audio.stop()
+            self.audioPlaceholder.configure(text=filename)
+            plotAudio(time, signal)
+            print("*Recording stopped*")
+            
+    # Transcribes audio, then prints to the transcription box
+    def transcribe(self):
+        my_progress = customtkinter.CTkProgressBar(self.master,  width = 300, mode = "indeterminate") #creates intederminate progress bar
+        my_progress.grid(row=4, column=0, padx=2, pady=2)
+        my_progress.start()
 
+        filename = self.audio.normalizeUploadedFile()        
+        transcribedAudio = diarizationAndTranscription.transcribe(filename)
+
+        self.transcriptionBox.configure(state="normal")
+        self.transcriptionBox.delete("0.0", "end")
+        self.transcriptionBox.insert("end", transcribedAudio + "\n")
+        self.transcriptionText = transcribedAudio
+        self.transcriptionBox.configure(state="disabled")
+        my_progress.stop()
+        my_progress.grid_remove() 
+        
+    # Creates thread that executes the transcribe function
+    def transcriptionThread(self):
+        threading.Thread(target = self.transcribe).start()
+
+# Creates button to be displayed
+def createButton(master, text: str, row: int, column: int, command = None, padx = 10, pady = 10, columnspan = 1, height = 60, font = ("Arial", 14)):
+    button = customtkinter.CTkButton(master, text = text, height = height, command = command, font = font)
+    if row is not None and column is not None:
+        button.grid(row = row, column = column, columnspan = columnspan, padx = padx, pady = pady, sticky=W+E)
+    return button
 
 gui = mainGUI()
