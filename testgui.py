@@ -1,4 +1,5 @@
 import customtkinter
+from customtkinter import *
 from tkinter import *
 from functions import diarizationAndTranscription
 from audio import AudioManager
@@ -8,7 +9,7 @@ from export import Exporter
 import threading
 import matplotlib.pyplot as plt
 
-WIDTH = 1280
+WIDTH = 1380
 HEIGHT = 720
 
 # Plots the waveform of audio
@@ -90,7 +91,7 @@ class userMenu(customtkinter.CTkFrame):
         self.resolutionSetting.grid(row=11, column=1, padx=10, pady=5, sticky=N+E+S+W)
 
 class sessionInfoMenu(customtkinter.CTkTabview):
-    def __init__(self, master):
+    def __init__(self, master, transcriptionBox: CTkTextbox, grammarBox: CTkTextbox):
         super().__init__(master)
         self.configure(height=200)
         self.add("Client Information")
@@ -148,11 +149,13 @@ class sessionInfoMenu(customtkinter.CTkTabview):
 
         # TABLE TOGGLE BUTTONS/SWITCHES
 
-        self.lockTranscriptionBox = customtkinter.CTkSwitch(self.tab("Tables"), text="Lock Transcription?")
+        self.lockTranscription = customtkinter.StringVar(value="on")
+        self.lockTranscriptionBox = customtkinter.CTkSwitch(self.tab("Tables"), text="Lock Transcription?", variable=self.lockTranscription, onvalue="on", offvalue="off")
         self.lockTranscriptionBox.grid(row=0, column=0, columnspan=2, padx=10, pady=12, sticky=E+W)
 
-        self.lockTranscriptionBox = customtkinter.CTkSwitch(self.tab("Tables"), text="Lock Grammar Check?")
-        self.lockTranscriptionBox.grid(row=1, column=0, columnspan=2,padx=10, pady=12, sticky=E+W)
+        self.lockGrammar = customtkinter.StringVar(value="on")
+        self.lockGrammarBox = customtkinter.CTkSwitch(self.tab("Tables"), text="Lock Grammar Check?", variable=self.lockGrammar, onvalue="on", offvalue="off")
+        self.lockGrammarBox.grid(row=1, column=0, columnspan=2,padx=10, pady=12, sticky=E+W)
 
         self.clearTranscriptionBox = customtkinter.CTkButton(self.tab("Tables"), text="Clear Transcription")
         self.clearTranscriptionBox.grid(row=2, column=0, padx=10, pady=10, sticky=N+E+S+W)
@@ -198,6 +201,12 @@ class sessionInfoMenu(customtkinter.CTkTabview):
             self.contextBox.configure(state="normal")
             self.ExaminerLocked = False
             self.saveExaminerInfo.configure(text="Lock")
+            
+    def isTranscriptionLocked(self):
+        return self.lockTranscription.get() == "on"
+    
+    def isGrammarLocked(self):
+        return self.lockGrammar.get() == "on"
 
 class audioMenu(customtkinter.CTkFrame):
     def __init__(self, master):
@@ -206,30 +215,22 @@ class audioMenu(customtkinter.CTkFrame):
         self.configure(height=HEIGHT)
         
         self.audio = AudioManager(master)
+        self.grammar = GrammarChecker()
+        self.exporter = Exporter()
 
         # BUTTONS
         
         createButton(self, "Upload", 1, 0, self.uploadAudio)
         self.recordButton = createButton(self, "Record", 1, 1, self.recordAudio)
         createButton(self, "Transcribe", 3, 0, self.transcriptionThread, 15, 15, 2, 100, ("Arial", 40))
+        createButton(self, "Download Audio", 4, 0, self.downloadRecordedAudio)
+        createButton(self, "Export to Word", 4, 1, self.exportToWord)
+        createButton(self, "Grammar Check", 4, 2, self.grammarCheck)
+        createButton(self, "Add Morphemes", 4, 3, self.inflectionalMorphemes)
+        createButton(self, "Submit", 4, 5, self.applyCorrection, 5)
 
         self.audioPlayback = customtkinter.CTkLabel(self, text="Audio Playback Area", height=175, fg_color="Red", font=("Arial", 30))
         self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
-
-        self.downloadButton = customtkinter.CTkButton(self, text="Download Audio", height=60)
-        self.downloadButton.grid(row=4,column=0, padx=10, pady=10, sticky=W+E)
-
-        self.exportButton = customtkinter.CTkButton(self, text="Export to DOCX", height=60)
-        self.exportButton.grid(row=4,column=1, padx=10, pady=10, sticky=W+E)
-
-        self.grammarCheckButton = customtkinter.CTkButton(self, text="Check Grammar", height=60) 
-        self.grammarCheckButton.grid(row=4,column=2, padx=10, pady=10, sticky=W+E)
-
-        self.addMorphemesButton = customtkinter.CTkButton(self, text="Add Morphemes", height=60)
-        self.addMorphemesButton.grid(row=4,column=3, padx=10, pady=10, sticky=W+E)
-
-        self.submitCorrectionButton = customtkinter.CTkButton(self, text="Submit", width=50, height=60)
-        self.submitCorrectionButton.grid(row=4,column=5, padx=5, pady=10)
 
         # CLIENT INFORMATION BOX
 
@@ -244,15 +245,14 @@ class audioMenu(customtkinter.CTkFrame):
         self.transcriptionBox = customtkinter.CTkTextbox(self, width=300)
         self.transcriptionBox.grid(row=0, column=2, columnspan=2, rowspan=4, padx=10, pady= 10, sticky=N+E+S+W)
         self.transcriptionBox.insert("0.0", text="Transcription Box")
-        self.transcriptionBox.configure(state=DISABLED)
-
+        self.lockBox(self.transcriptionBox)
 
         # CONVENTION BOX
 
         self.conventionBox = customtkinter.CTkTextbox(self, width=300)
         self.conventionBox.grid(row=0, column=4, columnspan=2, rowspan=4, padx=10, pady=10, sticky=N+E+S+W)
         self.conventionBox.insert("0.0", text="Grammar Box")
-        self.conventionBox.configure(state=DISABLED)
+        self.lockBox(self.conventionBox)
 
         self.correctionEntryBox = customtkinter.CTkTextbox(self, height=60)
         self.correctionEntryBox.grid(row=4,column=4, padx=10, sticky=E+W)  
@@ -275,30 +275,75 @@ class audioMenu(customtkinter.CTkFrame):
         else:
             self.recordButton.configure(text = "Record")
             filename, time, signal = self.audio.stop()
-            self.audioPlaceholder.configure(text=filename)
             plotAudio(time, signal)
             print("*Recording stopped*")
             
     # Transcribes audio, then prints to the transcription box
     def transcribe(self):
-        my_progress = customtkinter.CTkProgressBar(self.master,  width = 300, mode = "indeterminate") #creates intederminate progress bar
-        my_progress.grid(row=4, column=0, padx=2, pady=2)
-        my_progress.start()
+        # my_progress = customtkinter.CTkProgressBar(self.master,  width = 300, mode = "indeterminate") #creates intederminate progress bar
+        # my_progress.grid(row=4, column=0, padx=2, pady=2)
+        # my_progress.start()
 
         filename = self.audio.normalizeUploadedFile()        
         transcribedAudio = diarizationAndTranscription.transcribe(filename)
 
         self.transcriptionBox.configure(state="normal")
+        self.unlockBox(self.transcriptionBox)
         self.transcriptionBox.delete("0.0", "end")
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
         self.transcriptionText = transcribedAudio
-        self.transcriptionBox.configure(state="disabled")
-        my_progress.stop()
-        my_progress.grid_remove() 
+        if self.infoTab.isTranscriptionLocked(): self.lockBox(self.transcriptionBox)
+        # my_progress.stop()
+        # my_progress.grid_remove() 
         
     # Creates thread that executes the transcribe function
     def transcriptionThread(self):
         threading.Thread(target = self.transcribe).start()
+        
+    # Download file of recorded audio
+    def downloadRecordedAudio(self):
+        print("Downloading audio")
+        download_file = customtkinter.filedialog.asksaveasfile(defaultextension = ".wav", filetypes = [("Wave File", ".wav"), ("All Files", ".*")], initialfile = "downloaded_audio.wav")
+        self.audio.saveAudioFile(download_file.name)
+        
+    def exportToWord(self):
+        outputPath = customtkinter.filedialog.askdirectory()
+        self.exporter.exportToWord(self.transcriptionText, outputPath)
+        
+    def grammarCheck(self):
+        self.unlockBox(self.conventionBox)
+        self.conventionBox.delete("1.0", "end")
+        self.correctionEntryBox.delete("1.0", "end")
+        self.transcriptionText = self.transcriptionBox.get('1.0', "end")
+        self.grammar.checkGrammar(self.transcriptionText, False)
+        self.manageGrammarCorrection()
+        
+    # Apply's the user's grammar correction
+    def applyCorrection(self):
+        self.unlockBox(self.conventionBox)
+        self.conventionBox.insert("end", self.correctionEntryBox.get("1.0", "end"))
+        self.correctionEntryBox.delete("1.0", "end")
+        self.manageGrammarCorrection()
+        
+    def manageGrammarCorrection(self):
+        corrected, sentenceToCorrect = self.grammar.getNextCorrection()
+        if corrected: self.conventionBox.insert("end", corrected)
+        if sentenceToCorrect: self.correctionEntryBox.insert("end", sentenceToCorrect)
+        if self.infoTab.isGrammarLocked(): self.lockBox(self.conventionBox)
+        
+    # Adds conventions to text from transcription box and puts output in conventionBox box
+    def inflectionalMorphemes(self):
+        self.unlockBox(self.conventionBox)
+        converting = self.grammar.getInflectionalMorphemes(self.conventionBox.get("1.0", "end"))
+        self.conventionBox.delete("1.0", "end")
+        self.conventionBox.insert("end", converting)
+        if self.infoTab.isGrammarLocked(): self.lockBox(self.conventionBox)
+        
+    def unlockBox(self, textbox: CTkTextbox):
+        textbox.configure(state="normal")
+        
+    def lockBox(self, textbox: CTkTextbox):
+        textbox.configure(state="disabled")
 
 # Creates button to be displayed
 def createButton(master, text: str, row: int, column: int, command = None, padx = 10, pady = 10, columnspan = 1, height = 60, font = ("Arial", 14)):
