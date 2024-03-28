@@ -105,7 +105,8 @@ def addInflectionalMorphemes(x):
                             originalWordIndex += 1
                 # Original word has no error coding; get word from saltified sentence 
                 else:
-                    finalSentence += correctedWords[correctedWordIndex] + " "
+                    if correctedWordIndex < len(correctedWords): finalSentence += correctedWords[correctedWordIndex] + " "
+                    elif originalWordIndex < len(originalWords): finalSentence += originalWords[originalWordIndex] + " "
                     originalWordIndex += 1
                     correctedWordIndex += 1
             converting += finalSentence + "\n"
