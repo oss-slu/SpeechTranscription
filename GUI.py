@@ -40,6 +40,8 @@ class GUI:
         self.playButton = self.createButton("Play", 0, 3, self.playbackClick)
         self.pauseButton = self.createButton("Pause", 0, 4, self.pausePlayback)
         self.createButton("Download", 1, 5, self.downloadRecordedAudio)
+        self.labelSpeakersButton = self.createButton("Label Speakers", 6, 4, self.labelSpeakers, 10, 10) # For speaker labeling
+
 
         # Allows user to select a sampling attribute, type the relevant information, and submit it
         self.clicked = customtkinter.StringVar()
@@ -82,16 +84,6 @@ class GUI:
         # Buttons used to export the transcription
         self.createButton("Export to Word Document", 8, 5, self.exportToWord)
         self.createButton("Print", 9, 5)
-
-        # Button for speaker labeling
-        #self.createButton("")
-        self.nameLabels = customtkinter.StringVar()
-        self.nameLabels.set("Speaker Labels")
-        speakerDropdown = customtkinter.CTkOptionMenu(self.master, variable = self.nameLabels, values = ['speaker1', 'speaker2'])
-        speakerDropdown.grid(row=3, column=3, padx=2, pady=2)
-        self.speakerEntryBox = customtkinter.CTkEntry(self.master)
-        self.speakerEntryBox.grid(row=1, column=2, padx=2, pady=2)
-        self.createButton("Submit", 1, 3, self.submitClientInfo)
 
         #slider stuff
         self.audioLength=100
@@ -181,13 +173,6 @@ class GUI:
         self.infoEntryBox.delete(0, "end")
         self.clientInfoBox.delete("1.0", "end")
         self.clientInfoBox.insert("end", str(self.clientInfo))
-
-    # Sends speaker info submitted by user to the client-info box for later use. Maybe just use the name we already have. 
-    def submitSpeakerInfo(self):
-        self.speakerInfo.submitInfo(self.speakerEntryBox.get(), self.nameLabels.get())
-        self.speakerEntryBox.delete(0, "end")
-        self.clientInfoBox.delete("1.0", "end")
-        self.clientInfoBox.insert("end", str(self.speakerInfo))
 
     # Transcribes audio, then prints to the transcription box
     def transcribe(self):
@@ -285,5 +270,70 @@ class GUI:
         outputPath = customtkinter.filedialog.askdirectory()
         self.exporter.exportToWord(self.transcriptionText, outputPath)
 
+    def labelSpeakers(self):
+        popup = customtkinter.CTkToplevel(self.master)
+        popup.title("Batch Label Speakers")
+        
+        container = customtkinter.CTkFrame(popup)
+        container.pack(fill='both', expand=True)
+        
+        canvas = customtkinter.CTkCanvas(container)
+        canvas.pack(side='left', fill='both', expand=True)
+        
+        scrollbar = customtkinter.CTkScrollbar(container, command=canvas.yview)
+        scrollbar.pack(side='right', fill='y')
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        segments_frame = customtkinter.CTkFrame(canvas)
+        canvas.create_window((0, 0), window=segments_frame, anchor='nw')
+        
+        def on_canvas_configure(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
+        canvas.bind('<Configure>', on_canvas_configure)
+        
+        segments = self.transcriptionText.split('\n')
+        self.segment_selections = []
+        
+        for i, segment in enumerate(segments):
+            if segment.strip() == "":
+                continue
+            selection_var = customtkinter.IntVar()
+            checkbox = customtkinter.CTkCheckBox(segments_frame, text=segment, variable=selection_var)
+            checkbox.pack(fill='x', padx=10, pady=5)
+            self.segment_selections.append((selection_var, segment))
+        
+        def label_selected_segments(speaker):
+            labeled_text = self.transcriptionText
+            for selection_var, segment in self.segment_selections:
+                if selection_var.get():
+                    labeled_text = labeled_text.replace(segment, f"{speaker}: {segment}")
+                    selection_var.set(0)  # Reset the checkbox after labeling
+            self.transcriptionText = labeled_text
+            self.updateTranscriptionWithSpeakerLabels()
+            popup.destroy()
+
+        speaker1_button = customtkinter.CTkButton(popup, text="Label as Speaker 1", command=lambda: label_selected_segments("Speaker 1"))
+        speaker1_button.pack(pady=5)
+
+        speaker2_button = customtkinter.CTkButton(popup, text="Label as Speaker 2", command=lambda: label_selected_segments("Speaker 2"))
+        speaker2_button.pack(pady=5)
+
+    
+    def applySpeakerLabels(self, speaker_labels, popup):
+        labeled_text = ""
+        for segment, speaker_choice in speaker_labels:
+            speaker_label = speaker_choice.get()
+            labeled_text += f"{speaker_label}: {segment}\n"
+        
+        self.transcriptionText = labeled_text  # Update the stored transcription text
+        self.updateTranscriptionWithSpeakerLabels()  # Update the transcription box display
+        popup.destroy()  # Close the labeling window
+
+    def updateTranscriptionWithSpeakerLabels(self):
+        self.transcriptionBox.configure(state="normal")
+        self.transcriptionBox.delete("1.0", "end")  # Clear existing text
+        self.transcriptionBox.insert("end", self.transcriptionText)  # Insert labeled text
+        self.transcriptionBox.configure(state="disabled")  # Optional: Lock the textbox to prevent manual edits 
 if __name__ == "__main__":
     myGui = GUI()
