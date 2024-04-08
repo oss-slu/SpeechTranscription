@@ -8,7 +8,7 @@ import threading
 import matplotlib.pyplot as plt
 
 WIDTH = 1340
-HEIGHT = 740
+HEIGHT = 800
 
 def plotAudio(time, signal):
     '''Plots the waveform of audio'''
@@ -200,7 +200,9 @@ class audioMenu(CTkFrame):
         self.morphemesButton = createButton(self, "Add Morphemes", 4, 3, self.inflectionalMorphemes)
         self.submitGrammarButton = createButton(self, "Submit", 4, 5, self.applyCorrection, 5)
 
-        self.labelSpeakersButton = createButton(self, "Label Speakers", 5, 0, self.labelSpeakers, lock=False) # For speaker labeling
+        self.labelSpeakersButton = createButton(self, "Label Speakers", 5, 0, self.labelSpeakers) # For speaker labeling
+        self.applyAliasesButton = createButton(self, "Apply Aliases", 5, 1, self.customizeSpeakerAliases) # For more specific labeling
+
 
         self.audioPlayback = CTkLabel(self, text="Audio Playback Area", height=175, fg_color="Red", font=("Arial", 30))
         self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
@@ -227,7 +229,7 @@ class audioMenu(CTkFrame):
         self.grammarCheckPerformed = False
         
     def startProgressBar(self):
-        self.progressBar.grid(row=5, column=0, columnspan=6, padx=2, pady=2)
+        self.progressBar.grid(row=5, column=1, columnspan=6, padx=2, pady=2)
         self.progressBar.start()
     
     def stopProgressBar(self):
@@ -269,11 +271,49 @@ class audioMenu(CTkFrame):
             new_transcription_text = "\n".join(current_segments)
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", new_transcription_text)
+            unlockItem(self.applyAliasesButton)
 
         # Buttons for applying speaker labels
         CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
         CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
-        
+    
+    def customizeSpeakerAliases(self):
+        popup = CTkToplevel(self)
+        popup.title("Customize Speaker Aliases")
+        popup.geometry("400x200")
+
+        # Entry for Speaker 1 alias
+        speaker1_alias_label = CTkLabel(popup, text="Speaker 1 Alias:")
+        speaker1_alias_label.pack(pady=(10, 0))
+        speaker1_alias_entry = CTkEntry(popup)
+        speaker1_alias_entry.pack(pady=(0, 10))
+
+        # Entry for Speaker 2 alias
+        speaker2_alias_label = CTkLabel(popup, text="Speaker 2 Alias:")
+        speaker2_alias_label.pack(pady=(10, 0))
+        speaker2_alias_entry = CTkEntry(popup)
+        speaker2_alias_entry.pack(pady=(0, 20))
+
+        def applyAliases():
+            speaker1_alias = speaker1_alias_entry.get().strip()
+            speaker2_alias = speaker2_alias_entry.get().strip()
+
+            # Fetch the current state of the transcription text
+            transcription_text = self.getTranscriptionText()
+            if speaker1_alias:
+                transcription_text = transcription_text.replace("Speaker 1:", f"{speaker1_alias}:")
+            if speaker2_alias:
+                transcription_text = transcription_text.replace("Speaker 2:", f"{speaker2_alias}:")
+
+            # Update the transcriptionBox with the new aliases
+            self.transcriptionBox.delete("0.0", "end")
+            self.transcriptionBox.insert("0.0", transcription_text)
+            popup.destroy()
+
+        # Button to apply the custom aliases
+        apply_button = CTkButton(popup, text="Apply Aliases", command=applyAliases)
+        apply_button.pack(pady=10)
+    
     def uploadAudio(self):
         '''Upload user's audio file'''
         filename = filedialog.askopenfilename()
@@ -307,6 +347,7 @@ class audioMenu(CTkFrame):
 
         self.transcriptionBox.configure(state="normal")
         unlockItem(self.transcriptionBox)
+        unlockItem(self.labelSpeakersButton)
         self.transcriptionBox.delete("0.0", "end")
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
         if self.infoTab.isTranscriptionLocked(): lockItem(self.transcriptionBox)
