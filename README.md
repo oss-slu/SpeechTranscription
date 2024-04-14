@@ -6,18 +6,6 @@ The app can currently transcribe audio samples of a conversation between a child
 The program can currently be run by:
 `python gui.py`
 
-Requirements include:
-
-* Allow the user to input participant/client information like name, age, gender and examiner details.
-* Record and Transcribe an audio language sample into text that SLPs can transfer to SALT’s program.
-* The transcription should automatically correct errors like accents and mispronounced letters. (e.g, bath instead of “baf”).
-* The transcription should include errors like missed grammatical morphemes, missing words, incorrect word usage and ungrammatical sentences.
-* Identify and label the speakers (For e.g., if a child says “I am fine” it should be represented as “C I am fine”).
-* The user can play the audio and manually change the transcription.
-* The program should be able to generate a transcription with SALT’s convention or without any conventions.
-* Finally, there should be an option to export the transcription into a word document.
-
-
 # Contributing as a Developer
 
 ## Development Environment
