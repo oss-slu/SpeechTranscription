@@ -246,7 +246,7 @@ def correctSentence(x) :
             correctedIndex += 1
         # The current word in the corrected sentence matches the next word in the original one, append word in original with [EW]
         # (Checks to make sure index won't go out of bounds)
-        elif (originalIndex < len(originalWords) and originalWords[originalIndex+1] == correctedWords[correctedIndex]):
+        elif (originalIndex + 1 < len(originalWords) and originalWords[originalIndex+1] == correctedWords[correctedIndex]):
             saltSentence += originalWords[originalIndex] + "[EW] "
             originalIndex += 1
         # If either index is at the last element, default to word-level error
