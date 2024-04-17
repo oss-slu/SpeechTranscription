@@ -21,12 +21,13 @@ def plotAudio(time, signal):
 class mainGUI(CTk):
     def new_audio(self):
         dialog = CTkInputDialog(text="Enter Name of Session", title="New Audio")
-        self.audioMenuList.append(audioMenu(self))
-        newButton = createButton(self.userFrame.audioTabs, dialog.get_input(), len(self.audioButtonList), 0, lambda x=self.currentAudioNum: self.changeAudioWindow(x), lock=False)
-        self.audioButtonList.append(newButton)
-        
-        self.changeAudioWindow(self.currentAudioNum)
-        self.currentAudioNum += 1
+        session_name = dialog.get_input().strip()  # Get input and strip any whitespace
+        if session_name:  # Check if the name is not empty after stripping
+            self.audioMenuList.append(audioMenu(self))
+            newButton = createButton(self.userFrame.audioTabs, session_name, len(self.audioButtonList), 0, lambda x=self.currentAudioNum: self.changeAudioWindow(x), lock=False)
+            self.audioButtonList.append(newButton)
+            self.changeAudioWindow(self.currentAudioNum)
+            self.currentAudioNum += 1
 
     def changeAudioWindow(self, num):
         print("Changing Audio to #" + str(num))
