@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 
 WIDTH = 1340
 HEIGHT = 800
+SETTINGS_FILE = "user_settings.txt"
+
 
 def plotAudio(time, signal):
     '''Plots the waveform of audio'''
@@ -51,7 +53,12 @@ class mainGUI(CTk):
         self.audioMenuList: list[audioMenu] = []
 
         self.title('Speech Transcription')
-        set_appearance_mode("dark")
+        if os.path.getsize(SETTINGS_FILE) != 0:
+            file = open(SETTINGS_FILE, "r")
+            set_appearance_mode(file.read())
+            file.close()
+        else:
+            set_appearance_mode("dark")
         set_default_color_theme("blue")
         deactivate_automatic_dpi_awareness()
         self.resizable(False, False)
@@ -86,6 +93,11 @@ class userMenu(CTkFrame):
         
     def changeTheme(self, theme: str):
         set_appearance_mode(theme.lower())
+
+        # Save theme setting to txt file
+        file = open(SETTINGS_FILE, "w")
+        file.write(theme.lower())
+        file.close()
 
 class sessionInfoMenu(CTkTabview):
     def __init__(self, master, transcriptionBox: CTkTextbox, grammarBox: CTkTextbox):
