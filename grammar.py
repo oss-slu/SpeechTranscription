@@ -1,4 +1,4 @@
-from functions import addConventions
+import addConventions
 import nltk
 
 class GrammarChecker:
