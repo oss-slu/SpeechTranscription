@@ -1,4 +1,4 @@
-from functions import addConventions
+import addConventions
 
 class Test_isToBeVerb:
     def test_one(self):
