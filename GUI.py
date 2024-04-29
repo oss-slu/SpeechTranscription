@@ -202,15 +202,9 @@ class audioMenu(CTkFrame):
 
         self.labelSpeakersButton = createButton(self, "Label Speakers", 5, 0, self.labelSpeakers, lock=False) # For speaker labeling
 
-        #self.audioPlayback = CTkLabel(self, text="Audio Playback Area", height=175, fg_color="Red", font=("Arial", 30))
-        #self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
         self.audioPlayback = CTkLabel(self, text="", height=50, fg_color=None, font=("Arial", 16))
-        #self.audioPlayback = CTkLabel(self, height=150, fg_color="gray")
-        #self.exNameBox = CTkEntry(self.tab("Audio Playback Controls"), placeholder_text="Audio Playback")
-        self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
 
-        #self.label = CTkLabel(master=self, text="Speech Transcription", height=75, font=("Arial", 26))
-        #self.label.grid(row=0, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
+        self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
 
         # Play Button
         self.playButton = createButton(self, "Play", 2, 0, self.playAudio, padx=10, pady=10, columnspan=1, lock=False)
