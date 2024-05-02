@@ -1,5 +1,5 @@
 from customtkinter import *
-from functions import diarizationAndTranscription
+import diarizationAndTranscription
 from audio import AudioManager
 from client_info import ClientInfo
 from grammar import GrammarChecker
