@@ -8,9 +8,8 @@ import threading
 import matplotlib.pyplot as plt
 
 WIDTH = 1340
-HEIGHT = 800
+HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
-
 
 def plotAudio(time, signal):
     '''Plots the waveform of audio'''
@@ -23,11 +22,12 @@ def plotAudio(time, signal):
 class mainGUI(CTk):
     def new_audio(self):
         dialog = CTkInputDialog(text="Enter Name of Session", title="New Audio")
-        session_name = dialog.get_input().strip()  # Get input and strip any whitespace
-        if session_name:  # Check if the name is not empty after stripping
+        session_name = dialog.get_input().strip() # Get input and strip any whitespace
+        if session_name: # Check if the name is not empty after stripping
             self.audioMenuList.append(audioMenu(self))
             newButton = createButton(self.userFrame.audioTabs, session_name, len(self.audioButtonList), 0, lambda x=self.currentAudioNum: self.changeAudioWindow(x), lock=False)
             self.audioButtonList.append(newButton)
+            
             self.changeAudioWindow(self.currentAudioNum)
             self.currentAudioNum += 1
 
@@ -207,7 +207,6 @@ class audioMenu(CTkFrame):
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
-        
         createButton(self, "Upload", 1, 0, self.uploadAudio, lock=False)
         self.recordButton = createButton(self, "Record", 1, 1, self.recordAudio, lock=False)
         self.transcribeButton = createButton(self, "Transcribe", 3, 0, self.transcriptionThread, 15, 15, 2, 100, ("Arial", 40))
@@ -217,12 +216,19 @@ class audioMenu(CTkFrame):
         self.morphemesButton = createButton(self, "Add Morphemes", 4, 3, self.inflectionalMorphemes)
         self.submitGrammarButton = createButton(self, "Submit", 4, 5, self.applyCorrection, 5)
 
-        self.labelSpeakersButton = createButton(self, "Label Speakers", 5, 0, self.labelSpeakers) # For speaker labeling
+        self.labelSpeakersButton = createButton(self, "Label Speakers", 5, 0, self.labelSpeakers, lock=True) # For speaker labeling
         self.applyAliasesButton = createButton(self, "Apply Aliases", 5, 1, self.customizeSpeakerAliases) # For more specific labeling
 
+        self.audioPlayback = CTkLabel(self, text="", height=50, fg_color=None, font=("Arial", 16))
 
-        self.audioPlayback = CTkLabel(self, text="Audio Playback Area", height=175, fg_color="Red", font=("Arial", 30))
         self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
+
+        # Play Button
+        self.playButton = createButton(self, "Play", 2, 0, self.playAudio, padx=10, pady=10, columnspan=1, lock=False)
+
+        # Pause Button
+        self.pauseButton = createButton(self, "Pause", 2, 1, self.pauseAudio, padx=10, pady=10, columnspan=1, lock=False)
+        self.pauseButton.configure(state="disabled") # Initially disabled
 
         self.transcriptionBox = CTkTextbox(self, width=300)
         self.transcriptionBox.grid(row=0, column=2, columnspan=2, rowspan=4, padx=10, pady= 10, sticky=N+E+S+W)
@@ -244,7 +250,49 @@ class audioMenu(CTkFrame):
         self.progressBar = CTkProgressBar(self, width = 500, mode = "indeterminate")
         
         self.grammarCheckPerformed = False
+
+        self.playback_thread = None #thread for when audio is playing
         
+    def playAudio(self):
+        '''Play audio from the current position'''
+        #if not self.audio.paused or not self.audio.playing:
+        if not self.audio.playing:
+            #if self.playback_thread is None or not self.playback_thread.is_alive():
+            if self.playback_thread is not None and self.playback_thread.is_alive():
+                self.playback_thread.exit()
+                self.audio.stopPlayback() # Ensure stopping previous playback
+                # Start a new thread if not already playing or if the thread is not alive
+                #self.playback_thread = threading.Thread(target=self.audio.play)
+                #self.playback_thread.start()
+            self.audio.playing = False
+            self.audio.paused = False
+            self.pauseButton.configure(text="Pause", state="disabled")
+            self.startPlayback()
+            #self.audio.play()
+        self.playButton.configure(state="disabled")#
+        print('disabled')
+
+    def startPlayback(self):
+        '''Handles starting the audio playback in a thread'''
+        if self.playback_thread is None or not self.playback_thread.is_alive():
+            self.playback_thread = threading.Thread(target=self.audio.play)
+            self.playback_thread.start()
+            self.pauseButton.configure(state="normal")  # Enable the pause button when playing
+
+    def pauseAudio(self):
+        '''Pause the currently playing audio'''
+        #if not self.audio.paused:
+            #self.audio.pause()
+        if self.audio.pause():
+            self.pauseButton.configure(text="Resume")
+            self.playButton.configure(state='disabled')
+        else:
+            self.pauseButton.configure(text="Pause")
+            self.playButton.configure(state='normal')
+        if not self.playback_thread.is_alive():  # In case the thread ended
+            self.pauseButton.configure(state="disabled")   
+            
+
     def startProgressBar(self):
         self.progressBar.grid(row=5, column=1, columnspan=6, padx=2, pady=2)
         self.progressBar.start()
@@ -293,7 +341,7 @@ class audioMenu(CTkFrame):
         # Buttons for applying speaker labels
         CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
         CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
-    
+
     def customizeSpeakerAliases(self):
         popup = CTkToplevel(self)
         popup.title("Customize Speaker Aliases")
@@ -330,7 +378,7 @@ class audioMenu(CTkFrame):
         # Button to apply the custom aliases
         apply_button = CTkButton(popup, text="Apply Aliases", command=applyAliases)
         apply_button.pack(pady=10)
-    
+
     def uploadAudio(self):
         '''Upload user's audio file'''
         filename = filedialog.askopenfilename()
@@ -374,8 +422,13 @@ class audioMenu(CTkFrame):
         
     def transcriptionThread(self):
         '''Creates thread that executes the transcribe function'''
+        if self.audio.playing or not self.audio.paused:
+            self.audio.stopPlayback()
+            if self.playback_thread is not None and self.playback_thread.is_alive():
+                #threading.Thread(target = self.transcribe).start()
+                self.playback_thread.join()
         threading.Thread(target = self.transcribe).start()
-        
+
     def downloadRecordedAudio(self):
         '''Download file of recorded audio'''
         downloadFile = filedialog.asksaveasfile(defaultextension = ".wav", filetypes = [("Wave File", ".wav"), ("All Files", ".*")], initialfile = "downloaded_audio.wav")
@@ -469,4 +522,3 @@ def lockMultipleItems(items: list):
     
 if __name__ == "__main__":
     gui = mainGUI()
-
