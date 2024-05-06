@@ -53,11 +53,15 @@ class mainGUI(CTk):
         self.audioMenuList: list[audioMenu] = []
 
         self.title('Speech Transcription')
-        if os.path.getsize(SETTINGS_FILE) != 0:
-            file = open(SETTINGS_FILE, "r")
-            set_appearance_mode(file.read())
-            file.close()
-        else:
+        try:
+            if os.path.getsize(SETTINGS_FILE) != 0:
+                file = open(SETTINGS_FILE, "r")
+                set_appearance_mode(file.read())
+                file.close()
+            else:
+                set_appearance_mode("dark")
+        except FileNotFoundError:
+            print("Settings file not found. Defaulting to dark mode.")
             set_appearance_mode("dark")
         set_default_color_theme("blue")
         deactivate_automatic_dpi_awareness()
