@@ -190,7 +190,6 @@ class audioMenu(CTkFrame):
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
-        
         createButton(self, "Upload", 1, 0, self.uploadAudio, lock=False)
         self.recordButton = createButton(self, "Record", 1, 1, self.recordAudio, lock=False)
         self.transcribeButton = createButton(self, "Transcribe", 3, 0, self.transcriptionThread, 15, 15, 2, 100, ("Arial", 40))
@@ -211,6 +210,7 @@ class audioMenu(CTkFrame):
 
         # Pause Button
         self.pauseButton = createButton(self, "Pause", 2, 1, self.pauseAudio, padx=10, pady=10, columnspan=1, lock=False)
+        self.pauseButton.configure(state="disabled") # Initially disabled
 
         self.transcriptionBox = CTkTextbox(self, width=300)
         self.transcriptionBox.grid(row=0, column=2, columnspan=2, rowspan=4, padx=10, pady= 10, sticky=N+E+S+W)
@@ -232,16 +232,48 @@ class audioMenu(CTkFrame):
         self.progressBar = CTkProgressBar(self, width = 500, mode = "indeterminate")
         
         self.grammarCheckPerformed = False
+
+        self.playback_thread = None #thread for when audio is playing
         
     def playAudio(self):
         '''Play audio from the current position'''
-        if not self.audio.paused or not self.audio.playing:
-            self.audio.play()
+        #if not self.audio.paused or not self.audio.playing:
+        if not self.audio.playing:
+            #if self.playback_thread is None or not self.playback_thread.is_alive():
+            if self.playback_thread is not None and self.playback_thread.is_alive():
+                self.playback_thread.exit()
+                self.audio.stopPlayback() # Ensure stopping previous playback
+                # Start a new thread if not already playing or if the thread is not alive
+                #self.playback_thread = threading.Thread(target=self.audio.play)
+                #self.playback_thread.start()
+            self.audio.playing = False
+            self.audio.paused = False
+            self.pauseButton.configure(text="Pause", state="disabled")
+            self.startPlayback()
+            #self.audio.play()
+        self.playButton.configure(state="disabled")#
+        print('disabled')
+
+    def startPlayback(self):
+        '''Handles starting the audio playback in a thread'''
+        if self.playback_thread is None or not self.playback_thread.is_alive():
+            self.playback_thread = threading.Thread(target=self.audio.play)
+            self.playback_thread.start()
+            self.pauseButton.configure(state="normal")  # Enable the pause button when playing
 
     def pauseAudio(self):
         '''Pause the currently playing audio'''
-        if not self.audio.paused:
-            self.audio.pause()   
+        #if not self.audio.paused:
+            #self.audio.pause()
+        if self.audio.pause():
+            self.pauseButton.configure(text="Resume")
+            self.playButton.configure(state='disabled')
+        else:
+            self.pauseButton.configure(text="Pause")
+            self.playButton.configure(state='normal')
+        if not self.playback_thread.is_alive():  # In case the thread ended
+            self.pauseButton.configure(state="disabled")   
+            
 
     def startProgressBar(self):
         self.progressBar.grid(row=5, column=0, columnspan=6, padx=2, pady=2)
@@ -333,8 +365,13 @@ class audioMenu(CTkFrame):
         
     def transcriptionThread(self):
         '''Creates thread that executes the transcribe function'''
+        if self.audio.playing or not self.audio.paused:
+            self.audio.stopPlayback()
+            if self.playback_thread is not None and self.playback_thread.is_alive():
+                #threading.Thread(target = self.transcribe).start()
+                self.playback_thread.join()
         threading.Thread(target = self.transcribe).start()
-        
+
     def downloadRecordedAudio(self):
         '''Download file of recorded audio'''
         downloadFile = filedialog.asksaveasfile(defaultextension = ".wav", filetypes = [("Wave File", ".wav"), ("All Files", ".*")], initialfile = "downloaded_audio.wav")
