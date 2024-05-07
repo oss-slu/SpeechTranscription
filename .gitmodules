@@ -1,0 +1,3 @@
+[submodule "CtkXYFrame"]
+	path = /CtkXYFrame
+	url = https://github.com/Akascape/CTkXYFrame.git
