@@ -152,17 +152,12 @@ class AudioManager:
         #    self.pause()  # Immediately pause since we're only updating the position
 
     def stopPlayback(self):     
-        if self.playing:
-            # Stop playback and close the stream
-            if self.out_stream is not None:
-                print("out stream", self.out_stream)
-                print('here2')
-                self.out_stream.stop_stream()
-                self.out_stream.close()
-                self.playing = False
-                self.paused = True
-            # Try to reset the PyAudio instance
-            self.p.terminate()
-            self.p = pyaudio.PyAudio()  # Reinitialize PyAudio instance
-        
- 
+        '''Stops the audio playback and cleans up resources.'''
+        self.playing = False
+        self.paused = True  # Ensure paused is True so playback can reset correctly
+        if self.out_stream is not None:
+            self.out_stream.stop_stream()
+            self.out_stream.close()
+        self.p.terminate()
+        self.p = pyaudio.PyAudio()  # Reinitialize PyAudio
+    
