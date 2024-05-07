@@ -4,6 +4,7 @@ from audio import AudioManager
 from client_info import ClientInfo
 from grammar import GrammarChecker
 from export import Exporter
+from CTkXYFrame.CTkXYFrame import *
 import threading
 import matplotlib.pyplot as plt
 
@@ -87,7 +88,7 @@ class userMenu(CTkFrame):
         self.label = CTkLabel(master=self, text="Speech Transcription", height=75, font=("Arial", 26))
         self.label.grid(row=0, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
 
-        self.audioTabs = CTkScrollableFrame(self, height=560)
+        self.audioTabs = CTkXYFrame(self, height=500)
         self.audioTabs.grid(row=2, rowspan=8, columnspan=2, pady=5, padx=10, sticky=N+E+S+W)
 
         CTkLabel(self, text="Theme").grid(row=10, column=0, padx=10, pady=5, sticky=N+E+S+W)
