@@ -4,7 +4,7 @@ from audio import AudioManager
 from client_info import ClientInfo
 from grammar import GrammarChecker
 from export import Exporter
-from CTkXYFrame.CTkXYFrame import *
+from CTkXYFrame.CTkXYFrame import * # Uses Third party license found in CtkXYFrame/ folder
 import threading
 import matplotlib.pyplot as plt
 
