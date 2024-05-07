@@ -29,6 +29,7 @@ jobs:
 
       - name: Analysing the code with pylint and handling exit code
         run: |
+          git submodule init
           pylint --errors-only  *.py $(git ls-files '*.py')
           pylint_exit=$?
           if [ $pylint_exit -eq 0 ]; then
