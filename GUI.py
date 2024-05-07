@@ -4,6 +4,7 @@ from audio import AudioManager
 from client_info import ClientInfo
 from grammar import GrammarChecker
 from export import Exporter
+from CTkXYFrame.CTkXYFrame.ctk_xyframe import * # Uses Third party license found in CtkXYFrame/ folder
 import threading
 import matplotlib.pyplot as plt
 
@@ -25,7 +26,7 @@ class mainGUI(CTk):
         session_name = dialog.get_input().strip() # Get input and strip any whitespace
         if session_name: # Check if the name is not empty after stripping
             self.audioMenuList.append(audioMenu(self))
-            newButton = createButton(self.userFrame.audioTabs, session_name, len(self.audioButtonList), 0, lambda x=self.currentAudioNum: self.changeAudioWindow(x), lock=False)
+            newButton = createButton(self.userFrame.audioTabs, session_name, len(self.audioButtonList), 0, lambda x=self.currentAudioNum: self.changeAudioWindow(x), width = self.userFrame.audioTabs.cget("width"), lock=False)
             self.audioButtonList.append(newButton)
             
             self.changeAudioWindow(self.currentAudioNum)
@@ -72,7 +73,7 @@ class mainGUI(CTk):
         self.userFrame = userMenu(master=self)
         self.userFrame.grid(row=0, column=0, padx = 1, sticky=NW)
 
-        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, columnspan=2, lock=False)
+        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, height=60, columnspan=2, lock=False)
 
         self.audioFrame = CTkFrame(self)
 
@@ -87,7 +88,7 @@ class userMenu(CTkFrame):
         self.label = CTkLabel(master=self, text="Speech Transcription", height=75, font=("Arial", 26))
         self.label.grid(row=0, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
 
-        self.audioTabs = CTkScrollableFrame(self, height=465)
+        self.audioTabs = CTkXYFrame(self, height=465)
         self.audioTabs.grid(row=2, rowspan=8, columnspan=2, pady=5, padx=10, sticky=N+E+S+W)
 
         CTkLabel(self, text="Theme").grid(row=10, column=0, padx=10, pady=5, sticky=N+E+S+W)
@@ -207,9 +208,10 @@ class audioMenu(CTkFrame):
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
-        createButton(self, "Upload", 1, 0, self.uploadAudio, lock=False)
+        
+        createButton(self, "Upload", 1, 0, self.uploadAudio, lock=False) #The program breaks if you make this like the others?
         self.recordButton = createButton(self, "Record", 1, 1, self.recordAudio, lock=False)
-        self.transcribeButton = createButton(self, "Transcribe", 3, 0, self.transcriptionThread, 15, 15, 2, 100, ("Arial", 40))
+        self.transcribeButton = createButton(self, "Transcribe", 3, 0, self.transcriptionThread, 15, 15, 2, 100, font = ("Arial", 40))
         self.downloadAudioButton = createButton(self, "Download Audio", 4, 0, self.downloadRecordedAudio)
         self.exportButton = createButton(self, "Export to Word", 4, 1, self.exportToWord)
         self.grammarButton = createButton(self, "Grammar Check", 4, 2, self.grammarCheckThread)
@@ -494,9 +496,9 @@ class audioMenu(CTkFrame):
     def getGrammarText(self):
         return self.conventionBox.get('1.0', "end")
 
-def createButton(master, text: str, row: int, column: int, command = None, padx = 10, pady = 10, columnspan = 1, height = 60, font = ("Arial", 14), lock=True):
+def createButton(master, text: str, row: int, column: int, command = None, padx = 10, pady = 10, columnspan = 1, height = 50, width = 100, font = ("Arial", 14), lock=True):
     '''Creates button to be displayed'''
-    button = CTkButton(master, text = text, height = height, command = command, font = font)
+    button = CTkButton(master, text = text, height = height, width = width, command = command, font = font)
     if row is not None and column is not None:
         button.grid(row = row, column = column, columnspan = columnspan, padx = padx, pady = pady, sticky=W+E)
     if lock: lockItem(button)
