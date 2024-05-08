@@ -4,13 +4,18 @@ from audio import AudioManager
 from client_info import ClientInfo
 from grammar import GrammarChecker
 from export import Exporter
+from PIL import Image
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import * # Uses Third party license found in CtkXYFrame/ folder
 import threading
 import matplotlib.pyplot as plt
 
+
 WIDTH = 1340
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
+LOCK_ICON = customtkinter.CTkImage(Image.open("images/locked_icon.png"), Image.open("images/locked_icon.png"), (30, 30))
+UNLOCK_ICON = customtkinter.CTkImage(Image.open("images/unlocked_icon.png"), Image.open("images/unlocked_icon.png"), (30, 30))
+CLEAR_ICON = customtkinter.CTkImage(Image.open("images/clear_icon.png"), Image.open("images/clear_icon.png"), (30, 30))
 
 def plotAudio(time, signal):
     '''Plots the waveform of audio'''
@@ -184,20 +189,6 @@ class sessionInfoMenu(CTkTabview):
         if not self.examinerLocked:
             for item in [self.exNameBox, self.dosBox, self.contextBox]:
                 item.delete("0.0", "end")
-            
-    def isTranscriptionLocked(self):
-        return self.lockTranscription.get() == "on"
-    
-    def isGrammarLocked(self):
-        return self.lockGrammar.get() == "on"
-    
-    def toggleTranscription(self):
-        if self.isTranscriptionLocked(): lockItem(self.transcriptionBox)
-        else: unlockItem(self.transcriptionBox)
-        
-    def toggleGrammar(self):
-        if self.isGrammarLocked(): lockItem(self.grammarBox)
-        else: unlockItem(self.grammarBox)
 
 class audioMenu(CTkFrame):
     def __init__(self, master):
@@ -209,47 +200,76 @@ class audioMenu(CTkFrame):
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
         
-        createButton(self, "Upload", 1, 0, self.uploadAudio, lock=False) #The program breaks if you make this like the others?
-        self.recordButton = createButton(self, "Record", 1, 1, self.recordAudio, lock=False)
-        self.transcribeButton = createButton(self, "Transcribe", 3, 0, self.transcriptionThread, 15, 15, 2, 100, font = ("Arial", 40))
-        self.downloadAudioButton = createButton(self, "Download Audio", 4, 0, self.downloadRecordedAudio)
-        self.exportButton = createButton(self, "Export to Word", 4, 1, self.exportToWord)
-        self.grammarButton = createButton(self, "Grammar Check", 4, 2, self.grammarCheckThread)
-        self.morphemesButton = createButton(self, "Add Morphemes", 4, 3, self.inflectionalMorphemes)
-        self.submitGrammarButton = createButton(self, "Submit", 4, 5, self.applyCorrection, 5)
+        # ROW 0: Frame for Audio Upload/Record buttons
+        self.audioInputFrame = CTkFrame(self, height = 80)
+        self.audioInputFrame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N+E+W)
+        self.audioInputLabel = CTkLabel(self.audioInputFrame, text="Input Audio Source Here", font=("Arial", 18))
+        self.audioInputLabel.grid(row=0, column=0, columnspan= 2, padx=10, pady=10)
+        self.uploadButton = createButton(self.audioInputFrame, "Upload", 1, 0, self.uploadAudio, height=80, font=("Arial", 18), lock=False)
+        self.recordButton = createButton(self.audioInputFrame, "Record", 1, 1, self.recordAudio, height=80, font=("Arial", 18), lock=False)
 
-        self.labelSpeakersButton = createButton(self, "Label Speakers", 5, 0, self.labelSpeakers, lock=True) # For speaker labeling
-        self.applyAliasesButton = createButton(self, "Apply Aliases", 5, 1, self.customizeSpeakerAliases) # For more specific labeling
+        # ROW 1: Audio Playback control
+        self.playButton = createButton(self, "Play", 1, 0, self.playAudio, padx=10, pady=10)
+        self.pauseButton = createButton(self, "Pause", 1, 1, self.pauseAudio, padx=10, pady=10)
 
-        self.audioPlayback = CTkLabel(self, text="", height=50, fg_color=None, font=("Arial", 16))
+        # ROW 2+3: Transcribe (and progress bar)
+        self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125, font = ("Arial", 40))
 
-        self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
+        # ROW 4: Labelling Transcription buttons
+        self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True) # For speaker labeling
+        self.applyAliasesButton = createButton(self, "Apply Aliases", 4, 1, self.customizeSpeakerAliases) # For more specific labeling
 
-        # Play Button
-        self.playButton = createButton(self, "Play", 2, 0, self.playAudio, padx=10, pady=10, columnspan=1, lock=False)
+        # ROW 5: Export, Grammar, and correction boxes.
+        self.downloadAudioButton = createButton(self, "Download Audio", 5, 0, self.downloadRecordedAudio)
+        self.exportButton = createButton(self, "Export to Word", 5, 1, self.exportToWord)
 
-        # Pause Button
-        self.pauseButton = createButton(self, "Pause", 2, 1, self.pauseAudio, padx=10, pady=10, columnspan=1, lock=False)
-        self.pauseButton.configure(state="disabled") # Initially disabled
-
-        self.transcriptionBox = CTkTextbox(self, width=300)
-        self.transcriptionBox.grid(row=0, column=2, columnspan=2, rowspan=4, padx=10, pady= 10, sticky=N+E+S+W)
-        self.transcriptionBox.insert("0.0", text="Transcription Box")
-        lockItem(self.transcriptionBox)
-
-        self.conventionBox = CTkTextbox(self, width=300)
-        self.conventionBox.grid(row=0, column=4, columnspan=2, rowspan=4, padx=10, pady=10, sticky=N+E+S+W)
-        self.conventionBox.insert("0.0", text="Grammar Box")
-        lockItem(self.conventionBox)
+        self.grammarButton = createButton(self, "Grammar Check", 5, 2, self.grammarCheckThread)
+        self.morphemesButton = createButton(self, "Add Morphemes", 5, 3, self.inflectionalMorphemes)
+        self.submitGrammarButton = createButton(self, "Submit", 5, 5, self.applyCorrection)
 
         self.correctionEntryBox = CTkTextbox(self, height=60)
-        self.correctionEntryBox.grid(row=4,column=4, padx=10, sticky=E+W)
+        self.correctionEntryBox.grid(row=5,column=4, padx=10, sticky=E+W)
         lockItem(self.correctionEntryBox)
 
-        self.infoTab = sessionInfoMenu(self, self.transcriptionBox, self.conventionBox)
-        self.infoTab.grid(row=0, column=0, columnspan=2, padx=15, pady=15)
+        # self.audioPlayback = CTkLabel(self, text="", height=50, fg_color=None, font=("Arial", 16))
+        # self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
+
+        # Transcription Box Control and Frame
+        self.transcriptionBoxFrame = CTkFrame(self)
+        self.transcriptionBoxFrame.grid(row=0, column=2, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
+        self.transcriptionBoxLabel = CTkLabel(self.transcriptionBoxFrame, height=10, text="Transcription Box", font=("Arial", 18))
+        self.transcriptionBoxLabel.grid(row=0, column=0, padx=5)
+        self.transcriptionBoxLockButton = createButton(master=self.transcriptionBoxFrame, text='', row=0, column=1, command=self.toggleTranscriptionBox, height=10, width=10, lock=False)
+        self.transcriptionBoxLockButton.configure(image=LOCK_ICON)
+        self.transcriptionBoxClearButton = createButton(master=self.transcriptionBoxFrame, text='Clear Box?', row=0, column=2, command=self.clearTranscriptionBox, height=10, width=10, lock=False)
+        self.transcriptionBoxClearButton.configure(image=CLEAR_ICON)
+
+        self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
+        self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady= 10, sticky=N+E+S+W)
+        self.transcriptionBox.insert("0.0", text="Text will generate here")
+        lockItem(self.transcriptionBox)
+
+
+        # Conventions Box Control and Frame
+        self.conventionBoxFrame = CTkFrame(self)
+        self.conventionBoxFrame.grid(row=0, column=4, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
+        self.conventionBoxLabel = CTkLabel(self.conventionBoxFrame, height=10, text="Convention Box",  font=("Arial", 18))
+        self.conventionBoxLabel.grid(row=0, column=0, padx=5)
+        self.conventionBoxLockButton = createButton(master=self.conventionBoxFrame, text='', row=0, column=1, command=self.toggleGrammarBox, height=10, width=10, lock=False)
+        self.conventionBoxLockButton.configure(image=LOCK_ICON)
+        self.conventionBoxClearButton = createButton(master=self.conventionBoxFrame, text='Clear Box?', row=0, column=2, command=self.clearGrammarBox,height=10, width=10, lock=False)
+        self.conventionBoxClearButton.configure(image=CLEAR_ICON)
+
+
+        self.conventionBox = CTkTextbox(self.conventionBoxFrame, width=350, height=500)
+        self.conventionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N+E+S+W)
+        self.conventionBox.insert("0.0", text="Text will generate here")
+        lockItem(self.conventionBox)
+
+        # self.infoTab = sessionInfoMenu(self, self.transcriptionBox, self.conventionBox)
+        # self.infoTab.grid(row=0, column=0, columnspan=2, padx=15, pady=15)
         
-        self.progressBar = CTkProgressBar(self, width = 500, mode = "indeterminate")
+        self.progressBar = CTkProgressBar(self, width = 225, mode = "indeterminate")
         
         self.grammarCheckPerformed = False
 
@@ -296,12 +316,16 @@ class audioMenu(CTkFrame):
             
 
     def startProgressBar(self):
-        self.progressBar.grid(row=5, column=1, columnspan=6, padx=2, pady=2)
+        self.transcribeButton.grid(row=2, column=0, rowspan = 1, columnspan=2)
+        self.transcribeButton.configure(height=100)
+        self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
         self.progressBar.start()
     
     def stopProgressBar(self):
         self.progressBar.stop()
         self.progressBar.grid_remove()
+        self.transcribeButton.configure(height=200)
+        self.transcribeButton.grid(row=2, column=0, rowspan = 2, columnspan=2)
 
     def labelSpeakers(self):
         popup = CTkToplevel(self)
@@ -386,6 +410,8 @@ class audioMenu(CTkFrame):
         filename = filedialog.askopenfilename()
         if filename:
             print("File uploaded: ", filename)
+            unlockItem(self.playButton)
+            unlockItem(self.pauseButton)
             unlockItem(self.transcribeButton)
             unlockItem(self.downloadAudioButton)
             time, signal = self.audio.upload(filename)
@@ -401,6 +427,8 @@ class audioMenu(CTkFrame):
             self.audio.record()
         else:
             self.recordButton.configure(text = "Record")
+            unlockItem(self.playButton)
+            unlockItem(self.pauseButton)
             unlockItem(self.transcribeButton)
             unlockItem(self.downloadAudioButton)
             filename, time, signal = self.audio.stop()
@@ -417,7 +445,7 @@ class audioMenu(CTkFrame):
         unlockItem(self.labelSpeakersButton)
         self.transcriptionBox.delete("0.0", "end")
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
-        if self.infoTab.isTranscriptionLocked(): lockItem(self.transcriptionBox)
+        # if self.infoTab.isTranscriptionLocked(): lockItem(self.transcriptionBox)
         unlockItem(self.grammarButton)
         unlockItem(self.exportButton)
         self.stopProgressBar()
@@ -493,14 +521,43 @@ class audioMenu(CTkFrame):
     def getTranscriptionText(self):
         return self.transcriptionBox.get('1.0', "end")
     
-    def getGrammarText(self):
-        return self.conventionBox.get('1.0', "end")
+    def toggleTranscriptionBox(self):
+        if self.transcriptionBoxLockButton.cget('image') == LOCK_ICON:
+            self.transcriptionBox.configure(state="normal")
+            self.transcriptionBoxLockButton.configure(image = UNLOCK_ICON)
+        else: 
+            self.transcriptionBox.configure(state="disabled")
+            self.transcriptionBoxLockButton.configure(image = LOCK_ICON)
+        
+    def toggleGrammarBox(self):
+        if self.conventionBoxLockButton.cget('image') == LOCK_ICON:
+            self.conventionBox.configure(state="normal")
+            self.conventionBoxLockButton.configure(image = UNLOCK_ICON)
+        else: 
+            self.conventionBox.configure(state="disabled")
+            self.conventionBoxLockButton.configure(image = LOCK_ICON)
+    
+    def clearTranscriptionBox(self):
+        if self.transcriptionBoxLockButton.cget('image') == LOCK_ICON:
+            self.toggleTranscriptionBox()
+            self.transcriptionBox.delete("1.0", END)
+            self.toggleTranscriptionBox()
+        else:
+            self.transcriptionBox.delete("1.0", END)
 
-def createButton(master, text: str, row: int, column: int, command = None, padx = 10, pady = 10, columnspan = 1, height = 50, width = 100, font = ("Arial", 14), lock=True):
+    def clearGrammarBox(self):
+        if self.conventionBoxLockButton.cget('image') == LOCK_ICON:
+            self.toggleGrammarBox()
+            self.conventionBox.delete("1.0", END)
+            self.toggleGrammarBox()
+        else:
+            self.conventionBox.delete("1.0", END)
+
+def createButton(master, text: str, row: int, column: int, command = None, padx = 10, pady = 10, rowspan = 1, columnspan = 1, height = 60, width = 100, font = ("Arial", 14), lock=True):
     '''Creates button to be displayed'''
     button = CTkButton(master, text = text, height = height, width = width, command = command, font = font)
     if row is not None and column is not None:
-        button.grid(row = row, column = column, columnspan = columnspan, padx = padx, pady = pady, sticky=W+E)
+        button.grid(row = row, column = column, rowspan = rowspan, columnspan = columnspan, padx = padx, pady = pady, sticky=W+E)
     if lock: lockItem(button)
     return button
 
