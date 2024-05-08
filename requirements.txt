@@ -20,6 +20,7 @@ numpy
 simple_diarizer
 python-dotenv
 lightning_fabric
+pillow
 
 # For testing purposes
 pytest
