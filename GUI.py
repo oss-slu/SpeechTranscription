@@ -314,7 +314,6 @@ class audioMenu(CTkFrame):
         if not self.playback_thread.is_alive():  # In case the thread ended
             self.pauseButton.configure(state="disabled")   
             
-
     def startProgressBar(self):
         self.transcribeButton.grid(row=2, column=0, rowspan = 1, columnspan=2)
         self.transcribeButton.configure(height=100)
@@ -507,7 +506,7 @@ class audioMenu(CTkFrame):
             lockItem(self.correctionEntryBox)
             lockItem(self.submitGrammarButton)
             self.grammarCheckPerformed = True
-        if self.infoTab.isGrammarLocked(): lockItem(self.conventionBox)
+        # if self.infoTab.isGrammarLocked(): lockItem(self.conventionBox)
         
     def inflectionalMorphemes(self):
         '''Adds conventions to text from transcription box and puts output in conventionBox box'''
@@ -515,7 +514,7 @@ class audioMenu(CTkFrame):
         converting = self.grammar.getInflectionalMorphemes(self.conventionBox.get("1.0", "end"))
         self.conventionBox.delete("1.0", "end")
         self.conventionBox.insert("end", converting)
-        if self.infoTab.isGrammarLocked(): lockItem(self.conventionBox)
+        # if self.infoTab.isGrammarLocked(): lockItem(self.conventionBox)
         lockItem(self.morphemesButton)
         
     def getTranscriptionText(self):
