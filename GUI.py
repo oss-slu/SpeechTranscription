@@ -109,87 +109,6 @@ class userMenu(CTkFrame):
         file.write(theme.lower())
         file.close()
 
-class sessionInfoMenu(CTkTabview):
-    def __init__(self, master, transcriptionBox: CTkTextbox, grammarBox: CTkTextbox):
-        super().__init__(master)
-        self.configure(height=200)
-        self.add("Client Information")
-        self.add("Examiner Information")
-        self.add("Tables")
-        
-        self.transcriptionBox = transcriptionBox
-        self.grammarBox = grammarBox
-
-        self.clientLocked = False
-
-        self.nameBox = CTkEntry(self.tab("Client Information"), placeholder_text="Name")
-        self.nameBox.grid(row=0,column=0, padx=10, pady=10, sticky=W+E)
-
-        self.ageBox = CTkEntry(self.tab("Client Information"), placeholder_text="Age")
-        self.ageBox.grid(row=0,column=1, padx=10, pady=10, sticky=W+E)
-
-        self.genderBox = CTkEntry(self.tab("Client Information"), placeholder_text="Gender")
-        self.genderBox.grid(row=1,column=0, padx=10, pady=10, sticky=W+E)
-
-        self.dobBox = CTkEntry(self.tab("Client Information"), placeholder_text="Date of Birth")
-        self.dobBox.grid(row=1,column=1, padx=10, pady=10, sticky=W+E)
-
-        self.saveClientInfo = createButton(self.tab("Client Information"), "Lock", 2, 0, self.lockClientInfo, height=28, lock=False)
-        self.resetClientInfoButton = createButton(self.tab("Client Information"), "Reset", 2, 1, self.resetClientInfo, height=28, lock=False)
-
-        self.examinerLocked = False
-
-        self.exNameBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Examiner Name")
-        self.exNameBox.grid(row=0,column=0, padx=10, pady=10, sticky=W+E)
-
-        self.dosBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Date of Sample")
-        self.dosBox.grid(row=0,column=1, padx=10, pady=10, sticky=W+E)
-
-        self.contextBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Sample Context")
-        self.contextBox.grid(row=1,column=0, padx=10, pady=10, columnspan=2, sticky=W+E)
-
-        self.saveExaminerInfo = createButton(self.tab("Examiner Information"), "Lock", 2, 0, self.lockExaminerInfo, height=28, lock=False)
-        self.resetExaminerInfoButton = createButton(self.tab("Examiner Information"), "Reset", 2, 1, self.resetExaminerInfo, height=28, lock=False)
-
-        self.lockTranscription = StringVar(value="on")
-        self.lockTranscriptionBox = CTkSwitch(self.tab("Tables"), text="Lock Transcription?", command=self.toggleTranscription, variable=self.lockTranscription, onvalue="on", offvalue="off")
-        self.lockTranscriptionBox.grid(row=0, column=0, columnspan=2, padx=10, pady=12, sticky=E+W)
-
-        self.lockGrammar = StringVar(value="on")
-        self.lockGrammarBox = CTkSwitch(self.tab("Tables"), text="Lock Grammar Check?", command=self.toggleGrammar, variable=self.lockGrammar, onvalue="on", offvalue="off")
-        self.lockGrammarBox.grid(row=1, column=0, columnspan=2,padx=10, pady=12, sticky=E+W)
-
-        self.clearTranscriptionBox = createButton(self.tab("Tables"), "Clear Transcription", 2, 0, height=28, lock=False)
-        self.clearGrammarBox = createButton(self.tab("Tables"), "Clear Grammar Check", 2, 1, height=28, lock=False)
-
-    def lockClientInfo(self):
-        if not self.clientLocked:
-            lockMultipleItems([self.nameBox, self.ageBox, self.genderBox, self.dobBox])
-            self.saveClientInfo.configure(text="Unlock")
-        else:
-            unlockMultipleItems([self.nameBox, self.ageBox, self.genderBox, self.dobBox])
-            self.saveClientInfo.configure(text="Lock")
-        self.clientLocked = not self.clientLocked
-        
-    def resetClientInfo(self):
-        if not self.clientLocked:
-            for item in [self.nameBox, self.ageBox, self.genderBox, self.dobBox]:
-                item.delete("0.0", "end")
-
-    def lockExaminerInfo(self):
-        if not self.examinerLocked:
-            lockMultipleItems([self.exNameBox, self.dosBox, self.contextBox])
-            self.saveExaminerInfo.configure(text="Unlock")
-        else:
-            unlockMultipleItems([self.exNameBox, self.dosBox, self.contextBox])
-            self.saveExaminerInfo.configure(text="Lock")
-        self.examinerLocked = not self.examinerLocked
-        
-    def resetExaminerInfo(self):
-        if not self.examinerLocked:
-            for item in [self.exNameBox, self.dosBox, self.contextBox]:
-                item.delete("0.0", "end")
-
 class audioMenu(CTkFrame):
     def __init__(self, master):
         super().__init__(master)
@@ -580,3 +499,84 @@ def lockMultipleItems(items: list):
     
 if __name__ == "__main__":
     gui = mainGUI()
+
+# class sessionInfoMenu(CTkTabview):
+#     def __init__(self, master, transcriptionBox: CTkTextbox, grammarBox: CTkTextbox):
+#         super().__init__(master)
+#         self.configure(height=200)
+#         self.add("Client Information")
+#         self.add("Examiner Information")
+#         self.add("Tables")
+        
+#         self.transcriptionBox = transcriptionBox
+#         self.grammarBox = grammarBox
+
+#         self.clientLocked = False
+
+#         self.nameBox = CTkEntry(self.tab("Client Information"), placeholder_text="Name")
+#         self.nameBox.grid(row=0,column=0, padx=10, pady=10, sticky=W+E)
+
+#         self.ageBox = CTkEntry(self.tab("Client Information"), placeholder_text="Age")
+#         self.ageBox.grid(row=0,column=1, padx=10, pady=10, sticky=W+E)
+
+#         self.genderBox = CTkEntry(self.tab("Client Information"), placeholder_text="Gender")
+#         self.genderBox.grid(row=1,column=0, padx=10, pady=10, sticky=W+E)
+
+#         self.dobBox = CTkEntry(self.tab("Client Information"), placeholder_text="Date of Birth")
+#         self.dobBox.grid(row=1,column=1, padx=10, pady=10, sticky=W+E)
+
+#         self.saveClientInfo = createButton(self.tab("Client Information"), "Lock", 2, 0, self.lockClientInfo, height=28, lock=False)
+#         self.resetClientInfoButton = createButton(self.tab("Client Information"), "Reset", 2, 1, self.resetClientInfo, height=28, lock=False)
+
+#         self.examinerLocked = False
+
+#         self.exNameBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Examiner Name")
+#         self.exNameBox.grid(row=0,column=0, padx=10, pady=10, sticky=W+E)
+
+#         self.dosBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Date of Sample")
+#         self.dosBox.grid(row=0,column=1, padx=10, pady=10, sticky=W+E)
+
+#         self.contextBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Sample Context")
+#         self.contextBox.grid(row=1,column=0, padx=10, pady=10, columnspan=2, sticky=W+E)
+
+#         self.saveExaminerInfo = createButton(self.tab("Examiner Information"), "Lock", 2, 0, self.lockExaminerInfo, height=28, lock=False)
+#         self.resetExaminerInfoButton = createButton(self.tab("Examiner Information"), "Reset", 2, 1, self.resetExaminerInfo, height=28, lock=False)
+
+#         self.lockTranscription = StringVar(value="on")
+#         self.lockTranscriptionBox = CTkSwitch(self.tab("Tables"), text="Lock Transcription?", command=self.toggleTranscription, variable=self.lockTranscription, onvalue="on", offvalue="off")
+#         self.lockTranscriptionBox.grid(row=0, column=0, columnspan=2, padx=10, pady=12, sticky=E+W)
+
+#         self.lockGrammar = StringVar(value="on")
+#         self.lockGrammarBox = CTkSwitch(self.tab("Tables"), text="Lock Grammar Check?", command=self.toggleGrammar, variable=self.lockGrammar, onvalue="on", offvalue="off")
+#         self.lockGrammarBox.grid(row=1, column=0, columnspan=2,padx=10, pady=12, sticky=E+W)
+
+#         self.clearTranscriptionBox = createButton(self.tab("Tables"), "Clear Transcription", 2, 0, height=28, lock=False)
+#         self.clearGrammarBox = createButton(self.tab("Tables"), "Clear Grammar Check", 2, 1, height=28, lock=False)
+
+#     def lockClientInfo(self):
+#         if not self.clientLocked:
+#             lockMultipleItems([self.nameBox, self.ageBox, self.genderBox, self.dobBox])
+#             self.saveClientInfo.configure(text="Unlock")
+#         else:
+#             unlockMultipleItems([self.nameBox, self.ageBox, self.genderBox, self.dobBox])
+#             self.saveClientInfo.configure(text="Lock")
+#         self.clientLocked = not self.clientLocked
+        
+#     def resetClientInfo(self):
+#         if not self.clientLocked:
+#             for item in [self.nameBox, self.ageBox, self.genderBox, self.dobBox]:
+#                 item.delete("0.0", "end")
+
+#     def lockExaminerInfo(self):
+#         if not self.examinerLocked:
+#             lockMultipleItems([self.exNameBox, self.dosBox, self.contextBox])
+#             self.saveExaminerInfo.configure(text="Unlock")
+#         else:
+#             unlockMultipleItems([self.exNameBox, self.dosBox, self.contextBox])
+#             self.saveExaminerInfo.configure(text="Lock")
+#         self.examinerLocked = not self.examinerLocked
+        
+#     def resetExaminerInfo(self):
+#         if not self.examinerLocked:
+#             for item in [self.exNameBox, self.dosBox, self.contextBox]:
+#                 item.delete("0.0", "end")
