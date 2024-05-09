@@ -2,8 +2,8 @@ import warnings
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     from pyannote.audio import Pipeline
+    import whisper
 from pydub import AudioSegment
-import whisper
 import os
 import re
 from dotenv import load_dotenv
