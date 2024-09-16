@@ -7,3 +7,4 @@ ffmpeg
 .env
 diarization.txt
 user_settings.txt
+venv/
