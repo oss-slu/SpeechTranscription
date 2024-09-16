@@ -1,6 +1,6 @@
 ## Developer's Guide for Setting Up MacOS Environment
 
-Ensure you have the following prequisites downloaded:
+Ensure you have the following prerequisites downloaded:
 
 * `Java` --> [Download Here](https://www.oracle.com/java/technologies/downloads/)
 * `MySQL` --> [Download Here](https://dev.mysql.com/downloads/mysql/)
