@@ -18,10 +18,7 @@ In this application, you can record live or upload an audio file form your compu
 
 ## Development Environment
 
-* If you are on MacOS, please refer to the macos-setup.md file.
-1. **Clone the Repository** - Clone the repository using 'git clone'
-2. **Requirements** - Install a compatible version of Python (list the compatible versions here) and run 'pip install requirements.txt'. Some requirements need to be installed through different methods. See requirements.txt for this. Must be using a 3.10.x - 3.11.x version of Python (check using 'python --version').
-3. **Load Sub-Modules** - Before launching the program, run the command 'git submodule init'
+For details on setting up the development environment, please refer to the [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) file.
 
 ## Creating an Executable
 

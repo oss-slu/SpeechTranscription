@@ -28,13 +28,3 @@ pytest
 # Not currently in use - could be used for diarization in the future
 spectralcluster
 Resemblyzer
-
-#The 'nltk' library installation is more complex than just doing 'pip install nltk'.
-#This guide will show you how to install the 'nltk' library on Windows & Linux operating systems.
-#
-#Windows & Linux:
-#
-#    - 'pip install nltk'
-#    - 'import nltk'
-#    - 'nltk.download()'
-#    - Then click on the identifier 'all', then click 'Download'
