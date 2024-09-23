@@ -8,6 +8,7 @@ from PIL import Image
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import * # Uses Third party license found in CtkXYFrame/ folder
 import threading
 import matplotlib.pyplot as plt
+import time
 
 
 WIDTH = 1340
@@ -192,71 +193,48 @@ class audioMenu(CTkFrame):
         
         self.grammarCheckPerformed = False
 
+        self.current_position = 0
         self.playback_thread = None #thread for when audio is playing
+        self.is_playing = False
+        self._is_paused = False
         
     def playAudio(self):
-        '''Play audio from the current position'''
-        #if not self.audio.paused or not self.audio.playing:
-        if not self.audio.playing:
-            #if self.playback_thread is None or not self.playback_thread.is_alive():
-            if self.playback_thread is not None and self.playback_thread.is_alive():
-                #self.playback_thread.exit()
-                self.audio.stopPlayback() # Ensure stopping previous playback
-                self.playback_thread.join()
+        #Initiates audio playback in a separate thread, resetting the position if not already playing and allowing for resumption if paused.
+        if not self.is_playing:
+            print("Starting audio playback...")
+            self.is_playing = True
+            self.is_paused = False
+            self.current_position = 0
+            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()  #Play in a thread
+            self.updatePlayback()  #Start updating playback position
 
-                #start a new thread for playback
-            self.playback_thread = threading.Thread(target=self.audio.play)
-            self.playback_thread.start()
-            self.audio.playing = True
+        elif self.is_paused:
+            print("Resuming audio...")
+            self.is_paused = False
+            self.audio.paused = False  
 
-            #safely update button states using `after()`
-            self.after(0, lambda: self.pauseButton.configure(state="normal"))
-            self.after(0, lambda: self.playButton.configure(state="disabled"))
-                # Start a new thread if not already playing or if the thread is not alive
-                #self.playback_thread = threading.Thread(target=self.audio.play)
-                #self.playback_thread.start()
-            #self.audio.playing = False
-            #self.audio.paused = False
-            #self.pauseButton.configure(text="Pause", state="disabled")
-            #self.startPlayback()
-            #self.audio.play()
-        #self.playButton.configure(state="disabled")#
-        #print('disabled')
-
-    def startPlayback(self):
-        '''Handles starting the audio playback in a thread'''
-        if self.playback_thread is None or not self.playback_thread.is_alive():
-            self.playback_thread = threading.Thread(target=self.audio.play)
-            self.playback_thread.start()
-            self.pauseButton.configure(state="normal")  # Enable the pause button when playing
+        self.updateButtons()
 
     def pauseAudio(self):
-        '''Pause the currently playing audio'''
-        if self.audio.playing:
-            self.audio.paused = not self.audio.paused #toggle pause state
+        #Pauses the currently playing audio and updates the button states accordingly.
+        if self.is_playing and not self.is_paused:
+            print("Pausing audio...")
+            self.is_paused = True
+            self.audio.paused = True  
+            self.updateButtons()
 
-            if self.audio.paused:
-                self.audio.pause()
-                #safely update button states using `after()`
-                self.after(0, lambda: self.pauseButton.configure(text="Resume"))
-                self.after(0, lambda: self.playButton.configure(state="disabled"))
-            else:
-                self.audio.resume() #resume audio if it was paused
-                #safely update button states using `after()`
-                self.after(0, lambda: self.pauseButton.configure(text="Pause"))
-                self.after(0, lambda: self.playButton.configure(state="disabled"))
+    def updatePlayback(self):
+        #Continuously updates the playback position every 300 milliseconds if audio is playing and not paused.
+        if self.is_playing:
+            if not self.is_paused:
+                self.current_position += 0.5  #Incrementing playback position more slowly            
+            self.master.after(300, self.updatePlayback) 
 
-        #if not self.audio.paused:
-            #self.audio.pause()
-        """ if self.audio.pause():
-            self.pauseButton.configure(text="Resume")
-            self.playButton.configure(state='disabled')
-        else:
-            self.pauseButton.configure(text="Pause")
-            self.playButton.configure(state='normal')
-        if not self.playback_thread.is_alive():  # In case the thread ended
-            self.pauseButton.configure(state="disabled")  """  
-            
+    def updateButtons(self):
+        #Updates the state of the play and pause buttons based on whether the audio is currently playing or paused.
+        self.playButton.configure(state="normal" if self.is_paused else "disabled")
+        self.pauseButton.configure(state="normal" if not self.is_paused else "disabled")
+
     def startProgressBar(self):
         self.transcribeButton.grid(row=2, column=0, rowspan = 1, columnspan=2)
         self.transcribeButton.configure(height=100)
