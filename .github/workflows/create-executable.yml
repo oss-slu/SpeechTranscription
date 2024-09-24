@@ -15,8 +15,8 @@ jobs:
         os: ["windows-latest", "macos-latest"]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.11
       - run: brew install mysql pkg-config portaudio
@@ -32,7 +32,7 @@ jobs:
           robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal/lightning_fabric
           mkdir dist\Saltify\_internal\pattern\text\en\
           move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: SpeechTranscription_${{ matrix.os }}
