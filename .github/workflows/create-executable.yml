@@ -37,3 +37,18 @@ jobs:
         with:
           name: SpeechTranscription_${{ matrix.os }}
           path: dist/Saltify/*
+          
+  check_status:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check build matrix status
+        run: |
+          if [[ "${{ needs.build.result }}" == "success" ]]; then
+            echo "All builds completed successfully"
+            exit 0
+          else
+            echo "One or more builds failed"
+            exit 1
+          fi
