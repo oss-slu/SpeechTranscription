@@ -3,30 +3,20 @@ on:
     branches:
       - main
       - fix-exe
-      - fix-mac-exe
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["windows-latest", "macos-latest"]
+  build-windows:
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-      - run: brew install mysql pkg-config portaudio
-        if: ${{ matrix.os == 'macos-latest' }}
       - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
       - run: pip uninstall -y typing
       - run: pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
-      - shell: cmd
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
+      - run: |
           robocopy build_assets dist/Saltify
           mkdir dist\Saltify\_internal\lightning_fabric
           robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal/lightning_fabric
@@ -35,20 +25,20 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: SpeechTranscription_${{ matrix.os }}
+          name: SpeechTranscription_windows
           path: dist/Saltify/*
-          
+
   check_status:
-    needs: build
+    needs: build-windows
     runs-on: ubuntu-latest
     if: always()
+
     steps:
-      - name: Check build matrix status
+      - name: Check Windows build status
         run: |
-          if [[ "${{ needs.build.result }}" == "success" ]]; then
-            echo "All builds completed successfully"
+          if [[ "${{ needs.build-windows.result }}" == "success" ]]; then
+            echo "Windows build completed successfully"
             exit 0
           else
-            echo "One or more builds failed"
+            echo "Windows build failed"
             exit 1
-          fi
