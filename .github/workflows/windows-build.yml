@@ -3,6 +3,7 @@ on:
     branches:
       - main
       - fix-exe
+      - testingv4artifact
 
 jobs:
   build-windows:
