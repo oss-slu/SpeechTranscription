@@ -24,17 +24,3 @@ jobs:
           name: SpeechTranscription_macos
           path: dist/Saltify/*
 
-  check_status:
-    needs: build-macos
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Check macOS build status
-        run: |
-          if [[ "${{ needs.build-macos.result }}" == "success" ]]; then
-            echo "macOS build completed successfully"
-            exit 0
-          else
-            echo "macOS build failed"
-            exit 1
