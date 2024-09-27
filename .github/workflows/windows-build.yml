@@ -27,18 +27,3 @@ jobs:
         with:
           name: SpeechTranscription_windows
           path: dist/Saltify/*
-
-  check_status:
-    needs: build-windows
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Check Windows build status
-        run: |
-          if [[ "${{ needs.build-windows.result }}" == "success" ]]; then
-            echo "Windows build completed successfully"
-            exit 0
-          else
-            echo "Windows build failed"
-            exit 1
