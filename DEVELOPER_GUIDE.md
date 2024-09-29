@@ -30,6 +30,7 @@ Once Homebrew is set up and installed, you can enter the following commands:
 
 * `brew install mysql pkg-config`
 * `brew install portaudio`
+# `brew install ffmpeg`
 * `pip install pyaudio`
 
 Now you may run the `pip install -r requirements.txt` command to install the requirement dependencies.
