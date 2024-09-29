@@ -59,7 +59,10 @@ class Test_addInflectionalMorphemesToSentence:
     def test_seven(self):
         x = "I've been working for a long time."
         assert addConventions.addInflectionalMorphemesToSentence(x) == "I/'ve been work/ing for a long time."
-    
+    def test_ing(self):
+        x = "Then she ran down the path, singing and singing her favorite song."
+        assert addConventions.addInflectionalMorphemesToSentence(x) == "Then she ran down the path, sing/ing and sing/ing her favorite song."
+
 class Test_correctSentence:
     def test_one(self):
         x = "He walk to school."
