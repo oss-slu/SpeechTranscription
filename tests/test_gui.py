@@ -14,7 +14,7 @@ def invoke_upload_button_and_measure_time(gui_app, mocker):
     start_time = time.time()
 
     # mock the uploadAudio method to simulate user upload action
-    mock_upload = mocker.path('GUI.audioMenu.uploadAudio')
+    mocker.path('GUI.audioMenu.uploadAudio')
 
     # invoke the upload button
     gui_app.audioMenuList[0].uploadButton.invoke()
@@ -26,7 +26,7 @@ def invoke_record_button_and_measure_time(gui_app, mocker):
     start_time = time.time()
 
     # mock recordAudio method to simulate user record action
-    mock_record = mocker.patch('GUI.audioMenu.recordAudio')
+    mocker.patch('GUI.audioMenu.recordAudio')
 
     # invoke record button
     gui_app.audioMenuList[0].recordButton.invoke()
