@@ -89,9 +89,7 @@ class TestTranscriptionAndDiarization(unittest.TestCase):
         Compare each line of the generated output to the expected output.
         Asserts that each line matches.
         """
-        # Iterate through both generated and expected lines
         for gen_line, exp_line in zip(generated_output.splitlines(), expected_output.splitlines()):
-            # Asserting that each corresponding line matches
             self.assertEqual(gen_line.strip(), exp_line.strip(),
                              f"Mismatch found:\nGenerated: {gen_line}\nExpected: {exp_line}")
 
@@ -100,18 +98,14 @@ class TestTranscriptionAndDiarization(unittest.TestCase):
         Test diarization and transcription by comparing the generated output
         with the expected output from a file.
         """
-        # Define paths for the test audio and expected output
         audio_file = "test_audio.wav"
         expected_output_file = "expected_output.txt"
 
-        # Generate transcription and diarization output
         generated_output = diarizationAndTranscription.diarizeAndTranscribe(audio_file)
 
-        # Load the expected output from the file
         with open(expected_output_file, "r") as file:
             expected_output = file.read()
 
-        # Compare generated output with expected output, line by line
         self.compare_outputs_line_by_line(generated_output, expected_output)
 
 if __name__ == "__main__":
