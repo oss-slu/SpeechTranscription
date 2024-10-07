@@ -1,10 +1,11 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+#or run export PYTHONPATH=$(pwd) before running python tests/saltify_test.py
 
 import unittest
 import addConventions
-import diarizationAndTranscription
+import grammar 
 
 class Test_isToBeVerb:
     def test_one(self):
@@ -82,31 +83,40 @@ class Test_addInflectionalMorphemes:
         x = "He looked at[EW] sad."
         assert addConventions.addInflectionalMorphemes(x) == "He look/ed at[EW] sad. \n"
 
-class TestTranscriptionAndDiarization(unittest.TestCase):
+class TestGrammarAndMorphemeFunctions(unittest.TestCase):
 
-    def compare_outputs_line_by_line(self, generated_output, expected_output):
-        """
-        Compare each line of the generated output to the expected output.
-        Asserts that each line matches.
-        """
-        for gen_line, exp_line in zip(generated_output.splitlines(), expected_output.splitlines()):
-            self.assertEqual(gen_line.strip(), exp_line.strip(),
-                             f"Mismatch found:\nGenerated: {gen_line}\nExpected: {exp_line}")
+    def setUp(self):
+        self.grammar_checker = grammar.GrammarChecker()
 
-    def test_diarization_and_transcription(self):
-        """
-        Test diarization and transcription by comparing the generated output
-        with the expected output from a file.
-        """
-        audio_file = "test_audio.wav"
-        expected_output_file = "expected_output.txt"
+    def read_file(self, file_path):
+        #read a file line by line
+        with open(file_path, 'r') as f:
+            return f.readlines()
 
-        generated_output = diarizationAndTranscription.diarizeAndTranscribe(audio_file)
+    def test_compare_input_with_output(self):
+        #load and read input and expected output files
+        input_file_path = os.path.join('tests', 'data', 'input1.txt')
+        output_file_path = os.path.join('tests', 'data', 'output1.txt')
 
-        with open(expected_output_file, "r") as file:
-            expected_output = file.read()
+        input_lines = self.read_file(input_file_path)
+        expected_output_lines = self.read_file(output_file_path)
 
-        self.compare_outputs_line_by_line(generated_output, expected_output)
+        for input_line, expected_line in zip(input_lines, expected_output_lines):
+            self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False)
 
-if __name__ == "__main__":
+            #grammar-corrected sentence
+            corrected, _ = self.grammar_checker.getNextCorrection()
+
+            #adding morphemes to the corrected sentence
+            processed_text = self.grammar_checker.getInflectionalMorphemes(corrected)
+
+            print(f"Input Line: {input_line.strip()}")
+            print(f"Corrected Text: {corrected.strip()}")
+            print(f"Processed with Morphemes: {processed_text.strip()}")
+            print(f"Expected Line: {expected_line.strip()}")
+            print("-------------------------------------------------")
+
+            self.assertEqual(processed_text.strip(), expected_line.strip(), f"Mismatch for line: {input_line}")
+
+if __name__ == '__main__':
     unittest.main()
