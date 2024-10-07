@@ -89,34 +89,77 @@ class TestGrammarAndMorphemeFunctions(unittest.TestCase):
         self.grammar_checker = grammar.GrammarChecker()
 
     def read_file(self, file_path):
-        #read a file line by line
         with open(file_path, 'r') as f:
             return f.readlines()
 
+    def get_file_pairs(self, data_directory):
+        files = os.listdir(data_directory)
+        
+        input_files = sorted([f for f in files if f.startswith('input') and f.endswith('.txt')])
+        output_files = sorted([f for f in files if f.startswith('output') and f.endswith('.txt')])
+        
+        file_pairs = []
+
+        for input_file in input_files:
+            #replacing 'input' with 'output' to find the corresponding output file
+            output_file = input_file.replace('input', 'output')
+
+            if output_file in output_files:
+                file_pairs.append((input_file, output_file))
+
+        return file_pairs
+
     def test_compare_input_with_output(self):
-        #load and read input and expected output files
-        input_file_path = os.path.join('tests', 'data', 'input1.txt')
-        output_file_path = os.path.join('tests', 'data', 'output1.txt')
+        data_directory = os.path.join('tests', 'data')
 
-        input_lines = self.read_file(input_file_path)
-        expected_output_lines = self.read_file(output_file_path)
+        file_pairs = self.get_file_pairs(data_directory)
 
-        for input_line, expected_line in zip(input_lines, expected_output_lines):
-            self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False)
+        total_tests = 0  
+        failed_tests = 0 
 
-            #grammar-corrected sentence
-            corrected, _ = self.grammar_checker.getNextCorrection()
+        errors = []
 
-            #adding morphemes to the corrected sentence
-            processed_text = self.grammar_checker.getInflectionalMorphemes(corrected)
+        for input_file, output_file in file_pairs:
+            input_file_path = os.path.join(data_directory, input_file)
+            output_file_path = os.path.join(data_directory, output_file)
 
-            print(f"Input Line: {input_line.strip()}")
-            print(f"Corrected Text: {corrected.strip()}")
-            print(f"Processed with Morphemes: {processed_text.strip()}")
-            print(f"Expected Line: {expected_line.strip()}")
-            print("-------------------------------------------------")
+            input_lines = self.read_file(input_file_path)
+            expected_output_lines = self.read_file(output_file_path)
 
-            self.assertEqual(processed_text.strip(), expected_line.strip(), f"Mismatch for line: {input_line}")
+            for input_line, expected_line in zip(input_lines, expected_output_lines):
+                total_tests += 1 
+
+                self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
+                corrected, _ = self.grammar_checker.getNextCorrection() #grammar check
+                processed_text = self.grammar_checker.getInflectionalMorphemes(corrected) #add morphemes
+
+                print(f"Input Line: {input_line.strip()}")
+                print(f"Corrected Text: {corrected.strip()}")
+                print(f"Processed with Morphemes: {processed_text.strip()}")
+                print(f"Expected Line: {expected_line.strip()}")
+                print("-------------------------------------------------")
+
+                try:
+                    self.assertEqual(processed_text.strip(), expected_line.strip(), f"Mismatch for line: {input_file} -> {input_line}")
+                except AssertionError as e:
+                    errors.append(str(e))
+                    failed_tests += 1 
+
+        passed_tests = total_tests - failed_tests
+        accuracy = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+
+        print(f"Total Tests: {total_tests}")
+        print(f"Passed Tests: {passed_tests}")
+        print(f"Failed Tests: {failed_tests}")
+        print(f"Accuracy: {accuracy:.2f}%")
+
+        if errors:
+            print("Some tests failed:")
+            for error in errors:
+                print(error)
+            self.fail(f"{len(errors)} test(s) failed. Check the errors above.")
 
 if __name__ == '__main__':
     unittest.main()
+
+
