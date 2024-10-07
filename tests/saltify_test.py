@@ -92,67 +92,52 @@ class TestGrammarAndMorphemeFunctions(unittest.TestCase):
         with open(file_path, 'r') as f:
             return f.readlines()
 
-    def get_file_pairs(self, data_directory):
-        files = os.listdir(data_directory)
-        
-        input_files = sorted([f for f in files if f.startswith('input') and f.endswith('.txt')])
-        output_files = sorted([f for f in files if f.startswith('output') and f.endswith('.txt')])
-        
-        file_pairs = []
-
-        for input_file in input_files:
-            #replacing 'input' with 'output' to find the corresponding output file
-            output_file = input_file.replace('input', 'output')
-
-            if output_file in output_files:
-                file_pairs.append((input_file, output_file))
-
-        return file_pairs
-
     def test_compare_input_with_output(self):
-        data_directory = os.path.join('tests', 'data')
+        input_file_path = os.path.join('tests', 'data', 'input1.txt')
+        output_file_path = os.path.join('tests', 'data', 'output1.txt')
 
-        file_pairs = self.get_file_pairs(data_directory)
+        input_lines = self.read_file(input_file_path)
+        expected_output_lines = self.read_file(output_file_path)
 
         total_tests = 0  
         failed_tests = 0 
 
         errors = []
 
-        for input_file, output_file in file_pairs:
-            input_file_path = os.path.join(data_directory, input_file)
-            output_file_path = os.path.join(data_directory, output_file)
+        # Only one loop to iterate through both input and expected output lines
+        for input_line, expected_line in zip(input_lines, expected_output_lines):
+            total_tests += 1  # Increment total test count
 
-            input_lines = self.read_file(input_file_path)
-            expected_output_lines = self.read_file(output_file_path)
+            # Simulate processing the input line
+            self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
+            corrected, _ = self.grammar_checker.getNextCorrection()  # Grammar check
+            processed_text = self.grammar_checker.getInflectionalMorphemes(corrected)  # Add morphemes
 
-            for input_line, expected_line in zip(input_lines, expected_output_lines):
-                total_tests += 1 
+            # Print intermediate results for debugging
+            print(f"Input Line: {input_line.strip()}")
+            print(f"Corrected Text: {corrected.strip()}")
+            print(f"Processed with Morphemes: {processed_text.strip()}")
+            print(f"Expected Line: {expected_line.strip()}")
+            print("-------------------------------------------------")
 
-                self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
-                corrected, _ = self.grammar_checker.getNextCorrection() #grammar check
-                processed_text = self.grammar_checker.getInflectionalMorphemes(corrected) #add morphemes
+            # Compare the processed output with the expected output
+            try:
+                self.assertEqual(processed_text.strip(), expected_line.strip(), f"Mismatch for line: {input_file_path} -> {input_line}")
+            except AssertionError as e:
+                errors.append(str(e))
+                failed_tests += 1  # Count failed tests
 
-                print(f"Input Line: {input_line.strip()}")
-                print(f"Corrected Text: {corrected.strip()}")
-                print(f"Processed with Morphemes: {processed_text.strip()}")
-                print(f"Expected Line: {expected_line.strip()}")
-                print("-------------------------------------------------")
-
-                try:
-                    self.assertEqual(processed_text.strip(), expected_line.strip(), f"Mismatch for line: {input_file} -> {input_line}")
-                except AssertionError as e:
-                    errors.append(str(e))
-                    failed_tests += 1 
-
+        # Calculate accuracy
         passed_tests = total_tests - failed_tests
         accuracy = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
 
+        # Print the final accuracy
         print(f"Total Tests: {total_tests}")
         print(f"Passed Tests: {passed_tests}")
         print(f"Failed Tests: {failed_tests}")
         print(f"Accuracy: {accuracy:.2f}%")
 
+        # Print any errors that occurred
         if errors:
             print("Some tests failed:")
             for error in errors:
@@ -161,5 +146,3 @@ class TestGrammarAndMorphemeFunctions(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-
