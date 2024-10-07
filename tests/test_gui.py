@@ -3,6 +3,8 @@ from GUI import *
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# or run `export PYTHONPATH=$(pwd)`
+# must also run `pip install pytest-mock`
 
 @pytest.fixture
 def gui_app(mocker):
