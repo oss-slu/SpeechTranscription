@@ -4,6 +4,7 @@ on:
       - main
       - fix-mac-exe
       - testingv4artifact
+      - issue169_dependency
 
 jobs:
   build-macos:
