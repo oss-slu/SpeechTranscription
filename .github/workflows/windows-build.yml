@@ -15,13 +15,17 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-      
+
       - name: Install Java
+        shell: powershell
         run: |
-          if (!(java -version)) {
-            choco install jdk11
+          if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+            Write-Host "Java not found, installing JDK 11..."
+            choco install jdk11 -y
+          } else {
+            Write-Host "Java is already installed."
           }
-      
+
       - name: Install Specific Python Version
         uses: actions/setup-python@v4
         with:
@@ -30,7 +34,7 @@ jobs:
       - name: Install NLTK
         run: |
           pip install nltk
-          python -m nltk.downloader all
+          python -m nltk.downloader punkt
 
       - name: Cache Python packages
         uses: actions/cache@v3
@@ -40,15 +44,21 @@ jobs:
 
       - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
       - run: pip uninstall -y typing
-      - run: pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+
+      - run: |
+          pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
 
       - shell: cmd
         run: |
-          robocopy build_assets dist/Saltify /e /v 
-          mkdir dist\Saltify\_internal\lightning_fabric
-          robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal/lightning_fabric /e /v
-          mkdir dist\Saltify\_internal\pattern\text\en\
-          move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
+          if exist build_assets (
+            robocopy build_assets dist/Saltify /e /v 
+            mkdir dist\Saltify\_internal\lightning_fabric
+            robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal\lightning_fabric /e /v
+            mkdir dist\Saltify\_internal\pattern\text\en\
+            move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
+          ) else (
+            echo "Build assets not found."
+          )
 
       - uses: actions/upload-artifact@v4
         if: always()
