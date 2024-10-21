@@ -108,7 +108,7 @@ jobs:
           name: Release ${{ github.run_number }}
           body_path: release_notes.md
           draft: false
-          prerelease: true
+          prerelease: false
           files: |
             artifacts/**
             Saltify.zip
