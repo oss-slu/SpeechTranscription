@@ -3,7 +3,7 @@ name: Build, Test, and Release on macOS and Windows
 on:
   push:
     branches:
-      - issue168_automated-releases
+      - main
 
 jobs:
   build:
