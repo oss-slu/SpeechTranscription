@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -16,28 +15,53 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      
+      # setup Python version 3.11.7 or greater
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.11
+          python-version: '>=3.11.7'
+      
+      # install system dependencies for macOS
       - run: brew install mysql pkg-config portaudio
         if: ${{ matrix.os == 'macos-latest' }}
+        
+      # install Python dependencies, pyinstaller, and others
       - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
       - run: pip uninstall -y typing
+
+      # build the Python application into an executable
       - run: pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
       
-      # user runs this to check for required dependencies 
-      - run: pyinstaller --name CheckDependency --onefile check_dependency.py
-
-      - shell: cmd
+      # create installer script for Windows using Inno Setup
+      - name: Create Windows Installer
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          robocopy build_assets dist/Saltify
-          mkdir dist\Saltify\_internal\lightning_fabric
-          robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal/lightning_fabric
-          mkdir dist\Saltify\_internal\pattern\text\en\
-          move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
+          # Download Inno Setup
+          curl -L -o isetup.exe "https://jrsoftware.org/download.php/is.exe"
+          # Create a script for bundling everything into the installer
+          echo [Setup] > SaltifyInstaller.iss
+          echo AppName=Saltify >> SaltifyInstaller.iss
+          echo AppVersion=1.0 >> SaltifyInstaller.iss
+          echo DefaultDirName={pf}\Saltify >> SaltifyInstaller.iss
+          echo OutputBaseFilename=SaltifyInstaller >> SaltifyInstaller.iss
+          echo [Files] >> SaltifyInstaller.iss
+          echo Source: "dist\Saltify\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs >> SaltifyInstaller.iss
+          echo [Icons] >> SaltifyInstaller.iss
+          echo Name: "{group}\Saltify"; Filename: "{app}\Saltify.exe" >> SaltifyInstaller.iss
+          # Run Inno Setup to create the installer
+          isetup.exe /cc SaltifyInstaller.iss
+
+      - name: Create macOS DMG Installer
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          brew install create-dmg
+          mkdir -p dist/Saltify
+          cp -R dist/Saltify.app dist/Saltify
+          create-dmg --overwrite --volname "SaltifyInstaller" --window-pos 200 120 --window-size 800 400 --icon-size 100 --app-drop-link 600 185 dist/SaltifyInstaller.dmg dist/Saltify
+
       - uses: actions/upload-artifact@v2
-        if: always()
         with:
-          name: SpeechTranscription_${{ matrix.os }}
-          path: dist/Saltify/*
+          name: SaltifyInstaller_${{ matrix.os }}
+          path: |
+            dist/SaltifyInstaller.exe
+            dist/SaltifyInstaller.dmg
