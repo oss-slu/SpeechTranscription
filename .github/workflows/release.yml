@@ -3,7 +3,7 @@ name: Build, Test, and Release on macOS and Windows
 on:
   push:
     branches:
-      - main  # Trigger on merge to the main branch
+      - issue168_automated-releases  # Trigger on push (merge) to the main branch
 
 jobs:
   build:
@@ -11,8 +11,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, windows-latest] 
-        python-version: ['3.11', '3.12']    
+        os: [macos-latest, windows-latest]  # Run on macOS and Windows
+        python-version: ['3.11', '3.12']    # Python versions to test with (3.11.9 or greater)
 
     steps:
       - name: Checkout code
@@ -29,11 +29,11 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
-        run: pytest  # Modify if using a different test framework
+        run: pytest  # Adjust based on your test framework
 
   release:
-    needs: build
-    runs-on: ubuntu-latest  # Release only needs to run on one OS
+    needs: build  # Only run this after the build job succeeds
+    runs-on: ubuntu-latest  # Only needs one OS to create the release
 
     steps:
       - name: Checkout code
@@ -43,9 +43,9 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub provides this automatically
         with:
-          tag_name: v${{ github.run_number }} 
+          tag_name: v${{ github.run_number }}  # Use the run number as the version
           release_name: Release ${{ github.run_number }}
           body: |
             Automatically generated release.
@@ -58,3 +58,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: build-artifact
+          path: ./dist/  # Adjust this to your project's output directory
