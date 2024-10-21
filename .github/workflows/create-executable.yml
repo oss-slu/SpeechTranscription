@@ -4,6 +4,7 @@ on:
       - main
       - fix-exe
       - fix-mac-exe
+      - issue169_dependency #adding my branch for testing
 
 jobs:
   build:
