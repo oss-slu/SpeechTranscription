@@ -8,5 +8,3 @@ ffmpeg
 diarization.txt
 user_settings.txt
 venv/
-build/
-dist/
