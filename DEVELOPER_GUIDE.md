@@ -4,7 +4,7 @@ Ensure you have the following prerequisites downloaded:
 
 * `Java` --> [Download Here](https://www.oracle.com/java/technologies/downloads/)
 * `MySQL` --> [Download Here](https://dev.mysql.com/downloads/mysql/)
-* Python Version: `3.10.x - 3.11.x`
+* Python Version: `3.11.x`, where x >= 7
 
 ## Setting Up For MacOS:
 
@@ -30,6 +30,7 @@ Once Homebrew is set up and installed, you can enter the following commands:
 
 * `brew install mysql pkg-config`
 * `brew install portaudio`
+# `brew install ffmpeg`
 * `pip install pyaudio`
 
 Now you may run the `pip install -r requirements.txt` command to install the requirement dependencies.

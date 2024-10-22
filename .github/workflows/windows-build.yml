@@ -1,40 +1,40 @@
 on:
-  push:
-    branches:
-      - main
-      - fix-exe
-      - testingv4artifact
-
-jobs:
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-      
-      - name: Cache Python packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-      - run: pip uninstall -y typing
-      - run: pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
-
-      - shell: cmd 
-        run: |
-          robocopy build_assets dist/Saltify /e /v 
-          mkdir dist\Saltify\_internal\lightning_fabric
-          robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal/lightning_fabric /e /v
-          mkdir dist\Saltify\_internal\pattern\text\en\
-          move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
-      
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: SpeechTranscription_windows
-          path: dist/Saltify/*
+    push:
+      branches:
+        - main
+        - fix-exe
+        - testingv4artifact
+  
+  jobs:
+    build-windows:
+      runs-on: windows-latest
+  
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v4
+          with:
+            python-version: 3.11
+        
+        - name: Cache Python packages
+          uses: actions/cache@v3
+          with:
+            path: ~/.cache/pip
+            key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+  
+        - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+        - run: pip uninstall -y typing
+        - run: pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+  
+        - shell: cmd 
+          run: |
+            robocopy build_assets dist/Saltify /e /v 
+            mkdir dist\Saltify\_internal\lightning_fabric
+            robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal/lightning_fabric /e /v
+            mkdir dist\Saltify\_internal\pattern\text\en\
+            move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
+        
+        - uses: actions/upload-artifact@v4
+          if: always()
+          with:
+            name: SpeechTranscription_windows
+            path: dist/Saltify/*
