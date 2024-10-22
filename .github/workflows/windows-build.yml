@@ -4,8 +4,7 @@ on:
         - main
         - fix-exe
         - testingv4artifact
-  
-  jobs:
+jobs:
     build-windows:
       runs-on: windows-latest
   
