@@ -29,7 +29,7 @@ jobs:
       - name: Install NLTK
         run: |
           pip install nltk
-          python -m nltk.downloder all
+          python -m nltk.downloader all
           
       - run: brew install mysql pkg-config portaudio
       - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
