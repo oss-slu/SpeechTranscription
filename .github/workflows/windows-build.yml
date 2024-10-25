@@ -4,6 +4,8 @@ on:
         - main
         - fix-exe
         - testingv4artifact
+        - issue169_dependency
+
 jobs:
     build-windows:
       runs-on: windows-latest
@@ -13,6 +15,26 @@ jobs:
         - uses: actions/setup-python@v4
           with:
             python-version: 3.11
+
+        - name: Install Java
+          shell: powershell
+          run: |
+            if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+              Write-Host "Java not found, installing JDK 11..."
+              choco install jdk11 -y
+            } else {
+              Write-Host "Java is already installed."
+            }
+
+        - name: Install Specific Python Version
+          uses: actions/setup-python@v4
+          with:
+            python-version: 3.11.7
+
+        - name: Install NLTK
+          run: |
+            pip install nltk
+            python -m nltk.downloader punkt
         
         - name: Cache Python packages
           uses: actions/cache@v3
