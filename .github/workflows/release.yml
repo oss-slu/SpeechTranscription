@@ -19,15 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log System Information
-        run: |
-          echo "Python version:"
-          python --version
-          echo "Pip version:"
-          pip --version
-          echo "System Information:"
-          uname -a
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -37,49 +28,42 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install ffmpeg portaudio libomp cmake pkg-config
-          echo "Brew installed packages:"
-          brew list
-
+          brew install ffmpeg portaudio libomp cmake pkg-config --quiet || echo "Brew install failed"
+      
       - name: Install system dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
           choco install ffmpeg --verbose
-          choco install portaudio --source=https://community.chocolatey.org/api/v2/ --verbose
-          echo "Chocolatey installed packages:"
-          choco list --local-only
+          choco install portaudio --source=https://community.chocolatey.org/api/v2/ --verbose || echo "Choco install failed"
 
-      - name: Install critical Python dependencies separately
+      - name: Install critical Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install torch==2.0.0 torchaudio==2.0.1 --verbose || echo "Torch/Torchaudio installation failed"
-          pip install -r requirements.txt --verbose || echo "Requirements installation failed"
+          pip install torch==2.0.0 torchaudio==2.0.1 || echo "Torch/Torchaudio install failed"
+          pip install -r requirements.txt || echo "Requirements install failed"
 
       - name: Install NLTK data
         run: |
           python -c "import nltk; nltk.download('all')"
 
-      - name: Run tests without output redirection
+      - name: Run tests and save output
         run: |
           mkdir -p test-output
-          python -m pytest tests/ -v || echo "Tests encountered an error"
-        continue-on-error: true
-
-      - name: Ensure test output file exists
+          python -m pytest tests/ -v > test-output/pytest-output.txt || echo "Tests encountered an error"
+      
+      - name: Ensure test output exists
         run: |
-          touch test-output/pytest-output.txt
+          if [ ! -s test-output/pytest-output.txt ]; then echo "No output generated. Tests may have failed." > test-output/pytest-output.txt; fi
 
       - name: Display test output
         run: |
           cat test-output/pytest-output.txt || echo "No pytest output available."
 
-      - name: Store test results
-        if: always()
+      - name: Upload test results as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
-          path: |
-            test-output/pytest-output.txt
+          path: test-output/pytest-output.txt
           if-no-files-found: warn
 
   release:
@@ -115,7 +99,7 @@ jobs:
           echo "- Saltify.zip: Complete project source code" >> release_notes.md
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v1.1.0
         with:
           tag_name: v${{ github.run_number }}
           name: Release ${{ github.run_number }}
