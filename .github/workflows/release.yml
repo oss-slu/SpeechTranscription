@@ -3,7 +3,7 @@ name: Build, Test, and Release on macOS and Windows
 on:
   push:
     branches:
-      - main
+      - issue178_build-test-failures
 
 jobs:
   build:
