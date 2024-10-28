@@ -17,17 +17,27 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' || 
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create artifacts directory
+        run: mkdir -p artifacts/macos artifacts/windows
+
+      - name: Debug Event Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event path: ${{ github.event_path }}"
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "Workflow run ID: ${{ github.event.workflow_run.id }}"
+            echo "Workflow name: ${{ github.event.workflow_run.name }}"
+            echo "Workflow conclusion: ${{ github.event.workflow_run.conclusion }}"
+          fi
+
       - name: Download macOS build artifacts
-        if: ${{ github.event_name == 'workflow_run' }}
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow.name == 'macos-build' }}
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: SpeechTranscription_macos
           path: artifacts/macos
@@ -35,18 +45,24 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: Download Windows build artifacts
-        if: ${{ github.event_name == 'workflow_run' }}
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow.name == 'windows-build' }}
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: SpeechTranscription_windows
           path: artifacts/windows
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
 
-      - name: List artifacts (debug)
+      - name: List directory structure
         run: |
+          echo "Full directory structure:"
+          find . -type f -not -path "./.git/*"
+          
           echo "Contents of artifacts directory:"
-          ls -R artifacts/
+          ls -la artifacts/
+          ls -la artifacts/macos || echo "No macOS artifacts"
+          ls -la artifacts/windows || echo "No Windows artifacts"
 
       - name: Create project ZIP
         run: |
@@ -58,13 +74,20 @@ jobs:
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
           echo "Commit: ${{ github.sha }}" >> release_notes.md
           echo "Branch: ${{ github.ref_name }}" >> release_notes.md
+          echo "Event type: ${{ github.event_name }}" >> release_notes.md
           echo "## Downloads" >> release_notes.md
           echo "- Saltify.zip: Complete project source code" >> release_notes.md
-          if [ -d "artifacts/macos" ]; then
+          
+          if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
             echo "- macOS build included" >> release_notes.md
+          else
+            echo "Note: macOS build not available for this release" >> release_notes.md
           fi
-          if [ -d "artifacts/windows" ]; then
+          
+          if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
             echo "- Windows build included" >> release_notes.md
+          else
+            echo "Note: Windows build not available for this release" >> release_notes.md
           fi
 
       - name: Create GitHub Release
