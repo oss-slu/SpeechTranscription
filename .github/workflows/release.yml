@@ -45,7 +45,7 @@ jobs:
           echo "- Saltify.zip: Complete project source code" >> release_notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v1.1.0  # Updated to avoid Node.js deprecation warning
         with:
           tag_name: v${{ github.run_number }}
           name: Release ${{ github.run_number }}
