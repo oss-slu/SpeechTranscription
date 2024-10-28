@@ -1,169 +1,50 @@
-name: Build, Test, and Release on macOS and Windows
+name: Release
 
 on:
   push:
     branches:
-      - issue178_build-test-failures
+      - issue178_build-test-failures  # Specify your target branch
+  workflow_run:
+    workflows: ["macos-build", "windows-build"]
+    types:
+      - completed
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-        python-version: ['3.11', '3.12']
-      fail-fast: false
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install system dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install ffmpeg portaudio libomp cmake pkg-config --quiet || echo "Brew install failed"
-      
-      - name: Install system dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          choco install ffmpeg --verbose
-          choco install portaudio --source=https://community.chocolatey.org/api/v2/ --verbose || echo "Choco install failed"
-
-      - name: Install critical Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install torch==2.0.0 torchaudio==2.0.1 || echo "Torch/Torchaudio install failed"
-          pip install -r requirements.txt || echo "Requirements install failed"
-
-      - name: Install NLTK data
-        run: |
-          python -c "import nltk; nltk.download('all')"
-
-      - name: Run tests and save output
-        run: |
-          mkdir -p test-output
-          python -m pytest tests/ -v > test-output/pytest-output.txt || echo "Tests encountered an error"
-      
-      - name: Ensure test output exists
-        run: |
-          if [ ! -s test-output/pytest-output.txt ]; then echo "No output generated. Tests may have failed." > test-output/pytest-output.txt; fi
-
-      - name: Display test output
-        run: |
-          cat test-output/pytest-output.txt || echo "No pytest output available."
-
-      - name: Upload test results as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
-          path: test-output/pytest-output.txt
-          if-no-files-found: warn
-
-  macos-build:
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11.7
-      - name: Install Java
-        run: |
-          if ! java -version; then
-            brew install openjdk@11
-          fi
-      - name: Install NLTK
-        run: |
-          pip install nltk
-          python -m nltk.downloader all
-      - name: Install additional dependencies
-        run: |
-          brew install mysql pkg-config portaudio
-          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip uninstall -y typing
-      - name: Create macOS executable
-        run: |
-          pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: SpeechTranscription_macos
-          path: dist/Saltify/*
-
-  windows-build:
-    runs-on: windows-latest
-  
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11.7
-      - name: Install Java
-        shell: powershell
-        run: |
-          if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
-            Write-Host "Java not found, installing JDK 11..."
-            choco install jdk11 -y
-          }
-      - name: Install NLTK
-        run: |
-          pip install nltk
-          python -m nltk.downloader punkt
-      - name: Install additional dependencies
-        run: |
-          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip uninstall -y typing
-      - name: Create Windows executable
-        run: |
-          pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: SpeechTranscription_windows
-          path: dist/Saltify/*
-
   release:
-    if: always()
-    needs: [build, macos-build, windows-build]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_run' }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Download test results
+
+      - name: Download macOS build artifacts
+        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          pattern: test-results-*
-          merge-multiple: true
+          name: SpeechTranscription_macos
+          path: artifacts/macos
+
+      - name: Download Windows build artifacts
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: SpeechTranscription_windows
+          path: artifacts/windows
+
       - name: Create project ZIP
         run: |
           zip -r Saltify.zip . -x "*.git*" "*.pytest_cache*" "__pycache__/*" "*.pyc" "artifacts/*"
+
       - name: Generate release notes
         run: |
           echo "## Automated Release" > release_notes.md
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
           echo "Commit: ${{ github.sha }}" >> release_notes.md
-          echo "## Test Results" >> release_notes.md
-          echo "See attached test results in artifacts" >> release_notes.md
           echo "## Downloads" >> release_notes.md
           echo "- Saltify.zip: Complete project source code" >> release_notes.md
-      - name: Create Release
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.run_number }}
