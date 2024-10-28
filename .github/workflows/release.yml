@@ -15,8 +15,13 @@ jobs:
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_run' }}
     
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # Specify Node 20 explicitly
+
       - name: Checkout code
-        uses: actions/checkout@v3  # Uses latest version, will migrate to Node 20 automatically
+        uses: actions/checkout@v3  # Latest version
 
       - name: Download macOS build artifacts
         if: ${{ github.event_name == 'workflow_run' }}
@@ -45,7 +50,7 @@ jobs:
           echo "- Saltify.zip: Complete project source code" >> release_notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1  # Latest stable version
+        uses: softprops/action-gh-release@v1.37.0  # Updated to the latest stable version
         with:
           tag_name: v${{ github.run_number }}
           name: Release ${{ github.run_number }}
