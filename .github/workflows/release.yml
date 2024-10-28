@@ -3,39 +3,50 @@ name: Release
 on:
   push:
     branches:
-      - issue178_build-test-failures  # Specify your target branch
+      - issue178_build-test-failures
   workflow_run:
     workflows: ["macos-build", "windows-build"]
     types:
       - completed
 
+permissions:
+  contents: write
+  packages: read
+  actions: read
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_run' }}
+    if: |
+      github.event_name == 'push' || 
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'  # Specify Node 20 explicitly
-
       - name: Checkout code
-        uses: actions/checkout@v3  # Latest version
+        uses: actions/checkout@v4
 
       - name: Download macOS build artifacts
         if: ${{ github.event_name == 'workflow_run' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_macos
           path: artifacts/macos
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Download Windows build artifacts
         if: ${{ github.event_name == 'workflow_run' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_windows
           path: artifacts/windows
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: List artifacts (debug)
+        run: |
+          echo "Contents of artifacts directory:"
+          ls -R artifacts/
 
       - name: Create project ZIP
         run: |
@@ -46,11 +57,18 @@ jobs:
           echo "## Automated Release" > release_notes.md
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
           echo "Commit: ${{ github.sha }}" >> release_notes.md
+          echo "Branch: ${{ github.ref_name }}" >> release_notes.md
           echo "## Downloads" >> release_notes.md
           echo "- Saltify.zip: Complete project source code" >> release_notes.md
+          if [ -d "artifacts/macos" ]; then
+            echo "- macOS build included" >> release_notes.md
+          fi
+          if [ -d "artifacts/windows" ]; then
+            echo "- Windows build included" >> release_notes.md
+          fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1  # Use latest stable version
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.run_number }}
           name: Release ${{ github.run_number }}
@@ -58,7 +76,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/**
+            artifacts/**/*
             Saltify.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
