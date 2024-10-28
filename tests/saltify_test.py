@@ -3,6 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 #or run export PYTHONPATH=$(pwd) before running python tests/saltify_test.py
 
+import re
 import unittest
 import addConventions
 import grammar 
@@ -93,51 +94,68 @@ class TestGrammarAndMorphemeFunctions(unittest.TestCase):
             return f.readlines()
 
     def test_compare_input_with_output(self):
-        input_file_path = os.path.join('tests', 'data', 'input1.txt')
-        output_file_path = os.path.join('tests', 'data', 'output1.txt')
 
-        input_lines = self.read_file(input_file_path)
-        expected_output_lines = self.read_file(output_file_path)
+        # directory containing the test files
+        data_dir = os.path.join('tests', 'data')
+        files = os.listdir(data_dir)
+        
+        # filtering out input and output files
+        input_files = sorted([f for f in files if re.match(r'input\d+\.txt', f)])
+        output_files = sorted([f for f in files if re.match(r'output\d+\.txt', f)])
 
         total_tests = 0  
         failed_tests = 0 
 
         errors = []
 
-        # Only one loop to iterate through both input and expected output lines
-        for input_line, expected_line in zip(input_lines, expected_output_lines):
-            total_tests += 1  # Increment total test count
+        for input_file, output_file in zip(input_files, output_files):
+            # checking matching input and output numbers
+            input_num = re.search(r'input(\d+)\.txt', input_file).group(1)
+            output_num = re.search(r'output(\d+)\.txt', output_file).group(1)
+            if input_num != output_num:
+                print(f"File mismatch: {input_file} does not match {output_file}")
+                continue
 
-            # Simulate processing the input line
-            self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
-            corrected, _ = self.grammar_checker.getNextCorrection()  # Grammar check
-            processed_text = self.grammar_checker.getInflectionalMorphemes(corrected)  # Add morphemes
+            input_file_path = os.path.join(data_dir, input_file)
+            output_file_path = os.path.join(data_dir, output_file)
 
-            # Print intermediate results for debugging
-            print(f"Input Line: {input_line.strip()}")
-            print(f"Corrected Text: {corrected.strip()}")
-            print(f"Processed with Morphemes: {processed_text.strip()}")
-            print(f"Expected Line: {expected_line.strip()}")
-            print("-------------------------------------------------")
+            input_lines = self.read_file(input_file_path)
+            expected_output_lines = self.read_file(output_file_path)
 
-            # Compare the processed output with the expected output
-            try:
-                self.assertEqual(processed_text.strip(), expected_line.strip(), f"Mismatch for line: {input_file_path} -> {input_line}")
-            except AssertionError as e:
-                errors.append(str(e))
-                failed_tests += 1  # Count failed tests
+            # iterate through each line in the file pair
+            for input_line, expected_line in zip(input_lines, expected_output_lines):
+                total_tests += 1  # increment total test count
 
-        # Calculate accuracy
+                # simulate processing the input line
+                self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
+                corrected, _ = self.grammar_checker.getNextCorrection()  # grammar check
+                processed_text = self.grammar_checker.getInflectionalMorphemes(corrected)  # add morphemes
+
+                # debugging output
+                print(f"Input Line: {input_line.strip()}")
+                print(f"Corrected Text: {corrected.strip()}")
+                print(f"Processed with Morphemes: {processed_text.strip()}")
+                print(f"Expected Line: {expected_line.strip()}")
+                print("-------------------------------------------------")
+
+                # compare processed text with expected output
+                try:
+                    self.assertEqual(processed_text.strip(), expected_line.strip(), f"Mismatch for line: {input_file_path} -> {input_line}")
+                except AssertionError as e:
+                    errors.append(str(e))
+                    failed_tests += 1  # count failed tests
+
+        # calculate overall accuracy
         passed_tests = total_tests - failed_tests
         accuracy = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
 
-        # Print the final accuracy
+        # final accuracy output
         print(f"Total Tests: {total_tests}")
         print(f"Passed Tests: {passed_tests}")
         print(f"Failed Tests: {failed_tests}")
-        print(f"Accuracy: {accuracy:.2f}%")
+        print(f"Overall Accuracy: {accuracy:.2f}%")
 
-        # Print any errors that occurred
+        # output any errors
         if errors:
             print("Some tests failed:")
             for error in errors:
