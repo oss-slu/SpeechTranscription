@@ -66,9 +66,78 @@ jobs:
           path: test-output/pytest-output.txt
           if-no-files-found: warn
 
+  macos-build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.7
+      - name: Install Java
+        run: |
+          if ! java -version; then
+            brew install openjdk@11
+          fi
+      - name: Install NLTK
+        run: |
+          pip install nltk
+          python -m nltk.downloader all
+      - name: Install additional dependencies
+        run: |
+          brew install mysql pkg-config portaudio
+          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          pip uninstall -y typing
+      - name: Create macOS executable
+        run: |
+          pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SpeechTranscription_macos
+          path: dist/Saltify/*
+
+  windows-build:
+    runs-on: windows-latest
+  
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.7
+      - name: Install Java
+        shell: powershell
+        run: |
+          if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+            Write-Host "Java not found, installing JDK 11..."
+            choco install jdk11 -y
+          }
+      - name: Install NLTK
+        run: |
+          pip install nltk
+          python -m nltk.downloader punkt
+      - name: Install additional dependencies
+        run: |
+          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          pip uninstall -y typing
+      - name: Create Windows executable
+        run: |
+          pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SpeechTranscription_windows
+          path: dist/Saltify/*
+
   release:
     if: always()
-    needs: build
+    needs: [build, macos-build, windows-build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -76,18 +145,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Download test results
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           pattern: test-results-*
           merge-multiple: true
-
       - name: Create project ZIP
         run: |
           zip -r Saltify.zip . -x "*.git*" "*.pytest_cache*" "__pycache__/*" "*.pyc" "artifacts/*"
-
       - name: Generate release notes
         run: |
           echo "## Automated Release" > release_notes.md
@@ -97,7 +163,6 @@ jobs:
           echo "See attached test results in artifacts" >> release_notes.md
           echo "## Downloads" >> release_notes.md
           echo "- Saltify.zip: Complete project source code" >> release_notes.md
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
