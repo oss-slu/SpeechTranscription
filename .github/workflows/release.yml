@@ -4,22 +4,29 @@ on:
   push:
     branches:
       - issue178_build-test-failures  # Specify your target branch
+  workflow_run:
+    workflows: ["macos-build", "windows-build"]
+    types:
+      - completed
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_run' }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Download macOS build artifacts
+        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_macos
           path: artifacts/macos
 
       - name: Download Windows build artifacts
+        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_windows
