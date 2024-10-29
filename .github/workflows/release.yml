@@ -1,43 +1,45 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - issue178_build-test-failures  # Specify your target branch
   workflow_run:
     workflows: ["macos-build", "windows-build"]
     types:
       - completed
+  push:
+    branches:
+      - issue178_build-test-failures
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_run' }}
+    if: ${{ github.event_name == 'push' || github.event.workflow == 'macos-build' || github.event.workflow == 'windows-build' }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Download macOS build artifacts
-        if: ${{ github.event_name == 'workflow_run' }}
+        if: ${{ github.event.workflow == 'macos-build' && github.event.conclusion == 'success' }}
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_macos
           path: artifacts/macos
 
       - name: Download Windows build artifacts
-        if: ${{ github.event_name == 'workflow_run' }}
+        if: ${{ github.event.workflow == 'windows-build' && github.event.conclusion == 'success' }}
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_windows
           path: artifacts/windows
 
-      - name: Verify Artifacts Downloaded
+      - name: Verify Artifacts Directory Structure
         run: |
-          echo "Listing contents of artifacts/macos:"
-          ls artifacts/macos || echo "No macOS artifacts found."
-          echo "Listing contents of artifacts/windows:"
-          ls artifacts/windows || echo "No Windows artifacts found."
+          echo "Root directory structure:"
+          ls -R
+          echo "Checking artifacts/macos:"
+          ls -R artifacts/macos || echo "No macOS artifacts found."
+          echo "Checking artifacts/windows:"
+          ls -R artifacts/windows || echo "No Windows artifacts found."
 
       - name: Generate release notes
         run: |
@@ -55,7 +57,6 @@ jobs:
 
       - name: Create Release and Upload Assets
         run: |
-          # Adjust file paths as needed to specify specific files instead of directories.
           gh release create v${{ github.run_number }} \
             -t "Release ${{ github.run_number }}" \
             -F release_notes.md \
