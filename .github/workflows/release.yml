@@ -1,10 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - issue178_build-test-failures
-
   workflow_run:
     workflows: ["macos-build", "windows-build"]
     types:
