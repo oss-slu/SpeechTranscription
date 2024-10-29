@@ -32,6 +32,13 @@ jobs:
           name: SpeechTranscription_windows
           path: artifacts/windows
 
+      - name: Verify Artifacts Downloaded
+        run: |
+          echo "Listing contents of artifacts/macos:"
+          ls artifacts/macos || echo "No macOS artifacts found."
+          echo "Listing contents of artifacts/windows:"
+          ls artifacts/windows || echo "No Windows artifacts found."
+
       - name: Generate release notes
         run: |
           echo "## Automated Release" > release_notes.md
@@ -48,8 +55,9 @@ jobs:
 
       - name: Create Release and Upload Assets
         run: |
+          # Adjust file paths as needed to specify specific files instead of directories.
           gh release create v${{ github.run_number }} \
             -t "Release ${{ github.run_number }}" \
             -F release_notes.md \
-            artifacts/macos \
-            artifacts/windows
+            artifacts/macos/* \
+            artifacts/windows/*
