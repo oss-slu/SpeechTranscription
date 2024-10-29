@@ -1,10 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - issue178_build-test-failures
-
   workflow_run:
     workflows: ["macos-build", "windows-build"]
     types:
@@ -17,8 +13,9 @@ permissions:
 
 jobs:
   release:
-    # Ensures this job runs only if triggered by `push` *and* both `macos-build` and `windows-build` succeeded
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Runs only if both `macos-build` and `windows-build` succeeded after a push to `issue178_build-test-failures`
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'issue178_build-test-failures' }}
+    
     runs-on: ubuntu-latest
 
     steps:
