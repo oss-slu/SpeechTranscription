@@ -1,64 +1,94 @@
 name: Release
 
 on:
+  push:
+    branches:
+      - issue178_build-test-failures
   workflow_run:
     workflows: ["macos-build", "windows-build"]
     types:
       - completed
-  push:
-    branches:
-      - issue178_build-test-failures
+
+permissions:
+  contents: write
+  packages: read
+  actions: read
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event.workflow == 'macos-build' || github.event.workflow == 'windows-build' }}
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create artifacts directory
+        run: mkdir -p artifacts/macos artifacts/windows
+      - name: Debug Event Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event path: ${{ github.event_path }}"
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "Workflow run ID: ${{ github.event.workflow_run.id }}"
+            echo "Workflow name: ${{ github.event.workflow_run.name }}"
+            echo "Workflow conclusion: ${{ github.event.workflow_run.conclusion }}"
+          fi
       - name: Download macOS build artifacts
-        if: ${{ github.event.workflow == 'macos-build' && github.event.conclusion == 'success' }}
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow.name == 'macos-build' }}
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: SpeechTranscription_macos
           path: artifacts/macos
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Download Windows build artifacts
-        if: ${{ github.event.workflow == 'windows-build' && github.event.conclusion == 'success' }}
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow.name == 'windows-build' }}
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: SpeechTranscription_windows
           path: artifacts/windows
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
-      - name: Verify Artifacts Directory Structure
+      - name: List directory structure
         run: |
-          echo "Root directory structure:"
-          ls -R
-          echo "Checking artifacts/macos:"
-          ls -R artifacts/macos || echo "No macOS artifacts found."
-          echo "Checking artifacts/windows:"
-          ls -R artifacts/windows || echo "No Windows artifacts found."
-
-      - name: Generate release notes
+          echo "Full directory structure:"
+          find . -type f -not -path "./.git/*"
+          
+          echo "Contents of artifacts directory:"
+          ls -la artifacts/
+          ls -la artifacts/macos || echo "No macOS artifacts"
+          ls -la artifacts/windows || echo "No Windows artifacts"
+      - name: Create project ZIP
         run: |
-          echo "## Automated Release" > release_notes.md
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
           echo "Commit: ${{ github.sha }}" >> release_notes.md
+          echo "Branch: ${{ github.ref_name }}" >> release_notes.md
+          echo "Event type: ${{ github.event_name }}" >> release_notes.md
           echo "## Downloads" >> release_notes.md
-          echo "- macOS and Windows build artifacts included." >> release_notes.md
-
-      - name: Install GitHub CLI
-        run: sudo apt-get install -y gh
-
-      - name: Authenticate GitHub CLI
-        run: gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Create Release and Upload Assets
-        run: |
-          gh release create v${{ github.run_number }} \
-            -t "Release ${{ github.run_number }}" \
-            -F release_notes.md \
-            artifacts/macos/* \
-            artifacts/windows/*
+          echo "- Saltify.zip: Complete project source code" >> release_notes.md
+          
+          if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
+            echo "- macOS build included" >> release_notes.md
+          else
+            echo "Note: macOS build not available for this release" >> release_notes.md
+          fi
+          
+          if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
+            echo "- Windows build included" >> release_notes.md
+          else
+            echo "Note: Windows build not available for this release" >> release_notes.md
+          fi
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release ${{ github.run_number }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*
+            Saltify.zip
