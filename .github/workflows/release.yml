@@ -18,7 +18,7 @@ permissions:
 jobs:
   release:
     # Ensures this job runs only if triggered by `push` *and* both `macos-build` and `windows-build` succeeded
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
