@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   call-macos-build:
-    uses: ./.github/workflows/macos-build.yml
+    uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml@build_fixes_copy
   release:
     runs-on: ubuntu-latest
 
