@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["macos-build", "windows-build"]
     branches:
-      - issue178_build-test-failures
+      - build_fixes_copy
     types:
       - completed
 
@@ -29,7 +29,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_macos
-          path: artifacts/macos
+          path: dist/Saltify
 
       - name: Download Windows build artifacts
         uses: actions/download-artifact@v4

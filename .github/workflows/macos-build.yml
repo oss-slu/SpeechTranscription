@@ -5,7 +5,7 @@ on:
       - fix-mac-exe
       - testingv4artifact
       - issue169_dependency
-      - issue178_build-test-failures
+      - build_fixes_copy
 
 jobs:
   build-macos:
