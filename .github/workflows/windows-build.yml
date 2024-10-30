@@ -1,11 +1,5 @@
 on:
-    push:
-      branches:
-        - main
-        - fix-exe
-        - testingv4artifact
-        - issue169_dependency
-        - build_fixes_copy
+  workflow_call:
 
 jobs:
     build-windows:
