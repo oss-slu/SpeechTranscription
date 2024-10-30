@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   call-macos-build:
-    uses: ./.github/workflows/macos-build.yml@main
+    uses: ./.github/workflows/macos-build.yml
   release:
     runs-on: ubuntu-latest
 
