@@ -1,11 +1,5 @@
 on: 
-  push:
-    branches:
-      - main
-      - fix-mac-exe
-      - testingv4artifact
-      - issue169_dependency
-      - build_fixes_copy
+  workflow_call:
 
 jobs:
   build-macos:
@@ -41,4 +35,3 @@ jobs:
         with:
           name: SpeechTranscription_macos
           path: dist/Saltify/*
-
