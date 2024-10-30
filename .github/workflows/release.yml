@@ -2,9 +2,7 @@ name: Release
 
 on:
   workflow_run:
-    workflows:
-      - "macos-build"
-      - "windows-build"
+    workflows: ["windows-build"]
     branches:
       - build_fixes_copy
     types:
