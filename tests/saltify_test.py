@@ -103,10 +103,13 @@ class TestGrammarAndMorphemeFunctions(unittest.TestCase):
         input_files = sorted([f for f in files if re.match(r'input\d+\.txt', f)])
         output_files = sorted([f for f in files if re.match(r'output\d+\.txt', f)])
 
-        total_tests = 0  
-        failed_tests = 0 
+        # counters for line and word level comparison
+        total_line_tests = 0  
+        failed_line_tests = 0
+        total_word_tests = 0
+        failed_word_tests = 0
 
-        errors = []
+        file_summaries = []
 
         for input_file, output_file in zip(input_files, output_files):
             # checking matching input and output numbers
@@ -122,45 +125,117 @@ class TestGrammarAndMorphemeFunctions(unittest.TestCase):
             input_lines = self.read_file(input_file_path)
             expected_output_lines = self.read_file(output_file_path)
 
-            # iterate through each line in the file pair
+            # file-specific counters
+            file_line_tests = 0
+            file_failed_line_tests = 0
+            file_word_tests = 0
+            file_failed_word_tests = 0
+
+            line_errors = []
+            word_errors = []
+
+            # line-by-line comparison
             for input_line, expected_line in zip(input_lines, expected_output_lines):
-                total_tests += 1  # increment total test count
+                file_line_tests += 1
+                total_line_tests += 1
 
-                # simulate processing the input line
+                # process the input line
                 self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
-                corrected, _ = self.grammar_checker.getNextCorrection()  # grammar check
-                processed_text = self.grammar_checker.getInflectionalMorphemes(corrected)  # add morphemes
+                corrected, _ = self.grammar_checker.getNextCorrection()
+                processed_text = self.grammar_checker.getInflectionalMorphemes(corrected) if corrected else ""
 
-                # debugging output
-                print(f"Input Line: {input_line.strip()}")
-                print(f"Corrected Text: {corrected.strip()}")
-                print(f"Processed with Morphemes: {processed_text.strip()}")
-                print(f"Expected Line: {expected_line.strip()}")
-                print("-------------------------------------------------")
+                # check if the entire processed line matches the expected line
+                if processed_text.strip() != expected_line.strip():
+                    line_errors.append(f"Processed '{processed_text.strip()}' vs Expected '{expected_line.strip()}'")
+                    file_failed_line_tests += 1
+                    failed_line_tests += 1
 
-                # compare processed text with expected output
-                try:
-                    self.assertEqual(processed_text.strip(), expected_line.strip(), f"Mismatch for line: {input_file_path} -> {input_line}")
-                except AssertionError as e:
-                    errors.append(str(e))
-                    failed_tests += 1  # count failed tests
+                # word-by-word comparison
+                processed_words = processed_text.strip().split()
+                expected_words = expected_line.strip().split()
+                for i, (processed_word, expected_word) in enumerate(zip(processed_words, expected_words)):
+                    file_word_tests += 1
+                    total_word_tests += 1
+                    if processed_word != expected_word:
+                        word_errors.append(f"Word mismatch at position {i+1}: Processed '{processed_word}' vs Expected '{expected_word}'")
+                        file_failed_word_tests += 1
+                        failed_word_tests += 1
+
+                # handle any extra words in processed or expected lines
+                if len(processed_words) > len(expected_words):
+                    for extra_word in processed_words[len(expected_words):]:
+                        word_errors.append(f"Extra word in processed output: '{extra_word}'")
+                        file_failed_word_tests += 1
+                        failed_word_tests += 1
+                        file_word_tests += 1
+                        total_word_tests += 1
+                elif len(expected_words) > len(processed_words):
+                    for missing_word in expected_words[len(processed_words):]:
+                        word_errors.append(f"Missing word in processed output: Expected '{missing_word}'")
+                        file_failed_word_tests += 1
+                        failed_word_tests += 1
+                        file_word_tests += 1
+                        total_word_tests += 1
+
+            # calculate file-specific accuracy
+            file_line_accuracy = (file_line_tests - file_failed_line_tests) / file_line_tests * 100 if file_line_tests else 0
+            file_word_accuracy = (file_word_tests - file_failed_word_tests) / file_word_tests * 100 if file_word_tests else 0
+
+            # append summary for each file
+            file_summaries.append({
+                'file': input_file,
+                'total_line_tests': file_line_tests,
+                'failed_line_tests': file_failed_line_tests,
+                'line_accuracy': file_line_accuracy,
+                'total_word_tests': file_word_tests,
+                'failed_word_tests': file_failed_word_tests,
+                'word_accuracy': file_word_accuracy,
+                'line_errors': line_errors,
+                'word_errors': word_errors
+            })
 
         # calculate overall accuracy
-        passed_tests = total_tests - failed_tests
-        accuracy = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        line_accuracy = (total_line_tests - failed_line_tests) / total_line_tests * 100 if total_line_tests else 0
+        word_accuracy = (total_word_tests - failed_word_tests) / total_word_tests * 100 if total_word_tests else 0
+        total_accuracy = (line_accuracy + word_accuracy) / 2 if total_line_tests and total_word_tests else 0
 
-        # final accuracy output
-        print(f"Total Tests: {total_tests}")
-        print(f"Passed Tests: {passed_tests}")
-        print(f"Failed Tests: {failed_tests}")
-        print(f"Overall Accuracy: {accuracy:.2f}%")
+        # display summary for each file
+        print("\n===== Detailed Test Summary by File =====\n")
+        for summary in file_summaries:
+            print(f"File: {summary['file']}")
+            print(f"  Total Line Tests: {summary['total_line_tests']}")
+            print(f"  Failed Line Tests: {summary['failed_line_tests']}")
+            print(f"  Line Accuracy: {summary['line_accuracy']:.2f}%\n")
 
-        # output any errors
-        if errors:
-            print("Some tests failed:")
-            for error in errors:
-                print(error)
-            self.fail(f"{len(errors)} test(s) failed. Check the errors above.")
+            print(f"  Total Word Tests: {summary['total_word_tests']}")
+            print(f"  Failed Word Tests: {summary['failed_word_tests']}")
+            print(f"  Word Accuracy: {summary['word_accuracy']:.2f}%\n")
+
+            # show a limited number of errors per file
+            max_errors_to_show = 5
+            if summary['line_errors'] or summary['word_errors']:
+                print(f"  Showing up to {max_errors_to_show} errors:")
+                for error in (summary['line_errors'] + summary['word_errors'])[:max_errors_to_show]:
+                    print(f"    {error}")
+                if len(summary['line_errors']) + len(summary['word_errors']) > max_errors_to_show:
+                    print(f"    ...and more errors.\n")
+
+        # display overall accuracy summary
+        print("\n===== Overall Test Summary =====")
+        print(f"Total Line Tests: {total_line_tests}")
+        print(f"Total Failed Line Tests: {failed_line_tests}")
+        print(f"Line-by-Line Accuracy: {line_accuracy:.2f}%\n")
+
+        print(f"Total Word Tests: {total_word_tests}")
+        print(f"Total Failed Word Tests: {failed_word_tests}")
+        print(f"Word-by-Word Accuracy: {word_accuracy:.2f}%\n")
+
+        print(f"Overall Accuracy (Average of Line and Word Accuracy): {total_accuracy:.2f}%")
+        print("=========================\n")
+
+        # fail the test if there are any mismatches
+        if failed_line_tests > 0 or failed_word_tests > 0:
+            self.fail(f"{failed_line_tests} line mismatches and {failed_word_tests} word mismatches found across files.")
 
 if __name__ == '__main__':
     unittest.main()
