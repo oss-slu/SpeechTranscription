@@ -144,6 +144,13 @@ class TestGrammarAndMorphemeFunctions(unittest.TestCase):
                 corrected, _ = self.grammar_checker.getNextCorrection()
                 processed_text = self.grammar_checker.getInflectionalMorphemes(corrected) if corrected else ""
 
+                # Print intermediate results for debugging
+                print(f"Input Line: {input_line.strip()}")
+                print(f"Corrected Text: {corrected.strip()}")
+                print(f"Processed with Morphemes: {processed_text.strip()}")
+                print(f"Expected Line: {expected_line.strip()}")
+                print("-------------------------------------------------")
+
                 # check if the entire processed line matches the expected line
                 if processed_text.strip() != expected_line.strip():
                     line_errors.append(f"Processed '{processed_text.strip()}' vs Expected '{expected_line.strip()}'")
@@ -210,15 +217,6 @@ class TestGrammarAndMorphemeFunctions(unittest.TestCase):
             print(f"  Total Word Tests: {summary['total_word_tests']}")
             print(f"  Failed Word Tests: {summary['failed_word_tests']}")
             print(f"  Word Accuracy: {summary['word_accuracy']:.2f}%\n")
-
-            # show a limited number of errors per file
-            max_errors_to_show = 5
-            if summary['line_errors'] or summary['word_errors']:
-                print(f"  Showing up to {max_errors_to_show} errors:")
-                for error in (summary['line_errors'] + summary['word_errors'])[:max_errors_to_show]:
-                    print(f"    {error}")
-                if len(summary['line_errors']) + len(summary['word_errors']) > max_errors_to_show:
-                    print(f"    ...and more errors.\n")
 
         # display overall accuracy summary
         print("\n===== Overall Test Summary =====")
