@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - issue178_build-test-failures
+      - main
 permissions:
   contents: write
   packages: read
