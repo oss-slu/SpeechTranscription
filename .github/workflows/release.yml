@@ -50,14 +50,14 @@ jobs:
           
           if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
             echo "- macOS executable included" >> release_notes.md
-            zip -r artifacts/Saltify_macos.zip artifacts/macos/*
+            zip -j artifacts/Saltify_macos.zip artifacts/macos/*
           else
             echo "Note: macOS executable not available for this release" >> release_notes.md
           fi
           
           if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
             echo "- Windows executable included" >> release_notes.md
-            zip -r artifacts/Saltify_windows.zip artifacts/windows/*
+            zip -j artifacts/Saltify_windows.zip artifacts/windows/*
           else
             echo "Note: Windows executable not available for this release" >> release_notes.md
           fi
