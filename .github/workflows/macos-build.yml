@@ -5,6 +5,7 @@ on:
       - fix-mac-exe
       - testingv4artifact
       - issue169_dependency
+      - issue178_build-test-failures
 
 jobs:
   build-macos:
@@ -20,24 +21,21 @@ jobs:
           if ! java -version; then
             brew install openjdk@11
           fi
-
       - name: Install Specific Python Version
         uses: actions/setup-python@v4
         with:
           python-version: 3.11.7
-
       - name: Install NLTK
         run: |
           pip install nltk
           python -m nltk.downloader all
-          
       - run: brew install mysql pkg-config portaudio
       - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
       - run: pip uninstall -y typing
-      - run: pyinstaller --name Saltify --windowed --noconfirm --onedir -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+      - name: Build executable
+        run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: SpeechTranscription_macos
-          path: dist/Saltify/*
-
+          path: dist/Saltify

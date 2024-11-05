@@ -1,116 +1,95 @@
-name: Build, Test, and Release on macOS and Windows
-
+name: Release
 on:
   push:
     branches:
+      - issue178_build-test-failures
       - main
-
+permissions:
+  contents: write
+  packages: read
+  actions: read
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-        python-version: ['3.11', '3.12']
-      fail-fast: false
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install system dependencies
-        if: runner.os == 'macOS'
-        run: |
-          brew install ffmpeg
-          brew install portaudio
-
-      - name: Install system dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          choco install ffmpeg
-          choco install portaudio
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install torch torchaudio
-          pip install -r requirements.txt
-        continue-on-error: false
-
-      - name: Install NLTK data
-        run: |
-          python -c "import nltk; nltk.download('all')"
-
-      - name: Run tests with detailed output
-        id: test
-        run: |
-          python -m pytest tests/ -v --junitxml=test-results.xml --capture=tee-sys > pytest-output.txt 2>&1
-        continue-on-error: true
-
-      - name: Display test output
-        if: always()
-        run: cat pytest-output.txt
-        shell: bash
-
-      - name: Store test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
-          path: |
-            test-results.xml
-            pytest-output.txt
-          if-no-files-found: warn
-
+  call-macos-build:
+    uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml@build_fixes_copy
+  call-windows-build:
+    uses: oss-slu/SpeechTranscription/.github/workflows/windows-build.yml@build_fixes_copy
   release:
-    if: always()
-    needs: build
+    needs: [call-macos-build, call-windows-build]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Download test results
+      - name: Create artifacts directory
+        run: mkdir -p artifacts/macos artifacts/windows
+      - name: Download macOS build artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          pattern: test-results-*
-          merge-multiple: true
-
+          name: SpeechTranscription_macos
+          path: artifacts/macos
+      - name: Download Windows build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: SpeechTranscription_windows
+          path: artifacts/windows
+      - name: List directory structure
+        run: |
+          echo "Full directory structure:"
+          find . -type f -not -path "./.git/*"
+          
+          echo "Contents of artifacts directory:"
+          ls -la artifacts/
+          ls -la artifacts/macos || echo "No macOS artifacts"
+          ls -la artifacts/windows || echo "No Windows artifacts"
       - name: Create project ZIP
         run: |
-          # Create a ZIP of the entire project
-          zip -r Saltify.zip . -x "*.git*" "*.pytest_cache*" "__pycache__/*" "*.pyc" "artifacts/*"
-
-      - name: Generate release notes
-        run: |
-          echo "## Automated Release" > release_notes.md
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
           echo "Commit: ${{ github.sha }}" >> release_notes.md
-          echo "## Test Results" >> release_notes.md
-          echo "See attached test results in artifacts" >> release_notes.md
+          echo "Branch: ${{ github.ref_name }}" >> release_notes.md
+          echo "Event type: ${{ github.event_name }}" >> release_notes.md
           echo "## Downloads" >> release_notes.md
-          echo "- Saltify.zip: Complete project source code" >> release_notes.md
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ github.run_number }}
-          name: Release ${{ github.run_number }}
-          body_path: release_notes.md
-          draft: false
-          prerelease: false
-          files: |
-            artifacts/**
-            Saltify.zip
+          
+          if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
+            echo "- macOS executable included" >> release_notes.md
+            zip -j artifacts/Saltify_macos.zip artifacts/macos/*
+          else
+            echo "Note: macOS executable not available for this release" >> release_notes.md
+          fi
+          
+          if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
+            echo "- Windows executable included" >> release_notes.md
+            zip -j artifacts/Saltify_windows.zip artifacts/windows/*
+          else
+            echo "Note: Windows executable not available for this release" >> release_notes.md
+          fi
+          
+          echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
+          echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release ${{ github.run_number }}
+          body_path: ./release_notes.md
+          draft: false
+          prerelease: false
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/Saltify_macos.zip
+          asset_name: Saltify_macos.zip
+          asset_content_type: application/zip
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/Saltify_windows.zip
+          asset_name: Saltify_windows.zip
+          asset_content_type: application/zip
