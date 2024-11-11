@@ -51,12 +51,11 @@ jobs:
               --hidden-import Pillow \
               --hidden-import diarizationAndTranscription \
               GUI.py
-          chmod +x dist/Saltify
+          chmod +x dist/Saltify  # Ensure executable has correct permissions
 
-      - name: Verify Permissions of Executable
+      - name: Verify Build Output
         run: |
           ls -la dist/
-          chmod +x dist/Saltify
           file dist/Saltify
 
       - name: Upload macOS Build Artifact
