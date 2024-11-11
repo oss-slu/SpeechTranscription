@@ -1,4 +1,4 @@
-on: 
+on:
   push:
     branches:
       - main
@@ -14,23 +14,30 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.11
-      - name: Install Java
-        run: |
-          if ! java -version; then
-            brew install openjdk@11
-          fi
-      - name: Install Specific Python Version
-        uses: actions/setup-python@v4
-        with:
           python-version: 3.11.7
+
+      - name: Install System Libraries for mysqlclient
+        run: |
+          brew install mysql-client
+          export PATH="/usr/local/opt/mysql-client/bin:$PATH"
+          export MYSQLCLIENT_CFLAGS="-I/usr/local/opt/mysql-client/include"
+          export MYSQLCLIENT_LDFLAGS="-L/usr/local/opt/mysql-client/lib"
+
       - name: Install Python dependencies
         run: |
-          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          python -m pip install --upgrade pip
+          pip install --no-binary=mysqlclient mysqlclient
+          pip install -r requirements.txt
           pip uninstall -y typing
           python -m nltk.downloader all
+
+      - name: Verify Python and PyInstaller installation
+        run: |
+          python --version
+          pyinstaller --version
 
       - name: Build executable
         run: |
