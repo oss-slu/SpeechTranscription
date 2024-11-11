@@ -21,9 +21,10 @@ jobs:
         with:
           python-version: 3.11.7
 
-      # Install system tools and libraries
-      - name: Install System Tools
-        run: brew install pkg-config mysql-client
+      # Install required tools and libraries
+      - name: Install Required System Tools
+        run: |
+          brew install pkg-config mysql-client
 
       # Configure MySQL environment
       - name: Configure MySQL Environment
@@ -35,7 +36,7 @@ jobs:
 
       # Install mysqlclient
       - name: Install mysqlclient
-        run: pip install mysqlclient
+        run: pip install --only-binary :all: mysqlclient
 
       # Install Python dependencies
       - name: Install Python dependencies
