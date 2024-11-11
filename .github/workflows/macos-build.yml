@@ -6,9 +6,6 @@ on:
       - main
       - fix-mac-exe
       - testingv4artifact
-      - issue169_dependency
-      - issue178_build-test-failures
-      - issue182_releaseprocess
 
 jobs:
   build-macos:
@@ -23,20 +20,17 @@ jobs:
         with:
           python-version: 3.11
 
+      - name: Install MySQL Libraries
+        run: |
+          brew install mysql pkg-config
+          export MYSQLCLIENT_CFLAGS=$(pkg-config --cflags mysqlclient)
+          export MYSQLCLIENT_LDFLAGS=$(pkg-config --libs mysqlclient)
+
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          python -m nltk.downloader all  # If using NLTK
-
-      - name: Install Java
-        run: |
-          if ! java -version; then
-            brew install openjdk@11
-          fi
-
-      - name: Install Other Tools
-        run: brew install mysql pkg-config portaudio
+          python -m nltk.downloader all
 
       - name: Build macOS Executable
         run: |
