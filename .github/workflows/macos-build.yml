@@ -6,6 +6,7 @@ on:
       - testingv4artifact
       - issue169_dependency
       - issue178_build-test-failures
+      - issue182_releaseprocess
 
 jobs:
   build-macos:
