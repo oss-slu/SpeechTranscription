@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - issue182_releaseprocess
-      
   pull_request:
 
 jobs:
@@ -19,18 +18,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.11.7
 
       - name: Install system dependencies
         run: |
           brew update
-          brew install pkg-config portaudio mysql-client  # macOS equivalent of system dependencies
+          brew install pkg-config portaudio mysql-client openjdk@17  # Includes Java installation
+          echo "export PATH='/usr/local/opt/openjdk@17/bin:$PATH'" >> $HOME/.zshrc
+          source $HOME/.zshrc
+          java -version
 
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
+          python -m nltk.downloader all 
 
       - name: Build executable
         run: |
