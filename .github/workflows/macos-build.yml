@@ -6,6 +6,7 @@ on:
       - testingv4artifact
       - issue169_dependency
       - issue178_build-test-failures
+      - issue182_releaseprocess
 
 jobs:
   build-macos:
@@ -29,11 +30,28 @@ jobs:
         run: |
           pip install nltk
           python -m nltk.downloader all
-      - run: brew install mysql pkg-config portaudio
-      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-      - run: pip uninstall -y typing
+
       - name: Build executable
-        run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+        run: |
+          pyinstaller --name Saltify --windowed --noconfirm --onefile \
+            --copy-metadata torch \
+            --copy-metadata tqdm \
+            --copy-metadata regex \
+            --copy-metadata sacremoses \
+            --copy-metadata requests \
+            --copy-metadata packaging \
+            --copy-metadata filelock \
+            --copy-metadata numpy \
+            --copy-metadata tokenizers \
+            --copy-metadata importlib_metadata \
+            --collect-data sv_ttk \
+            --recursive-copy-metadata "openai-whisper" \
+            --collect-data whisper \
+            GUI.py
+
+      - name: Set permissions for macOS executable
+        run: chmod +x dist/Saltify
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
