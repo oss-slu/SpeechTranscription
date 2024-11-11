@@ -14,19 +14,30 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11.7
-      - name: Install Dependencies
+
+      - name: Install System Dependencies
         run: |
           brew update
           brew install openjdk@11 mysql pkg-config portaudio
+
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
-      - name: Validate Dependencies
+
+      - name: Remove Obsolete Typing Package
+        run: |
+          pip uninstall -y typing || echo "No typing package to remove"
+
+      - name: Validate Python Dependencies
         run: |
           python --version
           pip list
-          java -version
+
       - name: Build Executable with PyInstaller
         run: |
           pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
@@ -43,9 +54,11 @@ jobs:
             --collect-data sv_ttk \
             --recursive-copy-metadata "openai-whisper" \
             --collect-data whisper GUI.py
-          echo "Build completed. Verifying output:"
-          find dist || echo "No files in dist directory"
-      - uses: actions/upload-artifact@v4
+          echo "Build completed. Verifying output..."
+          find dist || echo "No files found in dist directory"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: SpeechTranscription_macos
           path: dist/*
