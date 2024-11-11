@@ -1,50 +1,42 @@
-name: Build and Test GUI (macOS)
-
-on:
+on: 
   push:
     branches:
       - main
+      - fix-mac-exe
+      - testingv4artifact
+      - issue169_dependency
+      - issue178_build-test-failures
       - issue182_releaseprocess
-  pull_request:
 
 jobs:
-  build:
+  build-macos:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install Java
+        run: |
+          if ! java -version; then
+            brew install openjdk@11
+          fi
+      - name: Install Specific Python Version
         uses: actions/setup-python@v4
         with:
           python-version: 3.11.7
-
-      - name: Install system dependencies
+      - name: Install NLTK
         run: |
-          brew update
-          brew install pkg-config portaudio mysql-client openjdk@17  # Includes Java installation
-          echo "export PATH='/usr/local/opt/openjdk@17/bin:$PATH'" >> $HOME/.zshrc
-          source $HOME/.zshrc
-          java -version
-
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
-          python -m nltk.downloader all 
-
+          pip install nltk
+          python -m nltk.downloader all
+      - run: brew install mysql pkg-config portaudio
+      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+      - run: pip uninstall -y typing
       - name: Build executable
-        run: |
-          pyinstaller --name SpeechTranscription --onefile --noconfirm \
-          --add-data "images:images" \
-          --add-data "user_settings.txt:." \
-          --hidden-import "customtkinter" \
-          GUI.py
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: SpeechTranscription_macos
-          path: dist/SpeechTranscription
+          path: dist/Saltify
