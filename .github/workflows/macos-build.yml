@@ -21,14 +21,22 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install MySQL Libraries
+      - name: Install PortAudio and MySQL Libraries
         run: |
-          brew install mysql pkg-config
-          export MYSQLCLIENT_CFLAGS=$(pkg-config --cflags mysqlclient)
-          export MYSQLCLIENT_LDFLAGS=$(pkg-config --libs mysqlclient)
+          brew install portaudio mysql pkg-config
+          brew link portaudio
+          brew link mysql
+
+      - name: Ensure Permissions for Build Tools
+        run: |
+          chmod +x /usr/local/bin/brew
+          chmod +x $(brew --prefix portaudio)/bin/* || true
+          chmod +x $(brew --prefix mysql)/bin/* || true
 
       - name: Install Dependencies
         run: |
+          export CFLAGS="-I$(brew --prefix portaudio)/include"
+          export LDFLAGS="-L$(brew --prefix portaudio)/lib"
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           python -m nltk.downloader all
@@ -46,6 +54,13 @@ jobs:
               --hidden-import Pillow \
               --hidden-import diarizationAndTranscription \
               GUI.py
+          chmod +x dist/Saltify
+
+      - name: Verify Permissions of Executable
+        run: |
+          ls -la dist/
+          chmod +x dist/Saltify
+          file dist/Saltify 
 
       - name: Upload macOS Build Artifact
         uses: actions/upload-artifact@v4
