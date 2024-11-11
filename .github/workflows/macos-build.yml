@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-      - fix-mac-exe
-      - testingv4artifact
-      - issue182_releaseprocess
 
 jobs:
   build-macos:
@@ -21,18 +18,23 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install PortAudio and MySQL Libraries
+      - name: Install Build Tools
         run: |
-          brew install portaudio mysql pkg-config
+          brew install portaudio pkg-config ffmpeg
           brew link portaudio
-          brew link mysql
+          brew link ffmpeg
+
+      - name: Install openai-whisper from GitHub
+        run: |
+          git clone https://github.com/openai/whisper.git
+          cd whisper
+          pip install .
 
       - name: Install Dependencies
         run: |
           export CFLAGS="-I$(brew --prefix portaudio)/include"
           export LDFLAGS="-L$(brew --prefix portaudio)/lib"
           python -m pip install --upgrade pip
-          pip install --no-cache-dir --only-binary=:all: openai-whisper
           pip install -r requirements.txt
           python -m nltk.downloader all
 
