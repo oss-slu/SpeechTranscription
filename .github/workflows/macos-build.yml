@@ -6,6 +6,7 @@ on:
       - main
       - fix-mac-exe
       - testingv4artifact
+      - issue182_releaseprocess
 
 jobs:
   build-macos:
