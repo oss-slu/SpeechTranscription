@@ -1,70 +1,82 @@
 name: Release
+
 on:
   push:
     branches:
       - issue178_build-test-failures
       - main
       - issue182_releaseprocess
+
 permissions:
   contents: write
   packages: read
   actions: read
+
 jobs:
   call-macos-build:
-    uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml@build_fixes_copy
+    uses: ./.github/workflows/macos-build.yml@main
+
   call-windows-build:
-    uses: oss-slu/SpeechTranscription/.github/workflows/windows-build.yml@build_fixes_copy
+    uses: ./.github/workflows/windows-build.yml@main
+
   release:
     needs: [call-macos-build, call-windows-build]
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
-      - name: Create artifacts directory
+
+      - name: Create Artifacts Directory
         run: mkdir -p artifacts/macos artifacts/windows
-      - name: Download macOS build artifacts
+
+      - name: Download macOS Build Artifact
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_macos
           path: artifacts/macos
-      - name: Download Windows build artifacts
+
+      - name: Download Windows Build Artifact
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_windows
           path: artifacts/windows
-      - name: List directory structure
+
+      - name: Verify Artifacts
         run: |
-          echo "Full directory structure:"
-          find . -type f -not -path "./.git/*"
-          
-          echo "Contents of artifacts directory:"
-          ls -la artifacts/
-          ls -la artifacts/macos || echo "No macOS artifacts"
-          ls -la artifacts/windows || echo "No Windows artifacts"
-      - name: Create project ZIP
+          if [ ! -f "artifacts/macos/Saltify" ]; then
+            echo "No macOS artifact found!" && exit 1
+          fi
+          if [ ! -f "artifacts/windows/Saltify.exe" ]; then
+            echo "No Windows artifact found!" && exit 1
+          fi
+
+      - name: Create Release Notes and ZIP Files
         run: |
-          echo "Build number: ${{ github.run_number }}" >> release_notes.md
+          echo "Build number: ${{ github.run_number }}" > release_notes.md
           echo "Commit: ${{ github.sha }}" >> release_notes.md
           echo "Branch: ${{ github.ref_name }}" >> release_notes.md
           echo "Event type: ${{ github.event_name }}" >> release_notes.md
+          echo "" >> release_notes.md
           echo "## Downloads" >> release_notes.md
-          
-          if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
+
+          # macOS
+          if [ -f "artifacts/macos/Saltify" ]; then
+            chmod +x artifacts/macos/Saltify
+            zip -j artifacts/Saltify_macos.zip artifacts/macos/Saltify
             echo "- macOS executable included" >> release_notes.md
-            zip -j artifacts/Saltify_macos.zip artifacts/macos/*
           else
-            echo "Note: macOS executable not available for this release" >> release_notes.md
+            echo "Note: macOS executable not available" >> release_notes.md
           fi
-          
-          if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
+
+          # Windows
+          if [ -f "artifacts/windows/Saltify.exe" ]; then
+            zip -j artifacts/Saltify_windows.zip artifacts/windows/Saltify.exe
             echo "- Windows executable included" >> release_notes.md
-            zip -j artifacts/Saltify_windows.zip artifacts/windows/*
           else
-            echo "Note: Windows executable not available for this release" >> release_notes.md
+            echo "Note: Windows executable not available" >> release_notes.md
           fi
-          
-          echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
-          echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -76,7 +88,8 @@ jobs:
           body_path: ./release_notes.md
           draft: false
           prerelease: false
-      - name: Upload Release Assets
+
+      - name: Upload macOS Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,7 +98,8 @@ jobs:
           asset_path: artifacts/Saltify_macos.zip
           asset_name: Saltify_macos.zip
           asset_content_type: application/zip
-      - name: Upload Release Assets
+
+      - name: Upload Windows Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
