@@ -22,13 +22,6 @@ jobs:
             echo "Homebrew not found. Installing Homebrew..."
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           fi
-          echo "Homebrew path: $(which brew)"
-
-      - name: Set Homebrew Path Dynamically
-        run: |
-          BREW_PATH=$(which brew)
-          echo "Brew path: $BREW_PATH"
-          chmod +x $BREW_PATH
 
       - name: Install PortAudio and MySQL Libraries
         run: |
@@ -36,16 +29,12 @@ jobs:
           brew link portaudio
           brew link mysql
 
-      - name: Ensure Permissions for Build Tools
-        run: |
-          chmod +x $(brew --prefix portaudio)/bin/* || true
-          chmod +x $(brew --prefix mysql)/bin/* || true
-
       - name: Install Dependencies
         run: |
           export CFLAGS="-I$(brew --prefix portaudio)/include"
           export LDFLAGS="-L$(brew --prefix portaudio)/lib"
           python -m pip install --upgrade pip
+          pip install openai-whisper  # Install from PyPI
           pip install -r requirements.txt
           python -m nltk.downloader all
 
@@ -62,13 +51,13 @@ jobs:
               --hidden-import Pillow \
               --hidden-import diarizationAndTranscription \
               GUI.py
-          chmod +x dist/Saltify  # Ensure executable has run permissions
+          chmod +x dist/Saltify
 
       - name: Verify Permissions of Executable
         run: |
           ls -la dist/
           chmod +x dist/Saltify
-          file dist/Saltify  # Verify it's a binary
+          file dist/Saltify
 
       - name: Upload macOS Build Artifact
         uses: actions/upload-artifact@v4
