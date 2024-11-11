@@ -1,65 +1,42 @@
-name: Build macOS Executable
-
-on:
+on: 
   push:
     branches:
       - main
+      - fix-mac-exe
+      - testingv4artifact
+      - issue169_dependency
+      - issue178_build-test-failures
+      - issue182_releaseprocess
 
 jobs:
   build-macos:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set Up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-
-      - name: Install Build Tools
+      - name: Install Java
         run: |
-          brew install portaudio pkg-config ffmpeg
-          brew link portaudio
-          brew link ffmpeg
-
-      - name: Install openai-whisper from GitHub
+          if ! java -version; then
+            brew install openjdk@11
+          fi
+      - name: Install Specific Python Version
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.7
+      - name: Install NLTK
         run: |
-          git clone https://github.com/openai/whisper.git
-          cd whisper
-          pip install .
-
-      - name: Install Dependencies
-        run: |
-          export CFLAGS="-I$(brew --prefix portaudio)/include"
-          export LDFLAGS="-L$(brew --prefix portaudio)/lib"
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install nltk
           python -m nltk.downloader all
-
-      - name: Build macOS Executable
-        run: |
-          pyinstaller --name Saltify --windowed --noconfirm --onefile \
-              --add-data "images/locked_icon.png:images" \
-              --add-data "images/unlocked_icon.png:images" \
-              --add-data "images/clear_icon.png:images" \
-              --add-data "user_settings.txt:." \
-              --add-data "CTkXYFrame:CTkXYFrame" \
-              --hidden-import customtkinter \
-              --hidden-import matplotlib \
-              --hidden-import Pillow \
-              --hidden-import diarizationAndTranscription \
-              GUI.py
-          chmod +x dist/Saltify  # Ensure executable has correct permissions
-
-      - name: Verify Build Output
-        run: |
-          ls -la dist/
-          file dist/Saltify
-
-      - name: Upload macOS Build Artifact
-        uses: actions/upload-artifact@v4
+      - run: brew install mysql pkg-config portaudio
+      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+      - run: pip uninstall -y typing
+      - name: Build executable
+        run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: SpeechTranscription_macos
           path: dist/Saltify
