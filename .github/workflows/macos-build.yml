@@ -1,4 +1,6 @@
-on: 
+name: Build macOS Executable
+
+on:
   push:
     branches:
       - main
@@ -13,30 +15,45 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v4
         with:
           python-version: 3.11
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m nltk.downloader all  # If using NLTK
+
       - name: Install Java
         run: |
           if ! java -version; then
             brew install openjdk@11
           fi
-      - name: Install Specific Python Version
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11.7
-      - name: Install NLTK
+
+      - name: Install Other Tools
+        run: brew install mysql pkg-config portaudio
+
+      - name: Build macOS Executable
         run: |
-          pip install nltk
-          python -m nltk.downloader all
-      - run: brew install mysql pkg-config portaudio
-      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-      - run: pip uninstall -y typing
-      - name: Build executable
-        run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
-      - uses: actions/upload-artifact@v4
-        if: always()
+          pyinstaller --name Saltify --windowed --noconfirm --onefile \
+              --add-data "images/locked_icon.png:images" \
+              --add-data "images/unlocked_icon.png:images" \
+              --add-data "images/clear_icon.png:images" \
+              --add-data "user_settings.txt:." \
+              --add-data "CTkXYFrame:CTkXYFrame" \
+              --hidden-import customtkinter \
+              --hidden-import matplotlib \
+              --hidden-import Pillow \
+              --hidden-import diarizationAndTranscription \
+              GUI.py
+
+      - name: Upload macOS Build Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: SpeechTranscription_macos
           path: dist/Saltify
