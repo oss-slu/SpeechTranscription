@@ -2,7 +2,6 @@ name: Release
 on:
   push:
     branches:
-      - issue178_build-test-failures
       - main
       - issue182_releaseprocess
 permissions:
@@ -32,16 +31,11 @@ jobs:
         with:
           name: SpeechTranscription_windows
           path: artifacts/windows
-      - name: Debug Artifacts
-        run: |
-          echo "Debugging macOS artifacts:"
-          find artifacts/macos || echo "No macOS artifacts found"
-          echo "Debugging Windows artifacts:"
-          find artifacts/windows || echo "No Windows artifacts found"
       - name: List directory structure
         run: |
           echo "Full directory structure:"
           find . -type f -not -path "./.git/*"
+          
           echo "Contents of artifacts directory:"
           ls -la artifacts/
           ls -la artifacts/macos || echo "No macOS artifacts"
@@ -56,14 +50,14 @@ jobs:
           
           if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
             echo "- macOS executable included" >> release_notes.md
-            find artifacts/macos -type f -name "Saltify*" -exec zip -j artifacts/Saltify_macos.zip {} \;
+            zip -j artifacts/Saltify_macos.zip artifacts/macos/*
           else
             echo "Note: macOS executable not available for this release" >> release_notes.md
           fi
           
           if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
             echo "- Windows executable included" >> release_notes.md
-            find artifacts/windows -type f -name "Saltify*" -exec zip -j artifacts/Saltify_windows.zip {} \;
+            zip -j artifacts/Saltify_windows.zip artifacts/windows/*
           else
             echo "Note: Windows executable not available for this release" >> release_notes.md
           fi
@@ -81,8 +75,7 @@ jobs:
           body_path: ./release_notes.md
           draft: false
           prerelease: false
-      - name: Upload macOS Release Asset
-        if: exists(artifacts/Saltify_macos.zip)
+      - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -91,8 +84,7 @@ jobs:
           asset_path: artifacts/Saltify_macos.zip
           asset_name: Saltify_macos.zip
           asset_content_type: application/zip
-      - name: Upload Windows Release Asset
-        if: exists(artifacts/Saltify_windows.zip)
+      - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,11 +1,7 @@
-on: 
+on:
   push:
     branches:
       - main
-      - fix-mac-exe
-      - testingv4artifact
-      - issue169_dependency
-      - issue178_build-test-failures
       - issue182_releaseprocess
 
 jobs:
@@ -13,34 +9,49 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      # Checkout the code
       - uses: actions/checkout@v4
 
+      # Set up Python environment
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11.7
 
-      - name: Install System Dependencies
+      # Install required tools and libraries
+      - name: Install Required System Tools
         run: |
-          brew update
-          brew install openjdk@11 mysql pkg-config portaudio
+          brew install pkg-config mysql-client
 
-      - name: Install Python Dependencies
+      # Configure MySQL environment
+      - name: Configure MySQL Environment
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
+          export PATH="/usr/local/opt/mysql-client/bin:$PATH"
+          export PKG_CONFIG_PATH="/usr/local/opt/mysql-client/lib/pkgconfig"
+          export MYSQLCLIENT_CFLAGS="-I/usr/local/opt/mysql-client/include"
+          export MYSQLCLIENT_LDFLAGS="-L/usr/local/opt/mysql-client/lib"
 
-      - name: Remove Obsolete Typing Package
+      # Install mysqlclient
+      - name: Install mysqlclient
+        run: pip install --only-binary :all: mysqlclient
+
+      # Install Python dependencies
+      - name: Install Python dependencies
         run: |
-          pip uninstall -y typing || echo "No typing package to remove"
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          pip uninstall -y typing
+          python -m nltk.downloader all
 
-      - name: Validate Python Dependencies
+      # Verify Python and PyInstaller installation
+      - name: Verify Python and PyInstaller installation
         run: |
           python --version
-          pip list
+          pyinstaller --version
 
-      - name: Build Executable with PyInstaller
+      # Build the macOS executable
+      - name: Build executable
         run: |
-          pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
+          pyinstaller --name Saltify --windowed --noconfirm --onefile \
             --copy-metadata torch \
             --copy-metadata tqdm \
             --copy-metadata regex \
@@ -53,12 +64,16 @@ jobs:
             --copy-metadata importlib_metadata \
             --collect-data sv_ttk \
             --recursive-copy-metadata "openai-whisper" \
-            --collect-data whisper GUI.py
-          echo "Build completed. Verifying output..."
-          find dist || echo "No files found in dist directory"
+            --collect-data whisper \
+            GUI.py
 
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+      # Set permissions for macOS executable
+      - name: Set permissions for macOS executable
+        run: chmod +x dist/Saltify
+
+      # Upload the built executable as an artifact
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: SpeechTranscription_macos
-          path: dist/*
+          path: dist/Saltify
