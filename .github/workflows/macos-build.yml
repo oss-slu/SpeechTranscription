@@ -16,10 +16,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set Up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
+      - name: Ensure Homebrew is Available
+        run: |
+          if ! command -v brew &>/dev/null; then
+            echo "Homebrew not found. Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          fi
+          echo "Homebrew path: $(which brew)"
+
+      - name: Set Homebrew Path Dynamically
+        run: |
+          BREW_PATH=$(which brew)
+          echo "Brew path: $BREW_PATH"
+          chmod +x $BREW_PATH
 
       - name: Install PortAudio and MySQL Libraries
         run: |
@@ -29,7 +38,6 @@ jobs:
 
       - name: Ensure Permissions for Build Tools
         run: |
-          chmod +x /usr/local/bin/brew
           chmod +x $(brew --prefix portaudio)/bin/* || true
           chmod +x $(brew --prefix mysql)/bin/* || true
 
@@ -54,13 +62,13 @@ jobs:
               --hidden-import Pillow \
               --hidden-import diarizationAndTranscription \
               GUI.py
-          chmod +x dist/Saltify
+          chmod +x dist/Saltify  # Ensure executable has run permissions
 
       - name: Verify Permissions of Executable
         run: |
           ls -la dist/
           chmod +x dist/Saltify
-          file dist/Saltify 
+          file dist/Saltify  # Verify it's a binary
 
       - name: Upload macOS Build Artifact
         uses: actions/upload-artifact@v4
