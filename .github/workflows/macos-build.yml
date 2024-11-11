@@ -16,12 +16,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Ensure Homebrew is Available
-        run: |
-          if ! command -v brew &>/dev/null; then
-            echo "Homebrew not found. Installing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          fi
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
 
       - name: Install PortAudio and MySQL Libraries
         run: |
@@ -34,7 +32,7 @@ jobs:
           export CFLAGS="-I$(brew --prefix portaudio)/include"
           export LDFLAGS="-L$(brew --prefix portaudio)/lib"
           python -m pip install --upgrade pip
-          pip install openai-whisper  # Install from PyPI
+          pip install --no-cache-dir --only-binary=:all: openai-whisper
           pip install -r requirements.txt
           python -m nltk.downloader all
 
