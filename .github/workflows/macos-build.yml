@@ -56,6 +56,12 @@ jobs:
           java -version
           pyinstaller --version
 
+      # Initialize and update submodules
+      - name: Initialize and update submodules
+        run: |
+          git submodule init
+          git submodule update
+
       # Build the macOS executable
       - name: Build executable
         run: |
