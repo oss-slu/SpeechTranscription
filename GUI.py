@@ -113,7 +113,7 @@ class userMenu(CTkFrame):
 class audioMenu(CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.configure(width = WIDTH * .8)
+        self.configure(width=WIDTH * .8)
         self.configure(height=HEIGHT)
         
         self.audio = AudioManager(master)
@@ -121,35 +121,52 @@ class audioMenu(CTkFrame):
         self.exporter = Exporter()
         
         # ROW 0: Frame for Audio Upload/Record buttons
-        self.audioInputFrame = CTkFrame(self, height = 80)
+        self.audioInputFrame = CTkFrame(self, height=160)  # Increased height to fit additional buttons
         self.audioInputFrame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N+E+W)
-        self.audioInputLabel = CTkLabel(self.audioInputFrame, text="Input Audio Source Here", font=("Arial", 18))
-        self.audioInputLabel.grid(row=0, column=0, columnspan= 2, padx=10, pady=10)
-        self.uploadButton = createButton(self.audioInputFrame, "Upload", 1, 0, self.uploadAudio, height=80, font=("Arial", 18), lock=False)
-        self.recordButton = createButton(self.audioInputFrame, "Record", 1, 1, self.recordAudio, height=80, font=("Arial", 18), lock=False)
 
-        # ROW 1: Audio Playback control
-        self.playButton = createButton(self, "Play", 1, 0, self.playAudio, padx=10, pady=10)
-        self.pauseButton = createButton(self, "Pause", 1, 1, self.pauseAudio, padx=10, pady=10)
+        # Upload and Record buttons in the first row
+        self.uploadButton = createButton(self.audioInputFrame, "Upload \n Audio", 1, 0, self.uploadAudio, height=60, font=("Arial", 14), lock=False)
+        self.recordButton = createButton(self.audioInputFrame, "Record \n Audio", 1, 1, self.recordAudio, height=60, font=("Arial", 14), lock=False)
 
-        # ROW 2+3: Transcribe (and progress bar)
-        self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125, font = ("Arial", 40))
+        # Play and Pause buttons in the second row
+        self.playButton = createButton(self.audioInputFrame, "Play", 2, 0, self.playAudio, padx=10, pady=10, font=("Arial", 14))
+        self.pauseButton = createButton(self.audioInputFrame, "Pause", 2, 1, self.pauseAudio, padx=10, pady=10, font=("Arial", 14))
+
+        # ROW 2+3: Frame for Transcribe, Label, and Apply buttons
+        self.transcribeFrame = CTkFrame(self, height=200)
+        self.transcribeFrame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky=N+E+W)
+        self.transcribeButton = createButton(self.transcribeFrame, "Transcribe", 2, 0, self.transcriptionThread, padx=10, pady=10, height=60, font=("Arial", 14))
+        self.graphButton = createButton(self.transcribeFrame, "Graph", 2, 1, lambda: None, padx=10, pady=10, height=60, font=("Arial", 14))
 
         # ROW 4: Labelling Transcription buttons
-        self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True) # For speaker labeling
-        self.applyAliasesButton = createButton(self, "Apply Aliases", 4, 1, self.customizeSpeakerAliases) # For more specific labeling
+        self.labelSpeakersButton = createButton(self.transcribeFrame, "Label \n Speakers", 4, 0, self.labelSpeakers, lock=True) # For speaker labeling
+        self.applyAliasesButton = createButton(self.transcribeFrame, "Apply \n Aliases", 4, 1, self.customizeSpeakerAliases) # For more specific labeling
 
-        # ROW 5: Export, Grammar, and correction boxes.
+        # ROW 5: Grammar, and correction boxes.
+        self.grammarFrame = CTkFrame(self, height=200)
+        self.grammarFrame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky=N+E+W)
+
+        # Grammar Check and Add Morphemes buttons in the first row
+        self.grammarButton = createButton(self.grammarFrame, "Grammar \n Check", 0, 0, self.grammarCheckThread, height=60, font=("Arial", 14))
+        self.morphemesButton = createButton(self.grammarFrame, "Add \n Morphemes", 0, 1, self.inflectionalMorphemes, height=60, font=("Arial", 14))
+
+        # TextBox for corrections in the second row
+        self.correctionEntryBox = CTkTextbox(self.grammarFrame, height=60)
+        self.correctionEntryBox.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky=E+W)
+        lockItem(self.correctionEntryBox)
+
+        # Submit button in the third row, centered with the textbox
+        self.submitGrammarButton = createButton(self.grammarFrame, "Submit", 2, 0, self.applyCorrection, height=60, width=100, font=("Arial", 14))
+        self.submitGrammarButton.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="")
+
+        # Center the button within the grid cell
+        self.grammarFrame.grid_columnconfigure(0, weight=1)
+        self.grammarFrame.grid_columnconfigure(1, weight=1)
+
+
+        #ROW 6: Download and Export buttons
         self.downloadAudioButton = createButton(self, "Download Audio", 5, 0, self.downloadRecordedAudio)
         self.exportButton = createButton(self, "Export to Word", 5, 1, self.exportToWord)
-
-        self.grammarButton = createButton(self, "Grammar Check", 5, 2, self.grammarCheckThread)
-        self.morphemesButton = createButton(self, "Add Morphemes", 5, 3, self.inflectionalMorphemes)
-        self.submitGrammarButton = createButton(self, "Submit", 5, 5, self.applyCorrection)
-
-        self.correctionEntryBox = CTkTextbox(self, height=60)
-        self.correctionEntryBox.grid(row=5,column=4, padx=10, sticky=E+W)
-        lockItem(self.correctionEntryBox)
 
         # self.audioPlayback = CTkLabel(self, text="", height=50, fg_color=None, font=("Arial", 16))
         # self.audioPlayback.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky=W+E)
@@ -197,6 +214,7 @@ class audioMenu(CTkFrame):
         self.playback_thread = None #thread for when audio is playing
         self.is_playing = False
         self._is_paused = False
+
         
     def playAudio(self):
         #Initiates audio playback in a separate thread, resetting the position if not already playing and allowing for resumption if paused.
