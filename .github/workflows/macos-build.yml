@@ -100,4 +100,4 @@ jobs:
         if: always()
         with:
           name: SpeechTranscription_macos
-          path: dist/Saltify/*
+          path: dist/Saltify.exe
