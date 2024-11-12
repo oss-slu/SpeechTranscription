@@ -61,19 +61,29 @@ jobs:
             --copy-metadata filelock \
             --copy-metadata numpy \
             --copy-metadata tokenizers \
+            --copy-metadata customtkinter \
             --copy-metadata importlib_metadata \
             --collect-data sv_ttk \
+            --collect-data customtkinter \
             --recursive-copy-metadata "openai-whisper" \
             --collect-data whisper \
             GUI.py
 
+      # Debug build directory if issues arise
+      - name: Debug build directory
+        run: |
+          echo "Contents of the dist directory:"
+          ls -la dist/
+          echo "Contents of the Saltify directory (if exists):"
+          ls -la dist/Saltify || echo "Saltify directory not found"
+
       # Set permissions for macOS executable
       - name: Set permissions for macOS executable
-        run: chmod +x dist/Saltify
+        run: chmod +x dist/Saltify/Saltify
 
       # Upload the built executable as an artifact
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: SpeechTranscription_macos
-          path: dist/Saltify
+          path: dist/Saltify/*
