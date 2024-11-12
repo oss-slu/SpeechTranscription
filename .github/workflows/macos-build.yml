@@ -21,7 +21,7 @@ jobs:
       - name: Install Required System Tools
         run: |
           brew install pkg-config mysql-client
-          
+
       # Set up Java environment
       - name: Configure Java Environment
         run: |
@@ -41,18 +41,19 @@ jobs:
       - name: Install mysqlclient
         run: pip install --only-binary :all: mysqlclient
 
-      # Install Python dependencies
+      # Install Python dependencies, including customtkinter
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers customtkinter
           pip uninstall -y typing
           python -m nltk.downloader all
 
-      # Verify Python and PyInstaller installation
-      - name: Verify Python and PyInstaller installation
+      # Verify Python, Java, and PyInstaller installation
+      - name: Verify Python, Java, and PyInstaller installation
         run: |
           python --version
+          java -version
           pyinstaller --version
 
       # Build the macOS executable
