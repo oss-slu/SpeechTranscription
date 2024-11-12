@@ -21,6 +21,13 @@ jobs:
       - name: Install Required System Tools
         run: |
           brew install pkg-config mysql-client
+          
+      # Set up Java environment
+      - name: Configure Java Environment
+        run: |
+          export JAVA_HOME=$(/usr/libexec/java_home)
+          export PATH="$JAVA_HOME/bin:$PATH"
+          java -version
 
       # Configure MySQL environment
       - name: Configure MySQL Environment
