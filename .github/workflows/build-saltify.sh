@@ -1,14 +1,42 @@
 #!/bin/bash
 
-# Create a virtual environment
+# Determine the OS (macOS or Linux)
+OS=$(uname -s)
+if [[ "$OS" == "Darwin" ]]; then
+    echo "Building on macOS..."
+elif [[ "$OS" == "Linux" ]]; then
+    echo "Building on Linux..."
+else
+    echo "Unsupported operating system: $OS"
+    exit 1
+fi
+
+# Step 1: Create a virtual environment
+echo "Setting up Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
 
-# Install dependencies
+# Step 2: Upgrade pip and install dependencies
+echo "Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt pyinstaller customtkinter
 
-# Build the executable with PyInstaller
+# Step 3: Download NLTK corpora
+echo "Downloading NLTK corpora..."
+python -m nltk.downloader all
+
+# Step 4: Ensure Java is installed and accessible
+if command -v java &> /dev/null; then
+    echo "Java is installed:"
+    java -version
+else
+    echo "Java is not installed. Please install it and try again."
+    deactivate
+    exit 1
+fi
+
+# Step 5: Build the executable with PyInstaller
+echo "Building the Saltify executable..."
 pyinstaller --name Saltify --windowed --noconfirm --onefile \
   --add-data "application/static:static" \
   --copy-metadata torch \
@@ -28,10 +56,12 @@ pyinstaller --name Saltify --windowed --noconfirm --onefile \
   --collect-data whisper \
   GUI.py
 
-# Deactivate the virtual environment
-deactivate
-
-# Set permissions for macOS
+# Step 6: Clean up and set permissions for macOS
+echo "Setting permissions for the executable..."
 chmod +x dist/Saltify
 
-echo "Build complete. Check the dist/ directory."
+# Step 7: Deactivate the virtual environment
+echo "Deactivating virtual environment..."
+deactivate
+
+echo "Build completed. Check the dist/ directory for the output."
