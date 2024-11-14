@@ -39,13 +39,7 @@ jobs:
       - name: Run Saltify Build Script
         run: ./.github/workflows/build-saltify.sh
 
-      # Step 6: Verify the build output
-      - name: Debug build directory
-        run: |
-          echo "Contents of the dist directory:"
-          ls -la dist/
-
-      # Step 7: Upload the built artifact
+      # Step 6: Upload the built artifact
       - name: Upload macOS Build Artifact
         uses: actions/upload-artifact@v4
         with:
