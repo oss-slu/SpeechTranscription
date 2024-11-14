@@ -49,13 +49,6 @@ jobs:
           pip uninstall -y typing
           python -m nltk.downloader all
 
-      # Verify Python, Java, and PyInstaller installation
-      - name: Verify Python, Java, and PyInstaller installation
-        run: |
-          python --version
-          java -version
-          pyinstaller --version
-
       # Initialize and update submodules
       - name: Initialize and update submodules
         run: |
@@ -66,6 +59,8 @@ jobs:
       - name: Build executable
         run: |
           pyinstaller --name Saltify --windowed --noconfirm --onefile \
+            --distpath dist \
+            --add-data "application/static:static" \
             --copy-metadata torch \
             --copy-metadata tqdm \
             --copy-metadata regex \
@@ -85,19 +80,15 @@ jobs:
 
       # Debug build directory if issues arise
       - name: Debug build directory
-        run: |
-          echo "Contents of the dist directory:"
-          ls -la dist/
-          echo "Contents of the Saltify directory (if exists):"
-          ls -la dist/Saltify || echo "Saltify directory not found"
+        run: ls -la dist/
 
       # Set permissions for macOS executable
       - name: Set permissions for macOS executable
-        run: chmod +x dist/Saltify/Saltify
+        run: chmod +x dist/Saltify
 
       # Upload the built executable as an artifact
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: SpeechTranscription_macos
-          path: dist/Saltify.exe
+          path: dist/Saltify
