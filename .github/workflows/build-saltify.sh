@@ -38,7 +38,6 @@ fi
 # Step 5: Build the executable with PyInstaller
 echo "Building the Saltify executable..."
 pyinstaller --name Saltify --windowed --noconfirm --onefile \
-  --add-data "application/static:static" \
   --copy-metadata torch \
   --copy-metadata tqdm \
   --copy-metadata regex \
