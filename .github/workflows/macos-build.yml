@@ -37,7 +37,7 @@ jobs:
 
       # Step 5: Run the build script
       - name: Run Saltify Build Script
-        run: ./workflows/build-saltify.sh
+        run: ./.github/workflows/build-saltify.sh
 
       # Step 6: Verify the build output
       - name: Debug build directory
