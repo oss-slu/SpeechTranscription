@@ -17,6 +17,12 @@ echo "Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt pyinstaller customtkinter
 
+# Ensure 'typing' is not installed
+if pip show typing &> /dev/null; then
+    echo "Removing obsolete 'typing' package..."
+    pip uninstall -y typing
+fi
+
 # Step 3: Download NLTK corpora
 echo "Downloading NLTK corpora..."
 python -m nltk.downloader all
@@ -38,6 +44,7 @@ pyinstaller --name Saltify --windowed --noconfirm --onefile \
   --copy-metadata tqdm \
   --copy-metadata regex \
   --copy-metadata sacremoses \
+  --copy-metadata tokenizers \
   --copy-metadata requests \
   --copy-metadata packaging \
   --copy-metadata filelock \
