@@ -15,14 +15,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Make the build script executable
-      - name: Make build script executable
-        run: chmod +x .github/workflows/build-saltify.sh
+      # Step 2: Set up Homebrew
+      - name: Set up Homebrew
+        run: |
+          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+          brew update
 
-      # Step 3: Install required system tools
+      # Step 3: Install required tools
       - name: Install Required System Tools
         run: |
-          brew install pkg-config mysql-client
+          brew install pkg-config mysql-client java
           export PATH="/usr/local/opt/mysql-client/bin:$PATH"
           export PKG_CONFIG_PATH="/usr/local/opt/mysql-client/lib/pkgconfig"
           export MYSQLCLIENT_CFLAGS="-I/usr/local/opt/mysql-client/include"
@@ -35,13 +38,17 @@ jobs:
           export PATH="$JAVA_HOME/bin:$PATH"
           java -version
 
-      # Step 5: Run the build script
+      # Step 5: Make the build script executable
+      - name: Make build script executable
+        run: chmod +x .github/workflows/build-saltify.sh
+
+      # Step 6: Run the Saltify build script
       - name: Run Saltify Build Script
         run: ./.github/workflows/build-saltify.sh
 
-      # Step 6: Upload the built artifact
+      # Step 7: Upload the built artifact
       - name: Upload macOS Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SpeechTranscription_macos
-          path: dist/Saltify
+          name: Saltify_macOS
+          path: dist/Saltify.zip

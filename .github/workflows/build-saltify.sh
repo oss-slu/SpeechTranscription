@@ -1,13 +1,9 @@
 #!/bin/bash
 
-# Determine the OS (macOS or Linux)
+# Ensure the script runs only on macOS
 OS=$(uname -s)
-if [[ "$OS" == "Darwin" ]]; then
-    echo "Building on macOS..."
-elif [[ "$OS" == "Linux" ]]; then
-    echo "Building on Linux..."
-else
-    echo "Unsupported operating system: $OS"
+if [[ "$OS" != "Darwin" ]]; then
+    echo "This script is designed to run only on macOS."
     exit 1
 fi
 
@@ -36,7 +32,7 @@ else
 fi
 
 # Step 5: Build the executable with PyInstaller
-echo "Building the Saltify executable..."
+echo "Building the Saltify macOS executable..."
 pyinstaller --name Saltify --windowed --noconfirm --onefile \
   --copy-metadata torch \
   --copy-metadata tqdm \
@@ -55,12 +51,12 @@ pyinstaller --name Saltify --windowed --noconfirm --onefile \
   --collect-data whisper \
   GUI.py
 
-# Step 6: Clean up and set permissions for macOS
-echo "Setting permissions for the executable..."
-chmod +x dist/Saltify
+# Step 6: Zip the output
+echo "Zipping the macOS output..."
+zip -r dist/Saltify.zip dist/Saltify
 
-# Step 7: Deactivate the virtual environment
+# Step 7: Clean up and deactivate the virtual environment
 echo "Deactivating virtual environment..."
 deactivate
 
-echo "Build completed. Check the dist/ directory for the output."
+echo "Build completed. Check the dist/ directory for the macOS executable."
