@@ -172,6 +172,22 @@ class audioMenu(CTkFrame):
         self.transcriptionBox.insert("0.0", text="Text will generate here")
         lockItem(self.transcriptionBox)
 
+        # Conventions Box Control and Frame
+        self.conventionBoxFrame = CTkFrame(self)
+        self.conventionBoxFrame.grid(row=0, column=4, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
+        self.conventionBoxLabel = CTkLabel(self.conventionBoxFrame, height=10, text="Convention Box",  font=("Arial", 18))
+        self.conventionBoxLabel.grid(row=0, column=0, padx=5)
+        self.conventionBoxLockButton = createButton(master=self.conventionBoxFrame, text='', row=0, column=1, command=self.toggleGrammarBox, height=10, width=10, lock=False)
+        self.conventionBoxLockButton.configure(image=LOCK_ICON)
+        self.conventionBoxClearButton = createButton(master=self.conventionBoxFrame, text='Clear Box?', row=0, column=2, command=self.clearGrammarBox,height=10, width=10, lock=False)
+        self.conventionBoxClearButton.configure(image=CLEAR_ICON)
+
+
+        self.conventionBox = CTkTextbox(self.conventionBoxFrame, width=350, height=500)
+        self.conventionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N+E+S+W)
+        self.conventionBox.insert("0.0", text="Text will generate here")
+        lockItem(self.conventionBox)
+
         self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
         
         self.grammarCheckPerformed = False
