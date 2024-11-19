@@ -128,8 +128,26 @@ class audioMenu(CTkFrame):
         self.uploadButton = createButton(self.audioInputFrame, "Upload", 1, 0, self.uploadAudio, height=80, font=("Arial", 18), lock=False)
         self.recordButton = createButton(self.audioInputFrame, "Record", 1, 1, self.recordAudio, height=80, font=("Arial", 18), lock=False)
 
+        # Configure audio input frame columns
+        self.audioInputFrame.grid_columnconfigure(0, weight=1)
+        self.audioInputFrame.grid_columnconfigure(1, weight=1)
+
+        # ROW 1: Playback Controls in a Frame
+        self.playbackFrame = CTkFrame(self, height=100, width=200)
+        self.playbackFrame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+        self.playbackFrame.grid_propagate(False)  # Prevent frame from shrinking
+        
+        self.backwardButton = createButton(self.playbackFrame, "<<", 0, 0, self.backwardAudio, height=60, font=("Arial", 18), lock=False)
+        self.playPauseButton = createButton(self.playbackFrame, "⏯", 0, 1, self.togglePlayPause, height=60, font=("Arial", 18))
+        self.forwardButton = createButton(self.playbackFrame, ">>", 0, 2, self.forwardAudio, height=60, font=("Arial", 18), lock=False)
+        
+        # Configure playback frame columns
+        self.playbackFrame.grid_columnconfigure(0, weight=1)
+        self.playbackFrame.grid_columnconfigure(1, weight=1)
+        self.playbackFrame.grid_columnconfigure(2, weight=1)
+        
         # ROW 1: Audio Playback control
-        self.playPauseButton = createButton(self, "Play", 1, 0, self.togglePlayPause, padx=10, pady=10, columnspan=2)
+        #self.playPauseButton = createButton(self, "Play", 1, 0, self.togglePlayPause, padx=10, pady=10, columnspan=2)
 
         # ROW 2: Timeline Slider
         #self.timelineSlider = CTkSlider(self, from_=0, to=100, command=self.scrubAudio)
@@ -223,7 +241,7 @@ class audioMenu(CTkFrame):
             self.is_paused = False
             self.audio.paused = False
 
-        self.updateButtons()
+        #self.updateButtons()
 
     def pauseAudio(self):
         '''Pauses the currently playing audio and updates the button states accordingly.'''
@@ -231,7 +249,21 @@ class audioMenu(CTkFrame):
             print("Pausing audio...")
             self.is_paused = True
             self.audio.paused = True
-            self.updateButtons()
+            #self.updateButtons()
+
+    def forwardAudio(self):
+        if self.is_playing and not self.is_paused:
+            """Move audio 5 seconds forward."""
+            self.current_position += 5
+            print(f"Skipping forward to {self.current_position} seconds.")
+            self.audio.seek(self.current_position)
+
+    def backwardAudio(self):
+        if self.is_playing and not self.is_paused:
+            """Move audio 5 seconds backward."""
+            self.current_position = max(0, self.current_position - 5)
+            print(f"Rewinding to {self.current_position} seconds.")
+            self.audio.seek(self.current_position)
 
     def updatePlayback(self):
         '''Continuously updates the playback position every 300 milliseconds if audio is playing and not paused.'''
