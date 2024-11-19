@@ -41,6 +41,8 @@ fi
 echo "Building the Saltify macOS executable..."
 pyinstaller --name Saltify --windowed --noconfirm --onefile \
   --copy-metadata torch \
+  --copy-metadata lightning_fabric \
+  --copy-metadata pytorch_lightning \
   --copy-metadata tqdm \
   --copy-metadata regex \
   --copy-metadata sacremoses \
