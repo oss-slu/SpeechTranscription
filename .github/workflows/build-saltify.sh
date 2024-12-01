@@ -7,12 +7,17 @@ if [[ "$OS" != "Darwin" ]]; then
     exit 1
 fi
 
-# Step 1: Create a virtual environment
+# Step 1: Initialize and update submodules
+echo "Initializing and updating Git submodules..."
+git submodule init
+git submodule update
+
+# Step 2: Create a virtual environment
 echo "Setting up Python virtual environment..."
 python3 -m venv venv
 source venv/bin/activate
 
-# Step 2: Upgrade pip and install dependencies
+# Step 3: Upgrade pip and install dependencies
 echo "Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt pyinstaller customtkinter
@@ -23,11 +28,11 @@ if pip show typing &> /dev/null; then
     pip uninstall -y typing
 fi
 
-# Step 3: Download NLTK corpora
+# Step 4: Download NLTK corpora
 echo "Downloading NLTK corpora..."
 python -m nltk.downloader all
 
-# Step 4: Ensure Java is installed and accessible
+# Step 5: Ensure Java is installed and accessible
 if command -v java &> /dev/null; then
     echo "Java is installed:"
     java -version
@@ -37,7 +42,7 @@ else
     exit 1
 fi
 
-# Step 5: Build the executable with PyInstaller
+# Step 6: Build the executable with PyInstaller
 echo "Building the Saltify macOS executable..."
 pyinstaller --name Saltify --windowed --noconfirm --onefile \
   --copy-metadata torch \
@@ -58,11 +63,11 @@ pyinstaller --name Saltify --windowed --noconfirm --onefile \
   --collect-data whisper \
   GUI.py
 
-# Step 6: Zip the output
+# Step 7: Zip the output
 echo "Zipping the macOS output..."
 zip -r dist/Saltify.zip dist/Saltify
 
-# Step 7: Clean up and deactivate the virtual environment
+# Step 8: Clean up and deactivate the virtual environment
 echo "Deactivating virtual environment..."
 deactivate
 

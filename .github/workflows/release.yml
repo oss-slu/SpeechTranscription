@@ -1,69 +1,141 @@
-name: Release
+name: Build and Release
+
 on:
   push:
     branches:
       - main
-      - issue182_releaseprocess
+      - exe_fix
+
 permissions:
   contents: write
-  packages: read
-  actions: read
+
 jobs:
-  call-macos-build:
-    uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml@build_fixes_copy
-  call-windows-build:
-    uses: oss-slu/SpeechTranscription/.github/workflows/windows-build.yml@build_fixes_copy
-  release:
-    needs: [call-macos-build, call-windows-build]
-    runs-on: ubuntu-latest
+  build-windows:
+    runs-on: windows-latest
+
     steps:
-      - name: Checkout code
+      # Step 1: Check out the repository
+      - name: Check out the code
         uses: actions/checkout@v4
-      - name: Create artifacts directory
-        run: mkdir -p artifacts/macos artifacts/windows
-      - name: Download macOS build artifacts
-        uses: actions/download-artifact@v4
         with:
-          name: SpeechTranscription_macos
-          path: artifacts/macos
-      - name: Download Windows build artifacts
-        uses: actions/download-artifact@v4
+          submodules: true # Automatically initializes and updates submodules
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          name: SpeechTranscription_windows
-          path: artifacts/windows
-      - name: List directory structure
+          python-version: '3.11'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
         run: |
-          echo "Full directory structure:"
-          find . -type f -not -path "./.git/*"
-          
-          echo "Contents of artifacts directory:"
-          ls -la artifacts/
-          ls -la artifacts/macos || echo "No macOS artifacts"
-          ls -la artifacts/windows || echo "No Windows artifacts"
-      - name: Create project ZIP
+          pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      # Step 4: Build executable with PyInstaller
+      - name: Build executable
         run: |
-          echo "Build number: ${{ github.run_number }}" >> release_notes.md
+          pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
+          --copy-metadata torch \
+          --copy-metadata tqdm \
+          --copy-metadata regex \
+          --copy-metadata sacremoses \
+          --copy-metadata requests \
+          --copy-metadata packaging \
+          --copy-metadata filelock \
+          --copy-metadata numpy \
+          --copy-metadata customtkinter \
+          --recursive-copy-metadata "openai-whisper" \
+          GUI.py
+
+      # Step 5: Upload artifact
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saltify_windows
+          path: dist/Saltify.exe
+
+  build-macos:
+    runs-on: macOS-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: true # Automatically initializes and updates submodules
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      # Step 4: Build executable with PyInstaller
+      - name: Build executable
+        run: |
+          pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
+          --copy-metadata torch \
+          --copy-metadata tqdm \
+          --copy-metadata regex \
+          --copy-metadata sacremoses \
+          --copy-metadata requests \
+          --copy-metadata packaging \
+          --copy-metadata filelock \
+          --copy-metadata numpy \
+          --copy-metadata customtkinter \
+          --recursive-copy-metadata "openai-whisper" \
+          GUI.py
+
+      # Step 5: Upload artifact
+      - name: Upload macOS executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saltify_macos
+          path: dist/Saltify
+
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      # Step 2: Create release notes
+      - name: Create release notes
+        run: |
+          echo "Release Notes" > release_notes.md
+          echo "Build Number: ${{ github.run_number }}" >> release_notes.md
           echo "Commit: ${{ github.sha }}" >> release_notes.md
-          echo "Branch: ${{ github.ref_name }}" >> release_notes.md
-          echo "Event type: ${{ github.event_name }}" >> release_notes.md
-          echo "## Downloads" >> release_notes.md
-          
-          if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
-            echo "- macOS executable included" >> release_notes.md
-            zip -j artifacts/Saltify_macos.zip artifacts/macos/*
-          else
-            echo "Note: macOS executable not available for this release" >> release_notes.md
-          fi
-          
-          if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
-            echo "- Windows executable included" >> release_notes.md
-            zip -j artifacts/Saltify_windows.zip artifacts/windows/*
-          else
-            echo "Note: Windows executable not available for this release" >> release_notes.md
-          fi
-          
-          echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
-          echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
+
+      # Step 3: Download artifacts
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Saltify_windows
+          path: artifacts/windows
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Saltify_macos
+          path: artifacts/macos
+
+      # Step 4: Create ZIP files for releases
+      - name: Create ZIP files
+        run: |
+          zip -j artifacts/Saltify_windows.zip artifacts/windows/*
+          zip -j artifacts/Saltify_macos.zip artifacts/macos/*
+
+      # Step 5: Create GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -75,16 +147,9 @@ jobs:
           body_path: ./release_notes.md
           draft: false
           prerelease: false
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/Saltify_macos.zip
-          asset_name: Saltify_macos.zip
-          asset_content_type: application/zip
-      - name: Upload Release Assets
+
+      # Step 6: Upload Release Assets
+      - name: Upload Windows executable
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -92,4 +157,14 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: artifacts/Saltify_windows.zip
           asset_name: Saltify_windows.zip
+          asset_content_type: application/zip
+
+      - name: Upload macOS executable
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/Saltify_macos.zip
+          asset_name: Saltify_macos.zip
           asset_content_type: application/zip

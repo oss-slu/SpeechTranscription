@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - issue182_releaseprocess
+      - exe_fix
 
 jobs:
   build-macos:
@@ -14,6 +14,11 @@ jobs:
       # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Initialize Git Submodules
+        run: |
+          git submodule init
+          git submodule update
 
       # Step 2: Set up Homebrew
       - name: Set up Homebrew
