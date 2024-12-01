@@ -11,7 +11,8 @@ pydub
 language-tool-python
 python-docx
 git+https://github.com/openai/whisper.git
-sv_ttk
+#sv_ttk
+git+https://github.com/SilvioBartaletti/sv_ttk.git
 pattern
 customtkinter
 pyannote.audio
