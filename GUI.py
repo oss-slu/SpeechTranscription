@@ -217,6 +217,8 @@ class audioMenu(CTkFrame):
         self.audio_length = 0  # Store the length of the audio
         self.last_scrub_time = 0  # For debouncing scrubbing events
 
+        self.lock = threading.Lock()
+
     def togglePlayPause(self):
         '''Toggles between play and pause states.'''
         if self.is_playing and not self.is_paused:
@@ -241,37 +243,40 @@ class audioMenu(CTkFrame):
             self.is_paused = False
             self.audio.paused = False
 
-        #self.updateButtons()
-
     def pauseAudio(self):
         '''Pauses the currently playing audio and updates the button states accordingly.'''
         if self.is_playing and not self.is_paused:
             print("Pausing audio...")
             self.is_paused = True
             self.audio.paused = True
-            #self.updateButtons()
 
     def forwardAudio(self):
-        if self.is_playing and not self.is_paused:
-            """Move audio 5 seconds forward."""
-            self.current_position += 5
-            print(f"Skipping forward to {self.current_position} seconds.")
-            self.audio.seek(self.current_position)
+        if self.audio.playing and self.audio.out_stream:
+            max_position = self.audio.getAudioDuration()
+            self.audio.current_position = min(self.audio.current_position + 5, max_position)
+            print(f"Skipping forward to {self.audio.current_position} seconds.")
+            self.audio.seek(self.audio.current_position)
+        else:
+            print("Audio is not currently playing or out_stream is not initialized.")
 
     def backwardAudio(self):
-        if self.is_playing and not self.is_paused:
-            """Move audio 5 seconds backward."""
-            self.current_position = max(0, self.current_position - 5)
-            print(f"Rewinding to {self.current_position} seconds.")
-            self.audio.seek(self.current_position)
+        if self.audio.playing and self.audio.out_stream:
+            self.audio.current_position = max(0, self.audio.current_position - 5)
+            print(f"Rewinding to {self.audio.current_position} seconds.")
+            self.audio.seek(self.audio.current_position)
+        else:
+            print("Audio is not currently playing or out_stream is not initialized.")
+
 
     def updatePlayback(self):
         '''Continuously updates the playback position every 300 milliseconds if audio is playing and not paused.'''
-        if self.is_playing:
-            if not self.is_paused:
+        with self.lock:
+            if self.is_playing and not self.is_paused:
                 self.current_position += 0.3  # Incrementing playback position
-                #self.timelineSlider.set(self.current_position)  # Update the slider position
-            self.master.after(300, self.updatePlayback)
+                # Update slider or UI here
+            if self.is_playing:  # Continue updating
+                self.master.after(300, self.updatePlayback)
+
 
     def updateButtons(self):
         '''Updates the state of the play/pause button based on whether the audio is currently playing or paused.'''
