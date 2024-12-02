@@ -113,7 +113,7 @@ class userMenu(CTkFrame):
 class audioMenu(CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.configure(width = WIDTH * .8)
+        self.configure(width=WIDTH * .8)
         self.configure(height=HEIGHT)
         
         self.audio = AudioManager(master)
@@ -121,19 +121,40 @@ class audioMenu(CTkFrame):
         self.exporter = Exporter()
         
         # ROW 0: Frame for Audio Upload/Record buttons
-        self.audioInputFrame = CTkFrame(self, height = 80)
+        self.audioInputFrame = CTkFrame(self, height=80)
         self.audioInputFrame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N+E+W)
         self.audioInputLabel = CTkLabel(self.audioInputFrame, text="Input Audio Source Here", font=("Arial", 18))
-        self.audioInputLabel.grid(row=0, column=0, columnspan= 2, padx=10, pady=10)
+        self.audioInputLabel.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
         self.uploadButton = createButton(self.audioInputFrame, "Upload", 1, 0, self.uploadAudio, height=80, font=("Arial", 18), lock=False)
         self.recordButton = createButton(self.audioInputFrame, "Record", 1, 1, self.recordAudio, height=80, font=("Arial", 18), lock=False)
 
-        # ROW 1: Audio Playback control
-        self.playButton = createButton(self, "Play", 1, 0, self.playAudio, padx=10, pady=10)
-        self.pauseButton = createButton(self, "Pause", 1, 1, self.pauseAudio, padx=10, pady=10)
+        # Configure audio input frame columns
+        self.audioInputFrame.grid_columnconfigure(0, weight=1)
+        self.audioInputFrame.grid_columnconfigure(1, weight=1)
 
+        # ROW 1: Playback Controls in a Frame
+        self.playbackFrame = CTkFrame(self, height=100, width=200)
+        self.playbackFrame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+        self.playbackFrame.grid_propagate(False)  # Prevent frame from shrinking
+        
+        self.backwardButton = createButton(self.playbackFrame, "<<", 0, 0, self.backwardAudio, height=60, font=("Arial", 18), lock=False)
+        self.playPauseButton = createButton(self.playbackFrame, "⏯", 0, 1, self.togglePlayPause, height=60, font=("Arial", 18))
+        self.forwardButton = createButton(self.playbackFrame, ">>", 0, 2, self.forwardAudio, height=60, font=("Arial", 18), lock=False)
+        
+        # Configure playback frame columns
+        self.playbackFrame.grid_columnconfigure(0, weight=1)
+        self.playbackFrame.grid_columnconfigure(1, weight=1)
+        self.playbackFrame.grid_columnconfigure(2, weight=1)
+        
+        # ROW 1: Audio Playback control
+        #self.playPauseButton = createButton(self, "Play", 1, 0, self.togglePlayPause, padx=10, pady=10, columnspan=2)
+
+        # ROW 2: Timeline Slider
+        #self.timelineSlider = CTkSlider(self, from_=0, to=100, command=self.scrubAudio)
+        #self.timelineSlider.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        
         # ROW 2+3: Transcribe (and progress bar)
-        self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125, font = ("Arial", 40))
+        self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125, font=("Arial", 40))
 
         # ROW 4: Labelling Transcription buttons
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True) # For speaker labeling
@@ -148,7 +169,7 @@ class audioMenu(CTkFrame):
         self.submitGrammarButton = createButton(self, "Submit", 5, 5, self.applyCorrection)
 
         self.correctionEntryBox = CTkTextbox(self, height=60)
-        self.correctionEntryBox.grid(row=5,column=4, padx=10, sticky=E+W)
+        self.correctionEntryBox.grid(row=5, column=4, padx=10, sticky=E+W)
         lockItem(self.correctionEntryBox)
 
         # self.audioPlayback = CTkLabel(self, text="", height=50, fg_color=None, font=("Arial", 16))
@@ -165,10 +186,9 @@ class audioMenu(CTkFrame):
         self.transcriptionBoxClearButton.configure(image=CLEAR_ICON)
 
         self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
-        self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady= 10, sticky=N+E+S+W)
+        self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N+E+S+W)
         self.transcriptionBox.insert("0.0", text="Text will generate here")
         lockItem(self.transcriptionBox)
-
 
         # Conventions Box Control and Frame
         self.conventionBoxFrame = CTkFrame(self)
@@ -186,66 +206,104 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        # self.infoTab = sessionInfoMenu(self, self.transcriptionBox, self.conventionBox)
-        # self.infoTab.grid(row=0, column=0, columnspan=2, padx=15, pady=15)
-        
-        self.progressBar = CTkProgressBar(self, width = 225, mode = "indeterminate")
+        self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
         
         self.grammarCheckPerformed = False
 
         self.current_position = 0
-        self.playback_thread = None #thread for when audio is playing
+        self.playback_thread = None  # thread for when audio is playing
         self.is_playing = False
-        self._is_paused = False
-        
+        self.is_paused = False
+        self.audio_length = 0  # Store the length of the audio
+        self.last_scrub_time = 0  # For debouncing scrubbing events
+
+        self.lock = threading.Lock()
+
+    def togglePlayPause(self):
+        '''Toggles between play and pause states.'''
+        if self.is_playing and not self.is_paused:
+            self.pauseAudio()
+        else:
+            self.playAudio()
+
     def playAudio(self):
-        #Initiates audio playback in a separate thread, resetting the position if not already playing and allowing for resumption if paused.
+        '''Initiates audio playback in a separate thread, resetting the position if not already playing and allowing for resumption if paused.'''
         if not self.is_playing:
             print("Starting audio playback...")
             self.is_playing = True
             self.is_paused = False
             self.current_position = 0
-            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()  #Play in a thread
-            self.updatePlayback()  #Start updating playback position
-
+            #self.timelineSlider.set(0)  # Reset the slider to the beginning
+            self.audio_length = self.audio.getAudioDuration(self.audio.filePath)  # Get the length of the audio
+            #self.timelineSlider.configure(to=self.audio_length)  # Set the slider's maximum value to the audio length
+            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()  # Play in a thread
+            self.updatePlayback()  # Start updating playback position
         elif self.is_paused:
             print("Resuming audio...")
             self.is_paused = False
-            self.audio.paused = False  
-
-        self.updateButtons()
+            self.audio.paused = False
 
     def pauseAudio(self):
-        #Pauses the currently playing audio and updates the button states accordingly.
+        '''Pauses the currently playing audio and updates the button states accordingly.'''
         if self.is_playing and not self.is_paused:
             print("Pausing audio...")
             self.is_paused = True
-            self.audio.paused = True  
-            self.updateButtons()
+            self.audio.paused = True
+
+    def forwardAudio(self):
+        '''Skips forward by 5 seconds.'''
+        if self.audio.playing:
+            max_position = self.audio.getAudioDuration()
+            self.audio.current_position = min(self.audio.current_position + 5, max_position)
+            print(f"Skipping forward to {self.audio.current_position} seconds.")
+            self.audio.seek(self.audio.current_position)
+        else:
+            print("Audio is not currently playing.")
+
+    def backwardAudio(self):
+        '''Rewinds by 5 seconds.'''
+        if self.audio.playing:
+            self.audio.current_position = max(0, self.audio.current_position - 5)
+            print(f"Rewinding to {self.audio.current_position} seconds.")
+            self.audio.seek(self.audio.current_position)
+        else:
+            print("Audio is not currently playing.")
 
     def updatePlayback(self):
-        #Continuously updates the playback position every 300 milliseconds if audio is playing and not paused.
-        if self.is_playing:
-            if not self.is_paused:
-                self.current_position += 0.5  #Incrementing playback position more slowly            
-            self.master.after(300, self.updatePlayback) 
+        '''Continuously updates the playback position every 300 milliseconds if audio is playing and not paused.'''
+        with self.lock:
+            if self.is_playing and not self.is_paused:
+                self.current_position += 0.3  # Incrementing playback position
+                # Update slider or UI here
+            if self.is_playing:  # Continue updating
+                self.master.after(300, self.updatePlayback)
+
 
     def updateButtons(self):
-        #Updates the state of the play and pause buttons based on whether the audio is currently playing or paused.
-        self.playButton.configure(state="normal" if self.is_paused else "disabled")
-        self.pauseButton.configure(state="normal" if not self.is_paused else "disabled")
+        '''Updates the state of the play/pause button based on whether the audio is currently playing or paused.'''
+        if self.is_playing and not self.is_paused:
+            self.playPauseButton.configure(text="Pause")
+        else:
+            self.playPauseButton.configure(text="Play")
+
+    def scrubAudio(self, value):
+        '''Allows users to scrub through the audio by clicking and dragging the playhead along the timeline.'''
+        self.current_position = float(value)
+        self.audio.setPlaybackPosition(self.current_position)  # Set the audio playback position
+        if not self.is_paused:
+            self.audio.play(self.current_position)  # Play from the new position
 
     def startProgressBar(self):
-        self.transcribeButton.grid(row=2, column=0, rowspan = 1, columnspan=2)
+        self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
         self.transcribeButton.configure(height=100)
         self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
         self.progressBar.start()
-    
+
     def stopProgressBar(self):
         self.progressBar.stop()
         self.progressBar.grid_remove()
         self.transcribeButton.configure(height=200)
-        self.transcribeButton.grid(row=2, column=0, rowspan = 2, columnspan=2)
+        self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
 
     def labelSpeakers(self):
         popup = CTkToplevel(self)
@@ -330,8 +388,8 @@ class audioMenu(CTkFrame):
         filename = filedialog.askopenfilename()
         if filename:
             print("File uploaded: ", filename)
-            unlockItem(self.playButton)
-            unlockItem(self.pauseButton)
+            unlockItem(self.playPauseButton)
+            unlockItem(self.playPauseButton)
             unlockItem(self.transcribeButton)
             unlockItem(self.downloadAudioButton)
             time, signal = self.audio.upload(filename)
@@ -347,8 +405,7 @@ class audioMenu(CTkFrame):
             self.audio.record()
         else:
             self.recordButton.configure(text = "Record")
-            unlockItem(self.playButton)
-            unlockItem(self.pauseButton)
+            unlockItem(self.playPauseButton)
             unlockItem(self.transcribeButton)
             unlockItem(self.downloadAudioButton)
             filename, time, signal = self.audio.stop()
