@@ -405,8 +405,7 @@ class audioMenu(CTkFrame):
             self.audio.record()
         else:
             self.recordButton.configure(text = "Record")
-            unlockItem(self.playButton)
-            unlockItem(self.pauseButton)
+            unlockItem(self.playPauseButton)
             unlockItem(self.transcribeButton)
             unlockItem(self.downloadAudioButton)
             filename, time, signal = self.audio.stop()
