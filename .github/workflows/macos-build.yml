@@ -1,41 +1,54 @@
-on: 
+name: Build macOS Executable
+
+on:
   push:
     branches:
       - main
-      - fix-mac-exe
-      - testingv4artifact
-      - issue169_dependency
-      - issue178_build-test-failures
+      - issue182_releaseprocess
 
 jobs:
   build-macos:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-      - name: Install Java
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Homebrew
+      - name: Set up Homebrew
         run: |
-          if ! java -version; then
-            brew install openjdk@11
-          fi
-      - name: Install Specific Python Version
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11.7
-      - name: Install NLTK
+          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+          brew update
+
+      # Step 3: Install required tools
+      - name: Install Required System Tools
         run: |
-          pip install nltk
-          python -m nltk.downloader all
-      - run: brew install mysql pkg-config portaudio
-      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-      - run: pip uninstall -y typing
-      - name: Build executable
-        run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
-      - uses: actions/upload-artifact@v4
-        if: always()
+          brew install pkg-config mysql-client java
+          export PATH="/usr/local/opt/mysql-client/bin:$PATH"
+          export PKG_CONFIG_PATH="/usr/local/opt/mysql-client/lib/pkgconfig"
+          export MYSQLCLIENT_CFLAGS="-I/usr/local/opt/mysql-client/include"
+          export MYSQLCLIENT_LDFLAGS="-L/usr/local/opt/mysql-client/lib"
+
+      # Step 4: Configure Java environment
+      - name: Configure Java Environment
+        run: |
+          export JAVA_HOME=$(/usr/libexec/java_home)
+          export PATH="$JAVA_HOME/bin:$PATH"
+          java -version
+
+      # Step 5: Make the build script executable
+      - name: Make build script executable
+        run: chmod +x .github/workflows/build-saltify.sh
+
+      # Step 6: Run the Saltify build script
+      - name: Run Saltify Build Script
+        run: ./.github/workflows/build-saltify.sh
+
+      # Step 7: Upload the built artifact
+      - name: Upload macOS Build Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: SpeechTranscription_macos
-          path: dist/Saltify
+          name: Saltify_macOS
+          path: dist/Saltify.zip
