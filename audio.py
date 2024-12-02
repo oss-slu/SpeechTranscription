@@ -48,7 +48,7 @@ class AudioManager:
         time, signal = self.createWaveformFile()
         return (self.filePath, time, signal)
     
-    def play(self, startPosition=0):
+    def play(self, startPosition=None):
         '''Plays audio starting from the given position in seconds.'''
         # Ensure PyAudio is initialized
         if not self.p:
@@ -59,23 +59,27 @@ class AudioManager:
             msgbox.showerror("Playback Error", "No audio file selected or invalid file path.")
             return
 
-        self.stopPlayback()  # Clean up any existing playback
-        self.current_position = startPosition
+        if startPosition is not None:
+            self.current_position = startPosition
 
         try:
-            # Open the wave file
-            self.wf = wave.open(self.filePath, "rb")
-            startFrame = int(startPosition * self.wf.getframerate())
+            # Open the wave file if not already opened
+            if not self.wf:
+                self.wf = wave.open(self.filePath, "rb")
+
+            # Set position
+            startFrame = int(self.current_position * self.wf.getframerate())
             self.wf.setpos(startFrame)
 
-            # Initialize output stream
-            self.out_stream = self.p.open(
-                format=self.p.get_format_from_width(self.wf.getsampwidth()),
-                channels=self.wf.getnchannels(),
-                rate=self.wf.getframerate(),
-                output=True,
-                frames_per_buffer=self.CHUNK,
-            )
+            # Initialize output stream if not already initialized
+            if not self.out_stream:
+                self.out_stream = self.p.open(
+                    format=self.p.get_format_from_width(self.wf.getsampwidth()),
+                    channels=self.wf.getnchannels(),
+                    rate=self.wf.getframerate(),
+                    output=True,
+                    frames_per_buffer=self.CHUNK,
+                )
 
             self.playing = True
             self.paused = False
@@ -91,7 +95,8 @@ class AudioManager:
             print(f"Error during playback: {e}")
             msgbox.showerror("Playback Error", f"An error occurred: {e}")
         finally:
-            self.stopPlayback()
+            if not self.playing:  # Only stop playback if playback ends
+                self.stopPlayback()
 
     def pause(self):
         self.paused = not self.paused
@@ -161,8 +166,7 @@ class AudioManager:
     def seek(self, position):
         '''Seeks to the specified position in seconds.'''
         # Ensure wave file is initialized
-        if not hasattr(self, 'wf') or self.wf is None:
-            print("Wave file not initialized. Attempting to reopen.")
+        if not self.wf:
             try:
                 self.wf = wave.open(self.filePath, "rb")
             except Exception as e:
@@ -171,9 +175,6 @@ class AudioManager:
                 return
 
         try:
-            # Stop playback if it's ongoing
-            self.stopPlayback()
-
             # Clamp the position to valid bounds
             self.current_position = max(0, min(position, self.getAudioDuration()))
 
@@ -183,9 +184,9 @@ class AudioManager:
 
             print(f"Seeked to {self.current_position} seconds.")
 
-            # Restart playback if it was playing
-            if self.playing:
-                self.play(self.current_position)
+            # Update playback if currently playing
+            if self.playing and self.out_stream:
+                self.paused = False  # Resume playback
         except Exception as e:
             print(f"Error during seek: {e}")
             msgbox.showerror("Seek Error", f"An error occurred while seeking: {e}")

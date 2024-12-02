@@ -251,22 +251,23 @@ class audioMenu(CTkFrame):
             self.audio.paused = True
 
     def forwardAudio(self):
-        if self.audio.playing and self.audio.out_stream:
+        '''Skips forward by 5 seconds.'''
+        if self.audio.playing:
             max_position = self.audio.getAudioDuration()
             self.audio.current_position = min(self.audio.current_position + 5, max_position)
             print(f"Skipping forward to {self.audio.current_position} seconds.")
             self.audio.seek(self.audio.current_position)
         else:
-            print("Audio is not currently playing or out_stream is not initialized.")
+            print("Audio is not currently playing.")
 
     def backwardAudio(self):
-        if self.audio.playing and self.audio.out_stream:
+        '''Rewinds by 5 seconds.'''
+        if self.audio.playing:
             self.audio.current_position = max(0, self.audio.current_position - 5)
             print(f"Rewinding to {self.audio.current_position} seconds.")
             self.audio.seek(self.audio.current_position)
         else:
-            print("Audio is not currently playing or out_stream is not initialized.")
-
+            print("Audio is not currently playing.")
 
     def updatePlayback(self):
         '''Continuously updates the playback position every 300 milliseconds if audio is playing and not paused.'''
