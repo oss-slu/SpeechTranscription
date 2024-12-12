@@ -1,4 +1,4 @@
-import customtkinter # Only imported for typing
+import customtkinter  # Only imported for typing
 import wave
 import pyaudio
 from pydub import AudioSegment
@@ -11,7 +11,6 @@ class AudioManager:
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 44100
-    p = pyaudio.PyAudio()
     filePath = "session_output.wav"
     playing = False
     isRecording = False
@@ -19,14 +18,16 @@ class AudioManager:
     
     def __init__(self, root: customtkinter.CTk):
         self.root = root
+        self.p = pyaudio.PyAudio()
         self.out_stream = None
+        self.wf = None
 
     def record(self):
         self.filePath = "session_output.wav"
         self.isRecording = True
         self.frames = []
         try:
-            stream = self.p.open(format = self.FORMAT, channels = self.CHANNELS, rate = self.RATE, input = True, frames_per_buffer = self.CHUNK)
+            stream = self.p.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK)
             
             while self.isRecording:
                 data = stream.read(self.CHUNK)
@@ -36,52 +37,67 @@ class AudioManager:
             stream.close()
         except OSError as e:
             if e.errno == -9996 or e.errno == -9999:
-                # Handle the specific error, e.g., log it or notify the user
                 print("Warning: No default output device available.")
                 self.root.after(0, lambda: msgbox.showerror("Audio Error", "No default audio device available. Please check your audio settings."))
             else:
-                # Re-raise the exception if it's not the one we're expecting to handle
                 raise
-        
+
     def stop(self):
         self.isRecording = False
         self.saveAudioFile(self.filePath)
         time, signal = self.createWaveformFile()
         return (self.filePath, time, signal)
     
-    def play(self, startPosition=0):
-        
-        self.stopPlayback()
+    def play(self, startPosition=None):
+        '''Plays audio starting from the given position in seconds.'''
+        # Ensure PyAudio is initialized
+        if not self.p:
+            self.p = pyaudio.PyAudio()
 
-        print("Playing audio...from", startPosition)
-        self.playing = True
-        self.paused = False
-        audio_file = wave.open(self.filePath, "rb")
-        
-        startFrame = int(startPosition * audio_file.getframerate())
-        audio_file.setpos(startFrame)  # Seek to the start position
+        # Ensure filePath exists
+        if not self.filePath or not isinstance(self.filePath, str):
+            msgbox.showerror("Playback Error", "No audio file selected or invalid file path.")
+            return
 
-        # Code to create seperate output audio stream so audio can be played
-        out_p = pyaudio.PyAudio()
-        print('here3')
-        out_stream = out_p.open(
-            format = out_p.get_format_from_width(audio_file.getsampwidth()),
-            channels = audio_file.getnchannels(),
-            rate = audio_file.getframerate(),
-            output = True
-        )
-        print('here4')
-        
-        dat = audio_file.readframes(self.CHUNK)
-        while dat != b"" and self.playing:
-            if not self.paused:
-                out_stream.write(dat)
-                dat = audio_file.readframes(self.CHUNK)
+        if startPosition is not None:
+            self.current_position = startPosition
 
-        self.playing = False
-        out_stream.close()
-        print("Audio has ended")
-        
+        try:
+            # Open the wave file if not already opened
+            if not self.wf:
+                self.wf = wave.open(self.filePath, "rb")
+
+            # Set position
+            startFrame = int(self.current_position * self.wf.getframerate())
+            self.wf.setpos(startFrame)
+
+            # Initialize output stream if not already initialized
+            if not self.out_stream:
+                self.out_stream = self.p.open(
+                    format=self.p.get_format_from_width(self.wf.getsampwidth()),
+                    channels=self.wf.getnchannels(),
+                    rate=self.wf.getframerate(),
+                    output=True,
+                    frames_per_buffer=self.CHUNK,
+                )
+
+            self.playing = True
+            self.paused = False
+
+            # Playback loop
+            while self.playing:
+                if not self.paused:
+                    data = self.wf.readframes(self.CHUNK)
+                    if data == b"":
+                        break
+                    self.out_stream.write(data)
+        except Exception as e:
+            print(f"Error during playback: {e}")
+            msgbox.showerror("Playback Error", f"An error occurred: {e}")
+        finally:
+            if not self.playing:  # Only stop playback if playback ends
+                self.stopPlayback()
+
     def pause(self):
         self.paused = not self.paused
         return self.paused
@@ -89,27 +105,32 @@ class AudioManager:
     def upload(self, filename: str):
         self.filePath = filename
         try:
-            name = filename.split(".")[0]
-            extension = filename.split(".")[1].lower()
+            # Close any previously opened wave file
+            if self.wf:
+                self.wf.close()
+                self.wf = None
+
+            # Open and process the file
+            name, extension = filename.rsplit(".", 1)
+            extension = extension.lower()
             if extension in ["mp3", "wav"]:
-                if extension == "mp3":
-                    segment = AudioSegment.from_mp3(self.filePath)
-                    print("Attempting to convert mp3 to wav")
-                else:
-                    segment = AudioSegment.from_wav(self.filePath)
-                spacer = AudioSegment.silent(duration=2000)
-                segment = spacer.append(segment, crossfade=0)
+                segment = AudioSegment.from_file(self.filePath, format=extension)
                 segment.export("export.wav", format="wav")
                 self.filePath = "export.wav"
+
+                # Open the wave file
+                self.wf = wave.open(self.filePath, "rb")
                 time, signal = self.createWaveformFile()
                 return (time, signal)
             else:
-                raise Exception()
+                raise ValueError("Unsupported file format")
         except Exception as e:
-            print("The file format is not valid. Please try a file with extension .wav or .mp3")
-            
+            print(f"Error uploading file: {e}")
+            msgbox.showerror("Upload Error", f"Failed to upload file: {e}")
+            # Ensure return values are consistent
+            return None, None
+
     def normalizeUploadedFile(self):
-        # Create copy of file as AudioSegment for pydub normalize function
         print("The audio file is attempting to be normalized")
         pre_normalized_audio = AudioSegment.from_file(self.filePath, format="wav")
         normalized_audio = normalize(pre_normalized_audio)
@@ -120,7 +141,7 @@ class AudioManager:
         self.audioExists = True
         raw = wave.open(self.filePath)
         signal = raw.readframes(-1)
-        signal = np.frombuffer(signal, dtype = "int16")
+        signal = np.frombuffer(signal, dtype="int16")
         f_rate = raw.getframerate()
         time = np.linspace(0, len(signal) / f_rate, num=len(signal))
         return (time, signal)
@@ -133,31 +154,66 @@ class AudioManager:
         wf.writeframes(b"".join(self.frames))
         wf.close()
 
-    def getAudioDuration(self, filename):
+    def getAudioDuration(self, filename=None):
+        if filename is None:
+            filename = self.filePath
         audio = AudioSegment.from_file(filename)
         return len(audio) / 1000.0  # Return duration in seconds
 
+    def setPlaybackPosition(self, position):
+        self.seek(position)
+
     def seek(self, position):
+        '''Seeks to the specified position in seconds.'''
+        # Ensure wave file is initialized
+        if not self.wf:
+            try:
+                self.wf = wave.open(self.filePath, "rb")
+            except Exception as e:
+                print(f"Error reopening wave file: {e}")
+                msgbox.showerror("Error", "Cannot seek: Unable to reopen wave file.")
+                return
 
-        self.stopPlayback()
-        self.play(startPosition=position)
-        #if self.playing:
-            # Pause playback if currently playing
-        #    self.pause()
-            # Restart playback from the new position
-        #    self.play(startPosition=position)
-        #else:
-            # If not currently playing, just update the position to start from later
-        #    self.play(startPosition=position)
-        #    self.pause()  # Immediately pause since we're only updating the position
+        try:
+            # Clamp the position to valid bounds
+            self.current_position = max(0, min(position, self.getAudioDuration()))
 
-    def stopPlayback(self):     
+            # Seek to the appropriate frame
+            frame = int(self.current_position * self.wf.getframerate())
+            self.wf.setpos(frame)
+
+            print(f"Seeked to {self.current_position} seconds.")
+
+            # Update playback if currently playing
+            if self.playing and self.out_stream:
+                self.paused = False  # Resume playback
+        except Exception as e:
+            print(f"Error during seek: {e}")
+            msgbox.showerror("Seek Error", f"An error occurred while seeking: {e}")
+
+    def stopPlayback(self):
         '''Stops the audio playback and cleans up resources.'''
         self.playing = False
         self.paused = True  # Ensure paused is True so playback can reset correctly
-        if self.out_stream is not None:
-            self.out_stream.stop_stream()
-            self.out_stream.close()
-        self.p.terminate()
-        self.p = pyaudio.PyAudio()  # Reinitialize PyAudio
-    
+
+        # Stop and close the output stream
+        if self.out_stream:
+            try:
+                self.out_stream.stop_stream()
+                self.out_stream.close()
+            except OSError as e:
+                print(f"Error stopping/closing stream: {e}")
+            self.out_stream = None
+
+        # Close and reset the wave file
+        if self.wf:
+            self.wf.close()
+            self.wf = None
+
+        # Terminate PyAudio if active
+        if self.p:
+            self.p.terminate()
+            self.p = None
+
+        # Reinitialize PyAudio to prepare for future playback
+        self.p = pyaudio.PyAudio()

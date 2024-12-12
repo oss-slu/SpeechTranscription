@@ -12,7 +12,8 @@ language-tool-python
 python-docx
 git+https://github.com/openai/whisper.git
 sv_ttk
-pattern
+#pattern
+git+https://github.com/clips/pattern.git
 customtkinter
 pyannote.audio
 matplotlib
