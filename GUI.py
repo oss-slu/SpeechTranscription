@@ -9,14 +9,28 @@ from CTkXYFrame.CTkXYFrame.ctk_xyframe import * # Uses Third party license found
 import threading
 import matplotlib.pyplot as plt
 import time
+import sys
+import os
 
+if getattr(sys, 'frozen', False):
+    app_path = sys._MEIPASS
+else:
+    app_path = os.path.abspath(".")
 
 WIDTH = 1340
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
-LOCK_ICON = customtkinter.CTkImage(Image.open("images/locked_icon.png"), Image.open("images/locked_icon.png"), (30, 30))
-UNLOCK_ICON = customtkinter.CTkImage(Image.open("images/unlocked_icon.png"), Image.open("images/unlocked_icon.png"), (30, 30))
-CLEAR_ICON = customtkinter.CTkImage(Image.open("images/clear_icon.png"), Image.open("images/clear_icon.png"), (30, 30))
+#LOCK_ICON = customtkinter.CTkImage(Image.open("images/locked_icon.png"), Image.open("images/locked_icon.png"), (30, 30))
+#UNLOCK_ICON = customtkinter.CTkImage(Image.open("images/unlocked_icon.png"), Image.open("images/unlocked_icon.png"), (30, 30))
+#CLEAR_ICON = customtkinter.CTkImage(Image.open("images/clear_icon.png"), Image.open("images/clear_icon.png"), (30, 30))
+
+LOCK_ICON_PATH = os.path.join(app_path, "images", "locked_icon.png")
+UNLOCK_ICON_PATH = os.path.join(app_path, "images", "unlocked_icon.png")
+CLEAR_ICON_PATH = os.path.join(app_path, "images", "clear_icon.png")
+
+LOCK_ICON = customtkinter.CTkImage(Image.open(LOCK_ICON_PATH), size=(30, 30))
+UNLOCK_ICON = customtkinter.CTkImage(Image.open(UNLOCK_ICON_PATH), size=(30, 30))
+CLEAR_ICON = customtkinter.CTkImage(Image.open(CLEAR_ICON_PATH), size=(30, 30))
 
 def plotAudio(time, signal):
     '''Plots the waveform of audio'''
