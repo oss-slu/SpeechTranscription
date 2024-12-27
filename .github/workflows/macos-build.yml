@@ -28,7 +28,9 @@ jobs:
       # Step 4: Install MySQL and other Homebrew packages
       - name: Install MySQL and required packages
         run: |
-          brew install mysql pkg-config portaudio
+          brew install mysql pkg-config 
+          brew install portaudio
+          brew install ffmpeg
           brew services start mysql
           pip install pyaudio
       # Set MySQL environment variables
@@ -65,11 +67,22 @@ jobs:
       #checking
       - name: Display all environment variables
         run: env
-      - name: Display specific variables
+      # Resolve paths for binaries
+      - name: Resolve binary paths
         run: |
-          echo "PORTAUDIO_PATH: $PORTAUDIO_PATH"
-          echo "FFMPEG_PATH: $FFMPEG_PATH"
-          echo "FFPROBE_PATH: $FFPROBE_PATH"    
+          PORTAUDIO_PATH=$(brew --prefix portaudio)/lib/libportaudio.dylib
+          FFMPEG_PATH=$(which ffmpeg || echo "/usr/local/bin/ffmpeg")
+          FFPROBE_PATH=$(which ffprobe || echo "/usr/local/bin/ffprobe")
+
+          echo "PORTAUDIO_PATH=$PORTAUDIO_PATH" >> $GITHUB_ENV
+          echo "FFMPEG_PATH=$FFMPEG_PATH" >> $GITHUB_ENV
+          echo "FFPROBE_PATH=$FFPROBE_PATH" >> $GITHUB_ENV
+
+          # Debugging: Display resolved paths
+          echo "Resolved Paths:"
+          echo "PORTAUDIO_PATH=$PORTAUDIO_PATH"
+          echo "FFMPEG_PATH=$FFMPEG_PATH"
+          echo "FFPROBE_PATH=$FFPROBE_PATH"   
       #paths
       - name: Resolve binary paths
         id: resolve-paths
