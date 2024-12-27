@@ -47,7 +47,7 @@ pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
 # Step 7: Move the generated executable to the desired folder
 echo "Moving the executable to the 'dist' directory..."
 mkdir -p dist
-mv dist/Saltify dist/Saltify_macOS
+mv dist/Saltify_macOS dist/Saltify
 
 # Step 8: Notify user that the build is complete
 echo "macOS build complete. The executable is located in 'dist/Saltify_macOS'."
