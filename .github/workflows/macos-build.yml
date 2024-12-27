@@ -70,8 +70,12 @@ jobs:
             --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers \
             --copy-metadata importlib_metadata --collect-data sv_ttk \
             --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
-      # Step 9: Upload the built artifact
-      - uses: actions/upload-artifact@v4
+      # Step 9: Run the Saltify build script
+      - name: Run Saltify Build Script
+        run: ./.github/workflows/build-saltify.sh
+      # Step 10: Upload the built artifact
+      - name: Upload macOS Build Artifact
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: SpeechTranscription_macos
