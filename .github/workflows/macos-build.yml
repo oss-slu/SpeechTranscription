@@ -7,7 +7,7 @@ on:
       - issue169_dependency
       - issue178_build-test-failures
       - 182_fixing_executable
-      
+
 jobs:
   build-macos:
     runs-on: macos-latest
@@ -60,7 +60,8 @@ jobs:
           CERT_PATH=$(python -m certifi)
           export SSL_CERT_FILE=${CERT_PATH}
           export REQUESTS_CA_BUNDLE=${CERT_PATH}
-          python -c "import nltk; nltk.download()"
+          echo "Downloading NLTK resources..."
+          python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
       # Step 8: Build the executable
       - name: Build executable
         run: |
