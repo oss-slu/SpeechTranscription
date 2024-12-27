@@ -6,10 +6,7 @@ on:
       - testingv4artifact
       - issue169_dependency
       - issue178_build-test-failures
-      - 182_fixining_executable
-  pull_request:    
-    branches:
-      - 182_fixining_executable
+      - 182_fixing_executable
 jobs:
   build-macos:
     runs-on: macos-latest
