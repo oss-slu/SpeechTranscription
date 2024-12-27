@@ -62,6 +62,14 @@ jobs:
           export REQUESTS_CA_BUNDLE=${CERT_PATH}
           echo "Downloading NLTK resources..."
           python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
+      #checking
+      - name: Display all environment variables
+        run: env
+      - name: Display specific variables
+        run: |
+          echo "PORTAUDIO_PATH: $PORTAUDIO_PATH"
+          echo "FFMPEG_PATH: $FFMPEG_PATH"
+          echo "FFPROBE_PATH: $FFPROBE_PATH"    
       #paths
       - name: Resolve binary paths
         id: resolve-paths
