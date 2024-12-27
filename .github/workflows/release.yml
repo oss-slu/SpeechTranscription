@@ -5,6 +5,9 @@ on:
       - issue178_build-test-failures
       - main
       - 182_fixining_executable
+  pull_request:    
+    branches:
+      - 182_fixining_executable
 permissions:
   contents: write
   packages: read
