@@ -33,7 +33,8 @@ pip install nltk certifi
 CERT_PATH=$(python -m certifi)
 export SSL_CERT_FILE=${CERT_PATH}
 export REQUESTS_CA_BUNDLE=${CERT_PATH}
-python -c "import nltk; nltk.download()"
+echo "Downloading NLTK resources..."
+python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
 
 # Step 6: Build executable using PyInstaller
 echo "Building the macOS executable with PyInstaller..."
@@ -41,8 +42,16 @@ pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
   --copy-metadata torch --copy-metadata tqdm --copy-metadata regex \
   --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging \
   --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers \
-  --copy-metadata importlib_metadata --collect-data sv_ttk \
-  --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+  --copy-metadata importlib_metadata --copy-metadata lightning_fabric \
+  --collect-data sv_ttk --collect-data lightning_fabric --collect-data pytorch_lightning \
+  --recursive-copy-metadata "openai-whisper" --collect-data whisper \
+  --add-data "images:images" \
+  --add-data "build_assets/en-model.slp:pattern/text/en" \
+  --add-data "CTkXYFrame:CTkXYFrame" \
+  --add-binary "$(brew --prefix portaudio)/lib/libportaudio.dylib:." \
+  --add-binary "$(which ffmpeg):." \
+  --add-binary "$(which ffprobe):." \
+  GUI.py
 
 # Step 7: Move the generated executable to the desired folder
 echo "Moving the executable to the 'dist' directory..."

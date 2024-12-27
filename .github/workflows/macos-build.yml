@@ -63,14 +63,22 @@ jobs:
           echo "Downloading NLTK resources..."
           python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
       # Step 8: Build the executable
-      - name: Build executable
+      # Step 7: Build the Executable
+      - name: Build Executable
         run: |
           pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
             --copy-metadata torch --copy-metadata tqdm --copy-metadata regex \
             --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging \
             --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers \
             --copy-metadata importlib_metadata --collect-data sv_ttk \
-            --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+            --recursive-copy-metadata "openai-whisper" --collect-data whisper \
+            --add-data "images:images" \
+            --add-data "build_assets/en-model.slp:pattern/text/en" \
+            --add-data "CTkXYFrame:CTkXYFrame" \
+            --add-binary "$(brew --prefix portaudio)/lib/libportaudio.dylib:." \
+            --add-binary "$(which ffmpeg):." \
+            --add-binary "$(which ffprobe):." \
+            GUI.py
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         #run: ./.github/workflows/build-saltify.sh
