@@ -4,6 +4,7 @@ on:
     branches:
       - issue178_build-test-failures
       - main
+      - 182_fixining_executable
 permissions:
   contents: write
   packages: read
