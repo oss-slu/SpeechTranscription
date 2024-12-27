@@ -5,7 +5,8 @@ on:
       - issue178_build-test-failures
       - main
       - 182_fixing_executable
-permissions:
+      
+permissions: 
   contents: write
   packages: read
   actions: read
