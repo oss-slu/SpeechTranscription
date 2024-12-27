@@ -62,9 +62,15 @@ jobs:
           export REQUESTS_CA_BUNDLE=${CERT_PATH}
           echo "Downloading NLTK resources..."
           python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
+      #paths
+      - name: Resolve binary paths
+        id: resolve-paths
+        run: |
+          echo "PORTAUDIO_PATH=$(brew --prefix portaudio)/lib/libportaudio.dylib" >> $GITHUB_ENV
+          echo "FFMPEG_PATH=$(which ffmpeg)" >> $GITHUB_ENV
+          echo "FFPROBE_PATH=$(which ffprobe)" >> $GITHUB_ENV      
       # Step 8: Build the executable
-      # Step 7: Build the Executable
-      - name: Build Executable
+      - name: Build executable
         run: |
           pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
             --copy-metadata torch --copy-metadata tqdm --copy-metadata regex \
@@ -75,9 +81,9 @@ jobs:
             --add-data "images:images" \
             --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "CTkXYFrame:CTkXYFrame" \
-            --add-binary "$(brew --prefix portaudio)/lib/libportaudio.dylib:." \
-            --add-binary "$(which ffmpeg):." \
-            --add-binary "$(which ffprobe):." \
+            --add-binary "$PORTAUDIO_PATH:." \
+            --add-binary "$FFMPEG_PATH:." \
+            --add-binary "$FFPROBE_PATH:." \
             GUI.py
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script

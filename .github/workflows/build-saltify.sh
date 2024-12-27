@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Exit immediately if any command fails
 set -e
+
+LOG_FILE="build.log"
+exec > >(tee -i ${LOG_FILE}) 2>&1
 
 # Step 1: Check and install Homebrew if not already installed
 if ! command -v brew &> /dev/null; then
@@ -13,38 +15,35 @@ fi
 
 # Step 2: Install MySQL and other dependencies
 echo "Installing MySQL and other dependencies..."
-brew install mysql pkg-config portaudio ffmpeg  # Add ffmpeg if necessary
+brew install mysql pkg-config portaudio ffmpeg
 brew services start mysql
-pip install pyaudio
 
-# Step 3: Set MySQL environment variables (ensure they are available for your session)
-echo "Setting MySQL environment variables..."
-export MYSQLCLIENT_CFLAGS='pkg-config mysqlclient --cflags'
-export MYSQLCLIENT_LDFLAGS='pkg-config mysqlclient --libs'
+# Step 3: Virtual Environment Setup
+echo "Setting up virtual environment..."
+python3 -m venv venv
+source venv/bin/activate
 
-# Step 4: Install Python dependencies (ensure you're in the right virtualenv if required)
-echo "Installing Python dependencies from requirements.txt..."
+# Step 4: Install Python dependencies
+echo "Installing Python dependencies..."
+pip install --upgrade pip
 pip install -r requirements.txt
 pip install pyinstaller importlib-metadata sacremoses tokenizers
 
-# Step 5: Install NLTK and handle SSL certificate issues
-echo "Installing NLTK and resolving SSL certificate issues..."
+# Step 5: Install NLTK and resolve SSL issues
+echo "Installing NLTK and resolving SSL issues..."
 pip install nltk certifi
 CERT_PATH=$(python -m certifi)
 export SSL_CERT_FILE=${CERT_PATH}
 export REQUESTS_CA_BUNDLE=${CERT_PATH}
-echo "Downloading NLTK resources..."
-python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
+python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('averaged_perceptron_tagger', quiet=True)"
 
-# Step 6: Build executable using PyInstaller
+# Step 6: Build the macOS executable with PyInstaller
 echo "Building the macOS executable with PyInstaller..."
 pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
   --copy-metadata torch --copy-metadata tqdm --copy-metadata regex \
   --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging \
   --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers \
-  --copy-metadata importlib_metadata --copy-metadata lightning_fabric \
-  --collect-data sv_ttk --collect-data lightning_fabric --collect-data pytorch_lightning \
-  --recursive-copy-metadata "openai-whisper" --collect-data whisper \
+  --copy-metadata importlib_metadata --collect-data sv_ttk \
   --add-data "images:images" \
   --add-data "build_assets/en-model.slp:pattern/text/en" \
   --add-data "CTkXYFrame:CTkXYFrame" \
@@ -53,10 +52,15 @@ pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
   --add-binary "$(which ffprobe):." \
   GUI.py
 
-# Step 7: Move the generated executable to the desired folder
-echo "Moving the executable to the 'dist' directory..."
-mkdir -p dist
-mv dist/Saltify_macOS dist/Saltify
+# Step 7: Move the executable
+OUTPUT_DIR="dist/Saltify_$(date +'%Y%m%d_%H%M%S')"
+mkdir -p "${OUTPUT_DIR}"
+mv dist/Saltify "${OUTPUT_DIR}"
 
-# Step 8: Notify user that the build is complete
-echo "macOS build complete. The executable is located in 'dist/Saltify_macOS'."
+# Step 8: Clean up build files
+echo "Cleaning up..."
+rm -rf build *.spec
+
+# Step 9: Notify user
+osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
+echo "Build complete. The executable is located in ${OUTPUT_DIR}."
