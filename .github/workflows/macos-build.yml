@@ -50,7 +50,9 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller importlib-metadata sacremoses tokenizers
       # Uninstall incompatible typing package
-      - run: pip uninstall -y typing
+      - name: Uninstall typing package
+        run: |
+          python -m pip uninstall -y typing
 #      - name: Install Specific Python Version
 #        uses: actions/setup-python@v4
 #        with:
