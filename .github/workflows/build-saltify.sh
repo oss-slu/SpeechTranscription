@@ -19,15 +19,16 @@ brew install mysql pkg-config portaudio ffmpeg
 brew services start mysql
 
 # Step 3: Virtual Environment Setup
-echo "Setting up virtual environment..."
-python3 -m venv venv
-source venv/bin/activate
+#echo "Setting up virtual environment..."
+#python3 -m venv venv
+#source venv/bin/activate
 
 # Step 4: Install Python dependencies
 echo "Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install pyinstaller importlib-metadata sacremoses tokenizers
+pip uninstall -y typing
 
 # Step 5: Install NLTK and resolve SSL issues
 echo "Installing NLTK and resolving SSL issues..."
