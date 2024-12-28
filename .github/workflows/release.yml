@@ -5,7 +5,7 @@ on:
       - issue178_build-test-failures
       - main
       - 182_fixing_executable
-      
+
 permissions: 
   contents: write
   packages: read
@@ -95,3 +95,8 @@ jobs:
           asset_path: artifacts/Saltify_windows.zip
           asset_name: Saltify_windows.zip
           asset_content_type: application/zip
+      - name: List artifact file types
+        run: |
+          file artifacts/macos/*
+          file artifacts/windows/*
+        

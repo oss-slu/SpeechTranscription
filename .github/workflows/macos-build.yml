@@ -121,3 +121,9 @@ jobs:
         with:
           name: SpeechTranscription_macos
           path: dist/Saltify
+      # Finding why exe isnt created
+      - name: Verify PyInstaller build output
+        run: |
+          echo "Contents of dist folder:"
+          ls -la dist/
+        

@@ -18,7 +18,7 @@ echo "Installing MySQL and other dependencies..."
 brew install mysql pkg-config portaudio ffmpeg
 brew services start mysql
 
-# Step 3: Virtual Environment Setup
+# Step 3: Virtual Environment Setup (optional)
 #echo "Setting up virtual environment..."
 #python3 -m venv venv
 #source venv/bin/activate
@@ -40,7 +40,7 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 
 # Step 6: Build the macOS executable with PyInstaller
 echo "Building the macOS executable with PyInstaller..."
-pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
+pyinstaller --name Saltify --windowed --noconfirm --onefile --debug all -c \
   --copy-metadata torch --copy-metadata tqdm --copy-metadata regex \
   --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging \
   --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers \
@@ -53,15 +53,24 @@ pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
   --add-binary "$(which ffprobe):." \
   GUI.py
 
-# Step 7: Move the executable
+# Step 7: Check for .txt file and rename if necessary
+if [[ -f dist/Saltify.txt ]]; then
+  echo "Found Saltify.txt instead of executable. Renaming..."
+  mv dist/Saltify.txt dist/Saltify
+fi
+
+# Step 8: Move the executable
 OUTPUT_DIR="dist/Saltify_$(date +'%Y%m%d_%H%M%S')"
 mkdir -p "${OUTPUT_DIR}"
 mv dist/Saltify "${OUTPUT_DIR}"
 
-# Step 8: Clean up build files
+# Step 9: Ensure permissions are correct
+chmod +x "${OUTPUT_DIR}/Saltify"
+
+# Step 10: Clean up build files
 echo "Cleaning up..."
 rm -rf build *.spec
 
-# Step 9: Notify user
+# Step 11: Notify user
 osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
 echo "Build complete. The executable is located in ${OUTPUT_DIR}."
