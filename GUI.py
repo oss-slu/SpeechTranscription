@@ -52,6 +52,42 @@ class mainGUI(CTk):
             else: button.configure(fg_color="#0062B1")
         self.tkraise(self.audioFrame)
 
+    
+    def showHelpOverlay(self):
+        '''Displays an overlay highlighting the functionality of all buttons in the application.'''
+        overlay = CTkToplevel(self)
+        overlay.title("Help Guide")
+        overlay.geometry(f"{WIDTH}x{HEIGHT}")
+        overlay.attributes("-topmost", True)
+        overlay.grab_set()
+
+        helpText = """
+        Help Guide:
+        
+        - New Audio: Create a new audio session.
+        - Upload: Upload an audio file.
+        - Record: Record a new audio file.
+        - <<: Rewind the audio by 5 seconds.
+        - ⏯: Play/Pause the audio.
+        - >>: Fast forward the audio by 5 seconds.
+        - Transcribe: Transcribe the audio.
+        - Label Speakers: Label different speakers in the transcription.
+        - Apply Aliases: Customize speaker aliases.
+        - Download Audio: Download the recorded audio.
+        - Export to Word: Export the transcription to a Word document.
+        - Grammar Check: Check the transcription for grammar errors.
+        - Add Morphemes: Add inflectional morphemes to the transcription.
+        - Submit: Submit grammar corrections.
+        - Clear Box?: Clear the transcription or convention box.
+        - Lock/Unlock: Lock or unlock the transcription or convention box.
+        """
+
+        helpLabel = CTkLabel(overlay, text=helpText, justify=LEFT, font=("Arial", 14))
+        helpLabel.pack(padx=20, pady=20)
+
+        closeButton = createButton(overlay, "Close", None, None, overlay.destroy, height=40, width=100, lock=False)
+        closeButton.pack(pady=20)
+
     def __init__(self):
         super().__init__()
 
@@ -82,7 +118,11 @@ class mainGUI(CTk):
         self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, height=60, columnspan=2, lock=False)
 
         self.audioFrame = CTkFrame(self)
-
+        
+        # Add Help Button
+        self.helpButton = createButton(self, "Help", None, None, self.showHelpOverlay, height=40, width=100, lock=False)
+        self.helpButton.place(relx=0, rely=1, anchor=SW, x=10, y=-10)  # Position at bottom left corner
+        
         self.mainloop()
 
 class userMenu(CTkFrame):
