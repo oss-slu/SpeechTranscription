@@ -120,7 +120,7 @@ class mainGUI(CTk):
         self.audioFrame = CTkFrame(self)
         
         # Add Help Button
-        self.helpButton = createButton(self, "Help", None, None, self.showHelpOverlay, height=40, width=100, lock=False)
+        self.helpButton = createButton(self, "Help", None, None, self.showHelpOverlay, height=30, width=80, lock=False)
         self.helpButton.place(relx=0, rely=1, anchor=SW, x=10, y=-10)  # Position at bottom left corner
         
         self.mainloop()
