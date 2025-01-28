@@ -59,7 +59,6 @@ class mainGUI(CTk):
         overlay.title("Help Guide")
         overlay.geometry(f"{WIDTH}x{HEIGHT}")
         overlay.attributes("-topmost", True)
-        overlay.grab_set()
 
         helpText = """
         Help Guide:
