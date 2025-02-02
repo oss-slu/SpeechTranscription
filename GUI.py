@@ -52,13 +52,12 @@ class mainGUI(CTk):
             else: button.configure(fg_color="#0062B1")
         self.tkraise(self.audioFrame)
 
-    
     def showHelpOverlay(self):
-        '''Displays an overlay highlighting the functionality of all buttons in the application.'''
-        overlay = CTkToplevel(self)
-        overlay.title("Help Guide")
-        overlay.geometry(f"{WIDTH}x{HEIGHT}")
-        overlay.attributes("-topmost", True)
+        '''Displays a small pop-up highlighting the functionality of all buttons in the application.'''
+        popup = CTkToplevel(self)
+        popup.title("Help Guide")
+        popup.geometry("400x400")
+        popup.attributes("-topmost", True)
 
         helpText = """
         Help Guide:
@@ -67,25 +66,25 @@ class mainGUI(CTk):
         - Upload: Upload an audio file.
         - Record: Record a new audio file.
         - <<: Rewind the audio by 5 seconds.
-        - ⏯: Play/Pause the audio.
+        - ⏯: Play and Pause the audio.
         - >>: Fast forward the audio by 5 seconds.
         - Transcribe: Transcribe the audio.
         - Label Speakers: Label different speakers in the transcription.
-        - Apply Aliases: Customize speaker aliases.
+        - Apply Aliases: Customize speaker aliases to give unique names to speakers.
         - Download Audio: Download the recorded audio.
         - Export to Word: Export the transcription to a Word document.
-        - Grammar Check: Check the transcription for grammar errors.
-        - Add Morphemes: Add inflectional morphemes to the transcription.
+        - Grammar Check: Check the transcription for grammar errors. This button will only work after transcribing the audio.
+        - Add Morphemes: Add inflectional morphemes to the transcription. This button will only work after grammar checking.
         - Submit: Submit grammar corrections.
         - Clear Box?: Clear the transcription or convention box.
-        - Lock/Unlock: Lock or unlock the transcription or convention box.
+        - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
         """
 
-        helpLabel = CTkLabel(overlay, text=helpText, justify=LEFT, font=("Arial", 14))
+        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12))
         helpLabel.pack(padx=20, pady=20)
 
-        closeButton = createButton(overlay, "Close", None, None, overlay.destroy, height=40, width=100, lock=False)
-        closeButton.pack(pady=20)
+        closeButton = createButton(popup, "Close", None, None, popup.destroy, height=30, width=80, lock=False)
+        closeButton.pack(pady=10)
 
     def __init__(self):
         super().__init__()
