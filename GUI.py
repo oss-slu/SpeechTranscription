@@ -53,11 +53,14 @@ class mainGUI(CTk):
         self.tkraise(self.audioFrame)
 
     def showHelpOverlay(self):
-        '''Displays a small pop-up highlighting the functionality of all buttons in the application.'''
+        '''Displays a pop-up with all button functionalities.'''
         popup = CTkToplevel(self)
         popup.title("Help Guide")
-        popup.geometry("400x400")
+
+        # Adjust window size to fit all text
+        popup.geometry("450x450")  # Adjusted to fit text better
         popup.attributes("-topmost", True)
+        popup.resizable(False, False)
 
         helpText = """
         Help Guide:
@@ -80,8 +83,9 @@ class mainGUI(CTk):
         - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
         """
 
-        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12))
-        helpLabel.pack(padx=20, pady=20)
+        # Instead of a scrollable frame, use a regular frame
+        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400)
+        helpLabel.pack(padx=10, pady=10)
 
         closeButton = createButton(popup, "Close", None, None, popup.destroy, height=30, width=80, lock=False)
         closeButton.pack(pady=10)
