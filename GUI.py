@@ -52,6 +52,44 @@ class mainGUI(CTk):
             else: button.configure(fg_color="#0062B1")
         self.tkraise(self.audioFrame)
 
+    def showHelpOverlay(self):
+        '''Displays a pop-up with all button functionalities.'''
+        popup = CTkToplevel(self)
+        popup.title("Help Guide")
+
+        # Adjust window size to fit all text
+        popup.geometry("450x450")  # Adjusted to fit text better
+        popup.attributes("-topmost", True)
+        popup.resizable(False, False)
+
+        helpText = """
+        Help Guide:
+        
+        - New Audio: Create a new audio session.
+        - Upload: Upload an audio file.
+        - Record: Record a new audio file.
+        - <<: Rewind the audio by 5 seconds.
+        - ⏯: Play and Pause the audio.
+        - >>: Fast forward the audio by 5 seconds.
+        - Transcribe: Transcribe the audio.
+        - Label Speakers: Label different speakers in the transcription.
+        - Apply Aliases: Customize speaker aliases to give unique names to speakers.
+        - Download Audio: Download the recorded audio.
+        - Export to Word: Export the transcription to a Word document.
+        - Grammar Check: Check the transcription for grammar errors. This button will only work after transcribing the audio.
+        - Add Morphemes: Add inflectional morphemes to the transcription. This button will only work after grammar checking.
+        - Submit: Submit grammar corrections.
+        - Clear Box?: Clear the transcription or convention box.
+        - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
+        """
+
+        # Instead of a scrollable frame, use a regular frame
+        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400)
+        helpLabel.pack(padx=10, pady=10)
+
+        closeButton = createButton(popup, "Close", None, None, popup.destroy, height=30, width=80, lock=False)
+        closeButton.pack(pady=10)
+
     def __init__(self):
         super().__init__()
 
@@ -82,7 +120,11 @@ class mainGUI(CTk):
         self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, height=60, columnspan=2, lock=False)
 
         self.audioFrame = CTkFrame(self)
-
+        
+        # Add Help Button
+        self.helpButton = createButton(self, "Help", None, None, self.showHelpOverlay, height=30, width=80, lock=False)
+        self.helpButton.place(relx=0, rely=1, anchor=SW, x=10, y=-10)  # Position at bottom left corner
+        
         self.mainloop()
 
 class userMenu(CTkFrame):
