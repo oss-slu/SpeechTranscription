@@ -115,6 +115,21 @@ class audioMenu(CTkFrame):
         super().__init__(master)
         self.configure(width=WIDTH * .8)
         self.configure(height=HEIGHT)
+
+         # Define speaker colors (contrast for readability)     
+        self.SPEAKER_COLORS = {
+            "Speaker 1": "#FF5733",  # Bright Red-Orange
+            "Speaker 2": "#3498DB"   # Deep Blue
+        }
+
+         # Transcription Box
+        self.transcriptionBox = CTkTextbox(self, width=700, height=400, wrap="word")
+        self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+        
+        # Transcribe Button
+        self.transcribeButton = CTkButton(self, text="Transcribe", command=self.transcriptionThread)
+        self.transcribeButton.grid(row=2, column=0, columnspan=3, pady=10)
+
         
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
@@ -219,6 +234,51 @@ class audioMenu(CTkFrame):
 
         self.lock = threading.Lock()
 
+    def display_transcription(self, transcription):
+        """Displays transcription with assigned colors."""
+        self.transcriptionBox.configure(state="normal")
+        self.transcriptionBox.delete("1.0", "end")  # Clear previous text
+        
+        for segment in transcription:
+            speaker = segment['speaker']
+            text = segment['text']
+            color = self.SPEAKER_COLORS.get(speaker, "#FFFFFF")  # Default to white
+            
+            self.transcriptionBox.insert("end", f"{speaker}: {text}\n", (speaker,))
+            self.transcriptionBox.tag_config(speaker, foreground=color)
+        
+        self.transcriptionBox.configure(state="disabled")
+
+    def transcribe(self):
+        """Fetches transcription and applies formatting."""
+        self.startProgressBar()
+        filename = self.audio.normalizeUploadedFile()        
+        transcribedAudio = diarizationAndTranscription.transcribe(filename)
+
+        formatted_transcription = self.format_transcription(transcribedAudio)
+        self.display_transcription(formatted_transcription)
+
+        unlockItem(self.labelSpeakersButton)
+        unlockItem(self.grammarButton)
+        unlockItem(self.exportButton)
+        self.stopProgressBar()
+        
+    def format_transcription(self, text):
+        """Simulate speaker diarization by splitting text into segments."""
+        segments = text.split("\n")
+        formatted_segments = []
+        
+        for i, segment in enumerate(segments):
+            speaker = "Speaker 1" if i % 2 == 0 else "Speaker 2"  # Simulated alternating speakers
+            formatted_segments.append({"speaker": speaker, "text": segment})
+        
+        return formatted_segments
+
+    def transcriptionThread(self):
+        """Creates a thread that executes the transcribe function."""
+        threading.Thread(target=self.transcribe).start()
+
+        
     def togglePlayPause(self):
         '''Toggles between play and pause states.'''
         if self.is_playing and not self.is_paused:
@@ -639,3 +699,4 @@ if __name__ == "__main__":
 #         if not self.examinerLocked:
 #             for item in [self.exNameBox, self.dosBox, self.contextBox]:
 #                 item.delete("0.0", "end")
+
