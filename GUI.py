@@ -280,7 +280,7 @@ class audioMenu(CTkFrame):
 
     def transcriptionThread(self):
        """Creates a thread that executes the transcribe function."""
-    threading.Thread(target=self.transcribe).start()
+    threading.Thread(target= self.transcribeButton).start()
 
         
     def togglePlayPause(self):
