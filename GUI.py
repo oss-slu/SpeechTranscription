@@ -15,9 +15,16 @@ import traceback
 WIDTH = 1340
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
-LOCK_ICON = customtkinter.CTkImage(Image.open("images/locked_icon.png"), Image.open("images/locked_icon.png"), (30, 30))
-UNLOCK_ICON = customtkinter.CTkImage(Image.open("images/unlocked_icon.png"), Image.open("images/unlocked_icon.png"), (30, 30))
-CLEAR_ICON = customtkinter.CTkImage(Image.open("images/clear_icon.png"), Image.open("images/clear_icon.png"), (30, 30))
+
+def scale_image(image_path, size=(30, 30)):
+    #Makes sure resize the image
+    image = Image.open(image_path)
+    image = image.resize(size)
+    return customtkinter.CTkImage(light_image=image, dark_image=image, size=size)
+
+LOCK_ICON = scale_image("images/locked_icon.png", size=(30, 30))
+UNLOCK_ICON = scale_image("images/unlocked_icon.png", size =(30, 30))
+CLEAR_ICON = scale_image("images/clear_icon.png", size = (30, 30))
 
 # Global error handler
 def global_error_handler(func):
@@ -95,6 +102,44 @@ class mainGUI(CTk):
         self.tkraise(self.audioFrame)
 
     @global_error_handler
+    def showHelpOverlay(self):
+        '''Displays a pop-up with all button functionalities.'''
+        popup = CTkToplevel(self)
+        popup.title("Help Guide")
+
+        # Adjust window size to fit all text
+        popup.geometry("450x450")  # Adjusted to fit text better
+        popup.attributes("-topmost", True)
+        popup.resizable(False, False)
+
+        helpText = """
+        Help Guide:
+        
+        - New Audio: Create a new audio session.
+        - Upload: Upload an audio file.
+        - Record: Record a new audio file.
+        - <<: Rewind the audio by 5 seconds.
+        - ⏯: Play and Pause the audio.
+        - >>: Fast forward the audio by 5 seconds.
+        - Transcribe: Transcribe the audio.
+        - Label Speakers: Label different speakers in the transcription.
+        - Apply Aliases: Customize speaker aliases to give unique names to speakers.
+        - Download Audio: Download the recorded audio.
+        - Export to Word: Export the transcription to a Word document.
+        - Grammar Check: Check the transcription for grammar errors. This button will only work after transcribing the audio.
+        - Add Morphemes: Add inflectional morphemes to the transcription. This button will only work after grammar checking.
+        - Submit: Submit grammar corrections.
+        - Clear Box?: Clear the transcription or convention box.
+        - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
+        """
+
+        # Instead of a scrollable frame, use a regular frame
+        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400)
+        helpLabel.pack(padx=10, pady=10)
+
+        closeButton = createButton(popup, "Close", None, None, popup.destroy, height=30, width=80, lock=False)
+        closeButton.pack(pady=10)
+
     def __init__(self):
         super().__init__()
 
@@ -126,7 +171,11 @@ class mainGUI(CTk):
                                            lock=False)
 
         self.audioFrame = CTkFrame(self)
-
+        
+        # Add Help Button
+        self.helpButton = createButton(self, "Help", None, None, self.showHelpOverlay, height=30, width=80, lock=False)
+        self.helpButton.place(relx=0, rely=1, anchor=SW, x=10, y=-10)  # Position at bottom left corner
+        
         self.mainloop()
 
 class userMenu(CTkFrame):
@@ -219,18 +268,14 @@ class audioMenu(CTkFrame):
 
         # Transcription Box Control and Frame
         self.transcriptionBoxFrame = CTkFrame(self)
-        self.transcriptionBoxFrame.grid(row=0, column=2, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N + E + S + W)
-        self.transcriptionBoxLabel = CTkLabel(self.transcriptionBoxFrame, height=10, text="Transcription Box",
-                                              font=("Arial", 18))
+
+        self.transcriptionBoxFrame.grid(row=0, column=2, rowspan=5, columnspan=2,  padx=10, pady=10,sticky=N+E+S+W)
+        self.transcriptionBoxLabel = CTkLabel(self.transcriptionBoxFrame, height=10, text="Transcription Box", font=("Arial", 18))
         self.transcriptionBoxLabel.grid(row=0, column=0, padx=5)
-        self.transcriptionBoxLockButton = createButton(master=self.transcriptionBoxFrame, text='', row=0, column=1,
-                                                       command=self.toggleTranscriptionBox, height=10, width=10,
-                                                       lock=False)
-        self.transcriptionBoxLockButton.configure(image=LOCK_ICON)
-        self.transcriptionBoxClearButton = createButton(master=self.transcriptionBoxFrame, text='Clear Box?', row=0,
-                                                        column=2, command=self.clearTranscriptionBox, height=10, width=10,
-                                                        lock=False)
-        self.transcriptionBoxClearButton.configure(image=CLEAR_ICON)
+        self.transcriptionBoxLockButton = createButton(master=self.transcriptionBoxFrame, text='', row=0, column=1, command=self.toggleTranscriptionBox, height =10, width=10, lock=False)
+        self.transcriptionBoxLockButton.configure(image=LOCK_ICON, width=30, height=30)
+        self.transcriptionBoxClearButton = createButton(master=self.transcriptionBoxFrame, text='Clear Box?', row=0, column=2, command=self.clearTranscriptionBox, height=10, width=10, lock=False)
+
 
         self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
         self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N + E + S + W)
@@ -242,12 +287,11 @@ class audioMenu(CTkFrame):
         self.conventionBoxFrame.grid(row=0, column=4, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N + E + S + W)
         self.conventionBoxLabel = CTkLabel(self.conventionBoxFrame, height=10, text="Convention Box", font=("Arial", 18))
         self.conventionBoxLabel.grid(row=0, column=0, padx=5)
-        self.conventionBoxLockButton = createButton(master=self.conventionBoxFrame, text='', row=0, column=1,
-                                                    command=self.toggleGrammarBox, height=10, width=10, lock=False)
-        self.conventionBoxLockButton.configure(image=LOCK_ICON)
-        self.conventionBoxClearButton = createButton(master=self.conventionBoxFrame, text='Clear Box?', row=0, column=2,
-                                                     command=self.clearGrammarBox, height=10, width=10, lock=False)
-        self.conventionBoxClearButton.configure(image=CLEAR_ICON)
+
+        self.conventionBoxLockButton = createButton(master=self.conventionBoxFrame, text='', row=0, column=1, command=self.toggleGrammarBox, height=10, width=10, lock=False)
+        self.conventionBoxLockButton.configure(image=LOCK_ICON, width=30, height=30)
+        self.conventionBoxClearButton = createButton(master=self.conventionBoxFrame, text='Clear Box?', row=0, column=2, command=self.clearGrammarBox,height=10, width=10, lock=False)
+        self.conventionBoxClearButton.configure(image=CLEAR_ICON, width=30, height=30)
 
         self.conventionBox = CTkTextbox(self.conventionBoxFrame, width=350, height=500)
         self.conventionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N + E + S + W)
