@@ -275,7 +275,7 @@ class audioMenu(CTkFrame):
         self.transcriptionBoxLockButton = createButton(master=self.transcriptionBoxFrame, text='', row=0, column=1, command=self.toggleTranscriptionBox, height =10, width=10, lock=False)
         self.transcriptionBoxLockButton.configure(image=LOCK_ICON, width=30, height=30)
         self.transcriptionBoxClearButton = createButton(master=self.transcriptionBoxFrame, text='Clear Box?', row=0, column=2, command=self.clearTranscriptionBox, height=10, width=10, lock=False)
-
+        self.transcriptionBoxClearButton.configure(image=CLEAR_ICON, width=30, height=30)
 
         self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
         self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N + E + S + W)
