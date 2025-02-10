@@ -14,9 +14,16 @@ import time
 WIDTH = 1340
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
-LOCK_ICON = customtkinter.CTkImage(Image.open("images/locked_icon.png"), Image.open("images/locked_icon.png"), (30, 30))
-UNLOCK_ICON = customtkinter.CTkImage(Image.open("images/unlocked_icon.png"), Image.open("images/unlocked_icon.png"), (30, 30))
-CLEAR_ICON = customtkinter.CTkImage(Image.open("images/clear_icon.png"), Image.open("images/clear_icon.png"), (30, 30))
+
+def scale_image(image_path, size=(30, 30)):
+    #Makes sure resize the image
+    image = Image.open(image_path)
+    image = image.resize(size)
+    return customtkinter.CTkImage(light_image=image, dark_image=image, size=size)
+
+LOCK_ICON = scale_image("images/locked_icon.png", size=(30, 30))
+UNLOCK_ICON = scale_image("images/unlocked_icon.png", size =(30, 30))
+CLEAR_ICON = scale_image("images/clear_icon.png", size = (30, 30))
 
 def plotAudio(time, signal):
     '''Plots the waveform of audio'''
@@ -219,13 +226,13 @@ class audioMenu(CTkFrame):
 
         # Transcription Box Control and Frame
         self.transcriptionBoxFrame = CTkFrame(self)
-        self.transcriptionBoxFrame.grid(row=0, column=2, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
+        self.transcriptionBoxFrame.grid(row=0, column=2, rowspan=5, columnspan=2,  padx=10, pady=10,sticky=N+E+S+W)
         self.transcriptionBoxLabel = CTkLabel(self.transcriptionBoxFrame, height=10, text="Transcription Box", font=("Arial", 18))
         self.transcriptionBoxLabel.grid(row=0, column=0, padx=5)
-        self.transcriptionBoxLockButton = createButton(master=self.transcriptionBoxFrame, text='', row=0, column=1, command=self.toggleTranscriptionBox, height=10, width=10, lock=False)
-        self.transcriptionBoxLockButton.configure(image=LOCK_ICON)
+        self.transcriptionBoxLockButton = createButton(master=self.transcriptionBoxFrame, text='', row=0, column=1, command=self.toggleTranscriptionBox, height =10, width=10, lock=False)
+        self.transcriptionBoxLockButton.configure(image=LOCK_ICON, width=30, height=30)
         self.transcriptionBoxClearButton = createButton(master=self.transcriptionBoxFrame, text='Clear Box?', row=0, column=2, command=self.clearTranscriptionBox, height=10, width=10, lock=False)
-        self.transcriptionBoxClearButton.configure(image=CLEAR_ICON)
+        self.transcriptionBoxClearButton.configure(image=CLEAR_ICON, width=30, height=30)
 
         self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
         self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N+E+S+W)
@@ -238,9 +245,9 @@ class audioMenu(CTkFrame):
         self.conventionBoxLabel = CTkLabel(self.conventionBoxFrame, height=10, text="Convention Box",  font=("Arial", 18))
         self.conventionBoxLabel.grid(row=0, column=0, padx=5)
         self.conventionBoxLockButton = createButton(master=self.conventionBoxFrame, text='', row=0, column=1, command=self.toggleGrammarBox, height=10, width=10, lock=False)
-        self.conventionBoxLockButton.configure(image=LOCK_ICON)
+        self.conventionBoxLockButton.configure(image=LOCK_ICON, width=30, height=30)
         self.conventionBoxClearButton = createButton(master=self.conventionBoxFrame, text='Clear Box?', row=0, column=2, command=self.clearGrammarBox,height=10, width=10, lock=False)
-        self.conventionBoxClearButton.configure(image=CLEAR_ICON)
+        self.conventionBoxClearButton.configure(image=CLEAR_ICON, width=30, height=30)
 
 
         self.conventionBox = CTkTextbox(self.conventionBoxFrame, width=350, height=500)
