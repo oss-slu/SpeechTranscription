@@ -123,12 +123,12 @@ class audioMenu(CTkFrame):
         }
 
          # Transcription Box
-        self.transcriptionBox = CTkTextbox(self, width=700, height=400, wrap="word")
-        self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+         # self.transcriptionBox = CTkTextbox(self, width=700, height=400, wrap="word")
+         # self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
         
         # Transcribe Button
-        self.transcribeButton = CTkButton(self, text="Transcribe", command=self.transcriptionThread)
-        self.transcribeButton.grid(row=2, column=0, columnspan=3, pady=10)
+        # self.transcribeButton = CTkButton(self, text="Transcribe", command=self.transcriptionThread)
+        # self.transcribeButton.grid(row=2, column=0, columnspan=3, pady=10)
 
         
         self.audio = AudioManager(master)
@@ -170,6 +170,7 @@ class audioMenu(CTkFrame):
         
         # ROW 2+3: Transcribe (and progress bar)
         self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125, font=("Arial", 40))
+
 
         # ROW 4: Labelling Transcription buttons
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True) # For speaker labeling
