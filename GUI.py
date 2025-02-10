@@ -250,19 +250,19 @@ class audioMenu(CTkFrame):
         
         self.transcriptionBox.configure(state="disabled")
 
-    def transcribe(self):
-        """Fetches transcription and applies formatting."""
-        self.startProgressBar()
-        filename = self.audio.normalizeUploadedFile()        
-        transcribedAudio = diarizationAndTranscription.transcribe(filename)
+    # def transcribe(self):
+        #"""Fetches transcription and applies formatting."""
+        # self.startProgressBar()
+        # filename = self.audio.normalizeUploadedFile()        
+        # transcribedAudio = diarizationAndTranscription.transcribe(filename)
 
-        formatted_transcription = self.format_transcription(transcribedAudio)
-        self.display_transcription(formatted_transcription)
+        # formatted_transcription = self.format_transcription(transcribedAudio)
+        #self.display_transcription(formatted_transcription)
 
-        unlockItem(self.labelSpeakersButton)
-        unlockItem(self.grammarButton)
-        unlockItem(self.exportButton)
-        self.stopProgressBar()
+        # unlockItem(self.labelSpeakersButton)
+        # unlockItem(self.grammarButton)
+        # unlockItem(self.exportButton)
+        # self.stopProgressBar()
         
     def format_transcription(self, text):
         """Simulate speaker diarization by splitting text into segments."""
@@ -275,9 +275,9 @@ class audioMenu(CTkFrame):
         
         return formatted_segments
 
-    def transcriptionThread(self):
-        """Creates a thread that executes the transcribe function."""
-        threading.Thread(target=self.transcribe).start()
+    # def transcriptionThread(self):
+       # """Creates a thread that executes the transcribe function."""
+        # threading.Thread(target=self.transcribe).start()
 
         
     def togglePlayPause(self):
