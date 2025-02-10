@@ -3,8 +3,3 @@
 [submodule "CTkXYFrame"]
     path = CTkXYFrame
     url = https://github.com/Akascape/CTkXYFrame.git
-
-[submodule "SpeechTranscription"]
-    path = SpeechTranscription
-    url = https://github.com/oss-slu/SpeechTranscription.git
-
