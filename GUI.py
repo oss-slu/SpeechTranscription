@@ -116,7 +116,6 @@ class audioMenu(CTkFrame):
         self.configure(width=WIDTH * .8)
         self.configure(height=HEIGHT)
 
-         # Define speaker colors (contrast for readability)     
         self.SPEAKER_COLORS = {
             "Speaker 1": "#FF5733",  # Bright Red-Orange
             "Speaker 2": "#3498DB"   # Deep Blue
@@ -235,34 +234,38 @@ class audioMenu(CTkFrame):
 
         self.lock = threading.Lock()
 
+
     def display_transcription(self, transcription):
         """Displays transcription with assigned colors."""
         self.transcriptionBox.configure(state="normal")
         self.transcriptionBox.delete("1.0", "end")  # Clear previous text
-        
+    
         for segment in transcription:
             speaker = segment['speaker']
             text = segment['text']
-            color = self.SPEAKER_COLORS.get(speaker, "#FFFFFF")  # Default to white
-            
-            self.transcriptionBox.insert("end", f"{speaker}: {text}\n", (speaker,))
+            color = self.SPEAKER_COLORS.get(speaker, "#000000")  # Default to black
+
+        # Apply color tag before inserting text
+        if not self.transcriptionBox.tag_names():
             self.transcriptionBox.tag_config(speaker, foreground=color)
-        
+
+            self.transcriptionBox.insert("end", f"{speaker}: {text}\n", speaker)
+
         self.transcriptionBox.configure(state="disabled")
 
-    # def transcribe(self):
-        #"""Fetches transcription and applies formatting."""
-        # self.startProgressBar()
-        # filename = self.audio.normalizeUploadedFile()        
-        # transcribedAudio = diarizationAndTranscription.transcribe(filename)
+    def transcribe(self):
+        """Fetches transcription and applies formatting."""
+        self.startProgressBar()
+        filename = self.audio.normalizeUploadedFile()        
+        transcribedAudio = diarizationAndTranscription.transcribe(filename)
 
-        # formatted_transcription = self.format_transcription(transcribedAudio)
-        #self.display_transcription(formatted_transcription)
+        formatted_transcription = self.format_transcription(transcribedAudio)
+        self.display_transcription(formatted_transcription)
 
-        # unlockItem(self.labelSpeakersButton)
-        # unlockItem(self.grammarButton)
-        # unlockItem(self.exportButton)
-        # self.stopProgressBar()
+        unlockItem(self.labelSpeakersButton)
+        unlockItem(self.grammarButton)
+        unlockItem(self.exportButton)
+        self.stopProgressBar()
         
     def format_transcription(self, text):
         """Simulate speaker diarization by splitting text into segments."""
@@ -275,9 +278,9 @@ class audioMenu(CTkFrame):
         
         return formatted_segments
 
-    # def transcriptionThread(self):
-       # """Creates a thread that executes the transcribe function."""
-        # threading.Thread(target=self.transcribe).start()
+    def transcriptionThread(self):
+       """Creates a thread that executes the transcribe function."""
+    threading.Thread(target=self.transcribe).start()
 
         
     def togglePlayPause(self):
