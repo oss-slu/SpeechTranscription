@@ -358,42 +358,7 @@ class audioMenu(CTkFrame):
                 self.transcriptionBox.tag_add(speaker, start_idx, end_idx)
                 start_idx = self.transcriptionBox.index(f"{start_idx} + 1 line")
 
-    def customizeSpeakerAliases(self):
-        """Allows customization of speaker aliases while keeping color coding."""
-        popup = ctk.CTkToplevel(self)
-        popup.title("Customize Speaker Aliases")
-        popup.geometry("400x200")
-
-        speaker1_alias_label = ctk.CTkLabel(popup, text="Speaker 1 Alias:")
-        speaker1_alias_label.pack(pady=(10, 0))
-        speaker1_alias_entry = ctk.CTkEntry(popup)
-        speaker1_alias_entry.pack(pady=(0, 10))
-
-        speaker2_alias_label = ctk.CTkLabel(popup, text="Speaker 2 Alias:")
-        speaker2_alias_label.pack(pady=(10, 0))
-        speaker2_alias_entry = ctk.CTkEntry(popup)
-        speaker2_alias_entry.pack(pady=(0, 20))
-
-        def applyAliases():
-            speaker1_alias = speaker1_alias_entry.get().strip()
-            speaker2_alias = speaker2_alias_entry.get().strip()
-
-            transcription_text = self.getTranscriptionText()
-            if speaker1_alias:
-                transcription_text = transcription_text.replace("Speaker 1:", f"{speaker1_alias}:")
-            if speaker2_alias:
-                transcription_text = transcription_text.replace("Speaker 2:", f"{speaker2_alias}:")
-
-            self.transcriptionBox.delete("0.0", "end")
-            self.transcriptionBox.insert("0.0", transcription_text)
-            self.color_code_transcription()
-            popup.destroy()
-
-        apply_button = ctk.CTkButton(popup, text="Apply Aliases", command=applyAliases)
-        apply_button.pack(pady=10)
-
-# Call color_code_transcription() after labeling speakers or applying aliases
-
+    
 
     @global_error_handler
     def togglePlayPause(self):
