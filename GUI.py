@@ -205,6 +205,7 @@ class userMenu(CTkFrame):
         file.write(theme.lower())
         file.close()
 
+
 # Define speaker colors (modify as needed for light/dark theme compatibility)
 SPEAKER_COLORS = {
     "Speaker 1": "#029CFF",  # Light Blue
@@ -223,8 +224,6 @@ class audioMenu(CTkFrame):
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
 
-
-    
 
         # ROW 0: Frame for Audio Upload/Record buttons
         self.audioInputFrame = CTkFrame(self, height=80)
@@ -359,6 +358,7 @@ class audioMenu(CTkFrame):
                 start_idx = self.transcriptionBox.index(f"{start_idx} + 1 line")
 
     
+
 
     @global_error_handler
     def togglePlayPause(self):
