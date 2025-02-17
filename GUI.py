@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import time
 import webbrowser
 import traceback
+import re
 
 WIDTH = 1340
 HEIGHT = 740
@@ -551,9 +552,15 @@ class audioMenu(CTkFrame):
                                                 initialfile=self.exporter.getDefaultFilename() + ".docx")
         if downloadFile:
             text = self.getTranscriptionText()
+            
+            text_without_timestamps = re.sub(r'\[\d+:\d+\] ', '', text)
+            
             if self.grammarCheckPerformed:
-                text = self.getGrammarText()
-            self.exporter.exportToWord(text, downloadFile.name)
+                grammar_text = self.getGrammarText()
+                grammar_text_without_timestamps = re.sub(r'\[\d+:\d+\] ', '', grammar_text)
+                self.exporter.exportToWord(grammar_text_without_timestamps, downloadFile.name)
+            else:
+                self.exporter.exportToWord(text_without_timestamps, downloadFile.name)
 
     @global_error_handler
     def grammarCheck(self):
