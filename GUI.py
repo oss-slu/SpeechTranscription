@@ -344,16 +344,21 @@ class audioMenu(CTkFrame):
         self.transcriptionBox.tag_config("Speaker 1", foreground=SPEAKER_COLORS["Speaker 1"])
         self.transcriptionBox.tag_config("Speaker 2", foreground=SPEAKER_COLORS["Speaker 2"])
         
+
+        # Clear existing tags before reapplying
+        self.transcriptionBox.tag_remove("Speaker 1", "1.0", "end")
+        self.transcriptionBox.tag_remove("Speaker 2", "1.0", "end")
+
         transcription_text = self.getTranscriptionText()
         self.transcriptionBox.mark_set("range_start", "1.0")
         
         for speaker in SPEAKER_COLORS.keys():
             start_idx = "1.0"
             while True:
-                start_idx = self.transcriptionBox.search(f"{speaker}:", start_idx, stopindex="end", nocase=True)
+                start_idx = self.transcriptionBox.search(f"{speaker}:", start_idx, stopindex="end", exact=True, nocase=False)
                 if not start_idx:
                     break
-                end_idx = f"{start_idx} lineend"
+                end_idx = self.transcriptionBox.index(f"{start_idx} lineend")
                 self.transcriptionBox.tag_add(speaker, start_idx, end_idx)
                 start_idx = self.transcriptionBox.index(f"{start_idx} + 1 line")
 
@@ -488,11 +493,14 @@ class audioMenu(CTkFrame):
             new_transcription_text = "\n".join(current_segments)
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", new_transcription_text)
+
+            self.color_code_transcription()
+            
             unlockItem(self.applyAliasesButton)
 
         # Buttons for applying speaker labels
-        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
-        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
+        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1"), fg_color=SPEAKER_COLORS["Speaker 1"], text_color="white").pack(side='left', padx=10, pady=10)
+        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2"), fg_color=SPEAKER_COLORS["Speaker 2"], text_color="white").pack(side='right', padx=10, pady=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
