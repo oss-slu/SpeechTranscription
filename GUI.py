@@ -266,6 +266,11 @@ class audioMenu(CTkFrame):
         self.correctionEntryBox.grid(row=5, column=4, padx=10, sticky=E + W)
         lockItem(self.correctionEntryBox)
 
+        # ROW 6 Timeline Slider (Audio Scrubbing)
+        self.timelineSlider = CTkSlider(self, from_=0, to=100, command=self.scrubAudio)
+        self.timelineSlider.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+
+
         # Transcription Box Control and Frame
         self.transcriptionBoxFrame = CTkFrame(self)
 
@@ -328,6 +333,12 @@ class audioMenu(CTkFrame):
             self.is_paused = False
             self.current_position = 0
             self.audio_length = self.audio.getAudioDuration(self.audio.filePath)  # Get the length of the audio
+            
+            if self.audio_length > 0:
+                self.timelineSlider.configure(to=self.audio_length)  # Set the slider max value
+            else:
+                print("Error: Audio length is 0, cannot configure timeline slider.")
+
             threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()  # Play in a thread
             self.updatePlayback()  # Start updating playback position
         elif self.is_paused:
@@ -370,6 +381,7 @@ class audioMenu(CTkFrame):
         with self.lock:
             if self.is_playing and not self.is_paused:
                 self.current_position += 0.3  # Incrementing playback position
+                self.timelineSlider.set(self.current_position)  # Update the slider
             if self.is_playing:  # Continue updating
                 self.master.after(300, self.updatePlayback)
 
