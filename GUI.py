@@ -211,6 +211,7 @@ SPEAKER_COLORS = {
     "Speaker 2": "#FF5733"   # Light Red
 }
 
+
 # Apply global error handler to all methods in the audioMenu class
 class audioMenu(CTkFrame):
     @global_error_handler
@@ -222,9 +223,6 @@ class audioMenu(CTkFrame):
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
-
-
-    
 
         # ROW 0: Frame for Audio Upload/Record buttons
         self.audioInputFrame = CTkFrame(self, height=80)
@@ -539,6 +537,7 @@ class audioMenu(CTkFrame):
         apply_button.pack(pady=10)
 
 # Call color_code_transcription() after labeling speakers or applying aliases
+
 
     @global_error_handler
     def uploadAudio(self):
