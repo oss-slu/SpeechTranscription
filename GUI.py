@@ -269,7 +269,7 @@ class audioMenu(CTkFrame):
         # ROW 6 Timeline Slider (Audio Scrubbing)
         self.timelineSlider = CTkSlider(self, from_=0, to=100, command=self.scrubAudio)
         self.timelineSlider.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
-
+        self.timelineSlider.configure(state="disabled")
 
         # Transcription Box Control and Frame
         self.transcriptionBoxFrame = CTkFrame(self)
@@ -326,33 +326,24 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def playAudio(self):
-        '''Initiates audio playback in a separate thread, resetting the position if not already playing and allowing for resumption if paused.'''
+        '''Starts or resumes audio playback from the current position.'''
         if not self.is_playing:
-            print("Starting audio playback...")
+            print(f"Starting playback from {round(self.current_position, 2)} seconds...")
             self.is_playing = True
             self.is_paused = False
-            self.current_position = 0
-            self.audio_length = self.audio.getAudioDuration(self.audio.filePath)  # Get the length of the audio
+            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()
+            self.updatePlayback()
             
-            if self.audio_length > 0:
-                self.timelineSlider.configure(to=self.audio_length)  # Set the slider max value
-            else:
-                print("Error: Audio length is 0, cannot configure timeline slider.")
-
-            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()  # Play in a thread
-            self.updatePlayback()  # Start updating playback position
-        elif self.is_paused:
-            print("Resuming audio...")
-            self.is_paused = False
-            self.audio.paused = False
-
     @global_error_handler
     def pauseAudio(self):
-        '''Pauses the currently playing audio and updates the button states accordingly.'''
+        '''Pauses the currently playing audio.'''
         if self.is_playing and not self.is_paused:
             print("Pausing audio...")
+            self.audio.pause()
+            self.is_playing = False
             self.is_paused = True
-            self.audio.paused = True
+
+
 
     @global_error_handler
     def forwardAudio(self):
@@ -377,13 +368,14 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def updatePlayback(self):
-        '''Continuously updates the playback position every 300 milliseconds if audio is playing and not paused.'''
-        with self.lock:
-            if self.is_playing and not self.is_paused:
-                self.current_position += 0.3  # Incrementing playback position
-                self.timelineSlider.set(self.current_position)  # Update the slider
-            if self.is_playing:  # Continue updating
-                self.master.after(300, self.updatePlayback)
+        '''Continuously updates playback position.'''
+        if self.is_playing and not self.is_paused:
+            self.current_position += 0.3
+            self.timelineSlider.set(self.current_position)
+
+        if self.is_playing:
+            self.master.after(300, self.updatePlayback)
+
 
     @global_error_handler
     def updateButtons(self):
@@ -395,12 +387,34 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def scrubAudio(self, value):
-        '''Allows users to scrub through the audio by clicking and dragging the playhead along the timeline.'''
-        self.current_position = float(value)
-        self.audio.setPlaybackPosition(self.current_position)  # Set the audio playback position
-        if not self.is_paused:
-            self.audio.play(self.current_position)  # Play from the new position
+        '''Scrubs audio by pausing, seeking, and preparing for smooth playback.'''
+        if not self.audio or not self.audio.filePath:
+            print("Error: Please upload an audio file before using the timeline.")
+            self.timelineSlider.set(0)
+            return
 
+        # Pause while scrubbing
+        if self.is_playing:
+            self.audio.pause()  # Pause playback
+            print("Audio paused for scrubbing.")
+
+        # Update playback position
+        self.current_position = float(value)
+        print(f"Scrubbed to {round(self.current_position, 2)} seconds.")
+        self.audio.setPlaybackPosition(self.current_position)
+
+
+    def applyScrub(self):
+        '''Applies scrub position and resumes playback if needed.'''
+        if self.audio and self.audio.filePath:
+            # Set playback position
+            self.audio.setPlaybackPosition(self.current_position)
+            print(f"Seeked to {round(self.current_position, 2)} seconds.")
+
+            # Resume playback if it was playing before scrubbing
+            if not self.is_paused:
+                self.playAudio()
+       
     @global_error_handler
     def startProgressBar(self):
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
@@ -508,6 +522,10 @@ class audioMenu(CTkFrame):
             time, signal = self.audio.upload(filename)
             plotAudio(time, signal)
             self.audioLength = self.audio.getAudioDuration(filename)
+            if self.audio and self.audio.filePath:
+                self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
+                print(f"Slider enabled with range: 0 to {self.audioLength} seconds.")
+
 
     @global_error_handler
     def recordAudio(self):
