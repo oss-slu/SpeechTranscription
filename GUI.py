@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import time
 import webbrowser
 import traceback
+import customtkinter as ctk
+
 
 WIDTH = 1340
 HEIGHT = 740
@@ -203,6 +205,13 @@ class userMenu(CTkFrame):
         file.write(theme.lower())
         file.close()
 
+
+# Define speaker colors (modify as needed for light/dark theme compatibility)
+SPEAKER_COLORS = {
+    "Speaker 1": "#029CFF",  # Light Blue
+    "Speaker 2": "#FF5733"   # Light Red
+}
+
 # Apply global error handler to all methods in the audioMenu class
 class audioMenu(CTkFrame):
     @global_error_handler
@@ -214,6 +223,8 @@ class audioMenu(CTkFrame):
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
+        
+
 
         # ROW 0: Frame for Audio Upload/Record buttons
         self.audioInputFrame = CTkFrame(self, height=80)
@@ -253,6 +264,8 @@ class audioMenu(CTkFrame):
         # ROW 4: Labelling Transcription buttons
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True)  # For speaker labeling
         self.applyAliasesButton = createButton(self, "Apply Aliases", 4, 1, self.customizeSpeakerAliases)  # For more specific labeling
+
+        self.speaker_aliases = {"Speaker 1": "Speaker 1", "Speaker 2": "Speaker 2"} 
 
         # ROW 5: Export, Grammar, and correction boxes.
         self.downloadAudioButton = createButton(self, "Download Audio", 5, 0, self.downloadRecordedAudio)
@@ -310,6 +323,63 @@ class audioMenu(CTkFrame):
         self.last_scrub_time = 0  # For debouncing scrubbing events
 
         self.lock = threading.Lock()
+
+    def apply_labels(self, speaker):
+        """Applies speaker labels with color coding."""
+        current_text = self.getTranscriptionText()
+        current_segments = current_text.split('\n')
+        
+        for var, idx in self.segment_selections:
+            if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
+                current_segments[idx] = f"{speaker}: {current_segments[idx]}"
+                var.set(0)  # Reset checkbox
+
+        new_transcription_text = "\n".join(current_segments)
+        self.transcriptionBox.delete("0.0", "end")
+        
+        # Apply color formatting
+        self.transcriptionBox.insert("0.0", new_transcription_text)
+        self.color_code_transcription()
+        unlockItem(self.applyAliasesButton)
+
+    def color_code_transcription(self):
+        """Applies color to different speakers' transcriptions."""
+        self.transcriptionBox.tag_config("Speaker 1", foreground=SPEAKER_COLORS["Speaker 1"])
+        self.transcriptionBox.tag_config("Speaker 2", foreground=SPEAKER_COLORS["Speaker 2"])
+
+        for speaker, alias in self.speaker_aliases.items():
+            self.transcriptionBox.tag_config(alias, foreground=SPEAKER_COLORS[speaker])
+        
+
+        # Clear existing tags before reapplying
+        self.transcriptionBox.tag_remove("Speaker 1", "1.0", "end")
+        self.transcriptionBox.tag_remove("Speaker 2", "1.0", "end")
+
+        for speaker, alias in self.speaker_aliases.items():
+            start_idx = "1.0"
+            while True:
+                start_idx = self.transcriptionBox.search(f"{alias}:", start_idx, stopindex="end", exact=True, nocase=False)
+                if not start_idx:
+                    break
+                end_idx = self.transcriptionBox.index(f"{start_idx} lineend")
+                self.transcriptionBox.tag_add(alias, start_idx, end_idx)
+                start_idx = self.transcriptionBox.index(f"{start_idx} + 1 line")
+
+        transcription_text = self.getTranscriptionText()
+        self.transcriptionBox.mark_set("range_start", "1.0")
+        
+        for speaker in SPEAKER_COLORS.keys():
+            start_idx = "1.0"
+            while True:
+                start_idx = self.transcriptionBox.search(f"{speaker}:", start_idx, stopindex="end", exact=True, nocase=False)
+                if not start_idx:
+                    break
+                end_idx = self.transcriptionBox.index(f"{start_idx} lineend")
+                self.transcriptionBox.tag_add(speaker, start_idx, end_idx)
+                start_idx = self.transcriptionBox.index(f"{start_idx} + 1 line")
+
+    
+
 
     @global_error_handler
     def togglePlayPause(self):
@@ -439,11 +509,14 @@ class audioMenu(CTkFrame):
             new_transcription_text = "\n".join(current_segments)
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", new_transcription_text)
+
+            self.color_code_transcription()
+            
             unlockItem(self.applyAliasesButton)
 
         # Buttons for applying speaker labels
-        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
-        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
+        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1"), fg_color=SPEAKER_COLORS["Speaker 1"], text_color="white").pack(side='left', padx=10, pady=10)
+        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2"), fg_color=SPEAKER_COLORS["Speaker 2"], text_color="white").pack(side='right', padx=10, pady=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
@@ -468,15 +541,20 @@ class audioMenu(CTkFrame):
             speaker2_alias = speaker2_alias_entry.get().strip()
 
             # Fetch the current state of the transcription text
-            transcription_text = self.getTranscriptionText()
+            
             if speaker1_alias:
-                transcription_text = transcription_text.replace("Speaker 1:", f"{speaker1_alias}:")
+                self.speaker_aliases["Speaker 1"] = speaker1_alias
             if speaker2_alias:
-                transcription_text = transcription_text.replace("Speaker 2:", f"{speaker2_alias}:")
+                self.speaker_aliases["Speaker 2"] = speaker2_alias
+
+            transcription_text = self.getTranscriptionText()
+            for speaker, alias in self.speaker_aliases.items():
+                transcription_text = transcription_text.replace(f"{speaker}:", f"{alias}:")
 
             # Update the transcriptionBox with the new aliases
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", transcription_text)
+            self.color_code_transcription()
             popup.destroy()
 
         # Button to apply the custom aliases
@@ -523,6 +601,7 @@ class audioMenu(CTkFrame):
         unlockItem(self.labelSpeakersButton)
         self.transcriptionBox.delete("0.0", "end")
         self.transcriptionBox.insert("end", transcribedAudio + "\n")
+        self.color_code_transcription()
         unlockItem(self.grammarButton)
         unlockItem(self.exportButton)
         self.stopProgressBar()
@@ -567,6 +646,7 @@ class audioMenu(CTkFrame):
         self.correctionEntryBox.delete("1.0", "end")
         self.grammar.checkGrammar(self.getTranscriptionText(), False)
         self.manageGrammarCorrection()
+        self.color_code_transcription()
         self.stopProgressBar()
 
     @global_error_handler
