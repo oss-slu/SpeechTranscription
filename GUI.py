@@ -557,7 +557,6 @@ class audioMenu(CTkFrame):
             speaker2_alias = speaker2_alias_entry.get().strip()
 
             transcription_text = self.getTranscriptionText()
-=======
             # Fetch the current state of the transcription text
             
 
