@@ -17,3 +17,4 @@ pyinstaller --onefile --noconsole \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
   /Users/ksp/Desktop/temp/SpeechTranscription/GUI.py
+  
