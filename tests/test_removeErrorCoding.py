@@ -20,7 +20,7 @@ def test_five():
     assert addConventions.removeErrorCoding(x) == "He looked sad."
 def test_six():
     x = "Give it *to me."
-    assert addConventions.removeErrorCoding(x) == "Give it to me."
+    assert addConventions.removeErrorCoding(x) == "Give it to me." 
 def test_seven():
     x = "The car go/*3s fast."
     assert addConventions.removeErrorCoding(x) == "The car goes fast."
