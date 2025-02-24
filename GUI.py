@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import time
 import webbrowser
 import traceback
+import os
+import sys
 import re
 import customtkinter as ctk
 
@@ -18,15 +20,21 @@ WIDTH = 1340
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
 def scale_image(image_path, size=(30, 30)):
     #Makes sure resize the image
-    image = Image.open(image_path)
+    image = Image.open(resource_path(image_path))
     image = image.resize(size)
     return customtkinter.CTkImage(light_image=image, dark_image=image, size=size)
 
 LOCK_ICON = scale_image("images/locked_icon.png", size=(30, 30))
-UNLOCK_ICON = scale_image("images/unlocked_icon.png", size =(30, 30))
-CLEAR_ICON = scale_image("images/clear_icon.png", size = (30, 30))
+UNLOCK_ICON = scale_image("images/unlocked_icon.png", size=(30, 30))
+CLEAR_ICON = scale_image("images/clear_icon.png", size=(30, 30))
 
 # Global error handler
 def global_error_handler(func):
