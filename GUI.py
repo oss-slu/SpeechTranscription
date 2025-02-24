@@ -13,6 +13,8 @@ import webbrowser
 import traceback
 import os
 import sys
+import re
+import customtkinter as ctk
 
 WIDTH = 1340
 HEIGHT = 740
@@ -285,6 +287,11 @@ class audioMenu(CTkFrame):
         self.correctionEntryBox.grid(row=5, column=4, padx=10, sticky=E + W)
         lockItem(self.correctionEntryBox)
 
+        # ROW 6 Timeline Slider (Audio Scrubbing)
+        self.timelineSlider = CTkSlider(self, from_=0, to=100, command=self.scrubAudio)
+        self.timelineSlider.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.timelineSlider.configure(state="disabled")
+
         # Transcription Box Control and Frame
         self.transcriptionBoxFrame = CTkFrame(self)
 
@@ -397,27 +404,24 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def playAudio(self):
-        '''Initiates audio playback in a separate thread, resetting the position if not already playing and allowing for resumption if paused.'''
+        '''Starts or resumes audio playback from the current position.'''
         if not self.is_playing:
-            print("Starting audio playback...")
+            print(f"Starting playback from {round(self.current_position, 2)} seconds...")
             self.is_playing = True
             self.is_paused = False
-            self.current_position = 0
-            self.audio_length = self.audio.getAudioDuration(self.audio.filePath)  # Get the length of the audio
-            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()  # Play in a thread
-            self.updatePlayback()  # Start updating playback position
-        elif self.is_paused:
-            print("Resuming audio...")
-            self.is_paused = False
-            self.audio.paused = False
-
+            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()
+            self.updatePlayback()
+            
     @global_error_handler
     def pauseAudio(self):
-        '''Pauses the currently playing audio and updates the button states accordingly.'''
+        '''Pauses the currently playing audio.'''
         if self.is_playing and not self.is_paused:
             print("Pausing audio...")
+            self.audio.pause()
+            self.is_playing = False
             self.is_paused = True
-            self.audio.paused = True
+
+
 
     @global_error_handler
     def forwardAudio(self):
@@ -442,12 +446,14 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def updatePlayback(self):
-        '''Continuously updates the playback position every 300 milliseconds if audio is playing and not paused.'''
-        with self.lock:
-            if self.is_playing and not self.is_paused:
-                self.current_position += 0.3  # Incrementing playback position
-            if self.is_playing:  # Continue updating
-                self.master.after(300, self.updatePlayback)
+        '''Continuously updates playback position.'''
+        if self.is_playing and not self.is_paused:
+            self.current_position += 0.3
+            self.timelineSlider.set(self.current_position)
+
+        if self.is_playing:
+            self.master.after(300, self.updatePlayback)
+
 
     @global_error_handler
     def updateButtons(self):
@@ -459,12 +465,34 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def scrubAudio(self, value):
-        '''Allows users to scrub through the audio by clicking and dragging the playhead along the timeline.'''
-        self.current_position = float(value)
-        self.audio.setPlaybackPosition(self.current_position)  # Set the audio playback position
-        if not self.is_paused:
-            self.audio.play(self.current_position)  # Play from the new position
+        '''Scrubs audio by pausing, seeking, and preparing for smooth playback.'''
+        if not self.audio or not self.audio.filePath:
+            print("Error: Please upload an audio file before using the timeline.")
+            self.timelineSlider.set(0)
+            return
 
+        # Pause while scrubbing
+        if self.is_playing:
+            self.audio.pause()  # Pause playback
+            print("Audio paused for scrubbing.")
+
+        # Update playback position
+        self.current_position = float(value)
+        print(f"Scrubbed to {round(self.current_position, 2)} seconds.")
+        self.audio.setPlaybackPosition(self.current_position)
+
+
+    def applyScrub(self):
+        '''Applies scrub position and resumes playback if needed.'''
+        if self.audio and self.audio.filePath:
+            # Set playback position
+            self.audio.setPlaybackPosition(self.current_position)
+            print(f"Seeked to {round(self.current_position, 2)} seconds.")
+
+            # Resume playback if it was playing before scrubbing
+            if not self.is_paused:
+                self.playAudio()
+       
     @global_error_handler
     def startProgressBar(self):
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
@@ -483,35 +511,37 @@ class audioMenu(CTkFrame):
     def labelSpeakers(self):
         popup = CTkToplevel(self)
         popup.title("Label Speakers")
-        popup.geometry("600x400")  # Adjust size as needed
+        popup.geometry("600x400")
 
         scrollable_frame = CTkScrollableFrame(popup)
         scrollable_frame.pack(fill='both', expand=True)
 
-        # Initial split of the transcription text (used to generate checkboxes only)
         initial_segments = self.getTranscriptionText().split('\n')
-
-        # Store checkboxes, associated with the index in the original text
         self.segment_selections = []
         for idx, segment in enumerate(initial_segments):
-            if segment.strip():  # Ignore empty lines
+            if segment.strip():
                 var = IntVar()
                 chk = CTkCheckBox(scrollable_frame, text=segment, variable=var)
                 chk.pack(anchor='w', padx=5, pady=2)
                 self.segment_selections.append((var, idx))
 
         def apply_labels(speaker):
-            # Fetch the current state of the transcription text
             current_text = self.getTranscriptionText()
             current_segments = current_text.split('\n')
 
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
-                    # Append the speaker label only if it's not already labeled
-                    current_segments[idx] = f"{speaker}: {current_segments[idx]}"
-                    var.set(0)  # Optionally reset the checkbox after labeling
+                    line = current_segments[idx]
+                    # Check for existing timestamp at the beginning of the line
+                    match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', line)
+                    if match:
+                        timestamp = match.group(1)
+                        rest = match.group(2)
+                        current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
+                    else:
+                        current_segments[idx] = f"{speaker}: {line}"
+                    var.set(0)  # Reset the checkbox
 
-            # Update the transcriptionBox with the modified text
             new_transcription_text = "\n".join(current_segments)
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", new_transcription_text)
@@ -520,9 +550,8 @@ class audioMenu(CTkFrame):
             
             unlockItem(self.applyAliasesButton)
 
-        # Buttons for applying speaker labels
-        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1"), fg_color=SPEAKER_COLORS["Speaker 1"], text_color="white").pack(side='left', padx=10, pady=10)
-        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2"), fg_color=SPEAKER_COLORS["Speaker 2"], text_color="white").pack(side='right', padx=10, pady=10)
+        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
+        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
@@ -580,6 +609,10 @@ class audioMenu(CTkFrame):
             time, signal = self.audio.upload(filename)
             plotAudio(time, signal)
             self.audioLength = self.audio.getAudioDuration(filename)
+            if self.audio and self.audio.filePath:
+                self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
+                print(f"Slider enabled with range: 0 to {self.audioLength} seconds.")
+
 
     @global_error_handler
     def recordAudio(self):
@@ -636,9 +669,15 @@ class audioMenu(CTkFrame):
                                                 initialfile=self.exporter.getDefaultFilename() + ".docx")
         if downloadFile:
             text = self.getTranscriptionText()
+            
+            text_without_timestamps = re.sub(r'\[\d+:\d+\] ', '', text)
+            
             if self.grammarCheckPerformed:
-                text = self.getGrammarText()
-            self.exporter.exportToWord(text, downloadFile.name)
+                grammar_text = self.getGrammarText()
+                grammar_text_without_timestamps = re.sub(r'\[\d+:\d+\] ', '', grammar_text)
+                self.exporter.exportToWord(grammar_text_without_timestamps, downloadFile.name)
+            else:
+                self.exporter.exportToWord(text_without_timestamps, downloadFile.name)
 
     @global_error_handler
     def grammarCheck(self):
