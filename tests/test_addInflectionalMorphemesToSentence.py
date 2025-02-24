@@ -4,6 +4,7 @@ import pytest
 
 
 
+
 def test_one():
     x = "John's dogs are smart."
     assert addConventions.addInflectionalMorphemesToSentence(x) == "John/z dog/s are smart."

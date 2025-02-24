@@ -8,6 +8,7 @@ import grammar
 def grammar_checker():
     return grammar.GrammarChecker()
 
+
 @pytest.fixture
 def grammar_checker():
     return grammar.GrammarChecker()

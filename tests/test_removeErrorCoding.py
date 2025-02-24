@@ -4,6 +4,7 @@ import addConventions
 
 
 
+
 def test_one():
     x = "(I I) I telled[EO:told] a lie."
     assert addConventions.removeErrorCoding(x) == "I told a lie."
