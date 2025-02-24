@@ -1,18 +1,17 @@
+import pytest
 import os
 import re
-import unittest
-import grammar 
+import grammar
 
+@pytest.fixture
+def grammar_checker():
+    return grammar.GrammarChecker()
 
-def setUp(self):
-    self.grammar_checker = grammar.GrammarChecker()
-
-def read_file(self, file_path):
+def read_file(file_path):
     with open(file_path, 'r') as f:
         return f.readlines()
 
-def test_compare_input_with_output(self):
-
+def test_compare_input_with_output(grammar_checker):
     # directory containing the test files
     data_dir = os.path.join('tests', 'data')
     files = os.listdir(data_dir)
@@ -40,8 +39,8 @@ def test_compare_input_with_output(self):
         input_file_path = os.path.join(data_dir, input_file)
         output_file_path = os.path.join(data_dir, output_file)
 
-        input_lines = self.read_file(input_file_path)
-        expected_output_lines = self.read_file(output_file_path)
+        input_lines = read_file(input_file_path)
+        expected_output_lines = read_file(output_file_path)
 
         # file-specific counters
         file_line_tests = 0
@@ -58,9 +57,9 @@ def test_compare_input_with_output(self):
             total_line_tests += 1
 
             # process the input line
-            self.grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
-            corrected, _ = self.grammar_checker.getNextCorrection()
-            processed_text = self.grammar_checker.getInflectionalMorphemes(corrected) if corrected else ""
+            grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
+            corrected, _ = grammar_checker.getNextCorrection()
+            processed_text = grammar_checker.getInflectionalMorphemes(corrected) if corrected else ""
 
             # Print intermediate results for debugging
             print(f"Input Line: {input_line.strip()}")
@@ -151,7 +150,7 @@ def test_compare_input_with_output(self):
 
     # fail the test if there are any mismatches
     if failed_line_tests > 0 or failed_word_tests > 0:
-        self.fail(f"{failed_line_tests} line mismatches and {failed_word_tests} word mismatches found across files.")
+        pytest.fail(f"{failed_line_tests} line mismatches and {failed_word_tests} word mismatches found across files.")
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main()
