@@ -4,6 +4,9 @@ import re
 import grammar
 #or run export PYTHONPATH=$(pwd) before running python tests/saltify_test.py
 
+@pytest.fixture
+def grammar_checker():
+    return grammar.GrammarChecker()
 
 @pytest.fixture
 def grammar_checker():
