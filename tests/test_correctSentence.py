@@ -1,5 +1,7 @@
 import pytest
 import addConventions
+#or run export PYTHONPATH=$(pwd) before running python tests/saltify_test.py
+
 
 def test_one():
     x = "He walk to school."

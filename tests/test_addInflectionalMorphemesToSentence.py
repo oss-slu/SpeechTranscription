@@ -1,5 +1,7 @@
 import addConventions
 import pytest
+#or run export PYTHONPATH=$(pwd) before running python tests/saltify_test.py
+
 
 def test_one():
     x = "John's dogs are smart."
