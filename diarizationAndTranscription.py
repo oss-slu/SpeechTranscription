@@ -30,10 +30,19 @@ def formatTranscription(transcription: str):
     transcript = transcript.strip()
     return transcript
 
+def formatTranscriptionWithTimestamps(transcription: str, timestamps: list):
+    transcript = ""
+    for line, timestamp in zip(transcription.split('\n'), timestamps):
+        if line.strip():  # Ensure the line is not empty
+            transcript += f"[{timestamp}] {line}\n"
+    return transcript.strip()
+
 def transcribe(audioFile):
     transcription = transcribeAudio(audioFile)
     transcriptionText = formatTranscription(transcription["text"])
-    return transcriptionText
+    timestamps = [f"{int(seg['start']) // 60}:{int(seg['start']) % 60:02}" for seg in transcription["segments"]]
+    transcriptionTextWithTimestamps = formatTranscriptionWithTimestamps(transcriptionText, timestamps)
+    return transcriptionTextWithTimestamps
 
 def diarizeAndTranscribe(audioFile):
     # Diarize and transcribe the audio
@@ -54,7 +63,7 @@ def diarizeAndTranscribe(audioFile):
         diarization = str(dz).splitlines()
 
         for l in diarization:
-            start, end =  tuple(re.findall('[0-9]+:[0-9]+:[0-9]+\.[0-9]+', string=l))
+            start, end = tuple(re.findall(r'[0-9]+:[0-9]+:[0-9]+\.[0-9]+', string=l))
             start = int(millisec(start))
             end = int(millisec(end))
             dzList.append([start - 2000, end - 2000, l.split(" ")[-1]])
@@ -69,6 +78,7 @@ def diarizeAndTranscribe(audioFile):
         captions = [[(int)(caption["start"] * 1000), (int)(caption["end"] * 1000), caption["text"]] for caption in result["segments"]]
         
         transcriptionText = ""
+        timestamps = []
         for i in range(len(captions)):
             caption = captions[i]
             startTime = caption[0]
@@ -83,9 +93,11 @@ def diarizeAndTranscribe(audioFile):
                     timeRange = duration
                     speaker = dzList[x][2]
                 
-            transcriptionText += speaker + " - " + caption[2] + "\n"
+            timestamp = f"{int(startTime // 60000)}:{int((startTime % 60000) // 1000):02}"
+            timestamps.append(timestamp)
+            transcriptionText += f"{speaker} - {caption[2]}\n"
                 
-        transcript = formatTranscription(transcriptionText)
+        transcript = formatTranscriptionWithTimestamps(transcriptionText, timestamps)
         return transcript
     else:
         print("Failed to diarize and transcribe: access token not found")

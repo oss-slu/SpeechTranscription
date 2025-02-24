@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 import time
 import webbrowser
 import traceback
+import re
 import customtkinter as ctk
-
 
 WIDTH = 1340
 HEIGHT = 740
@@ -488,18 +488,15 @@ class audioMenu(CTkFrame):
     def labelSpeakers(self):
         popup = CTkToplevel(self)
         popup.title("Label Speakers")
-        popup.geometry("600x400")  # Adjust size as needed
+        popup.geometry("600x400")
 
         scrollable_frame = CTkScrollableFrame(popup)
         scrollable_frame.pack(fill='both', expand=True)
 
-        # Initial split of the transcription text (used to generate checkboxes only)
         initial_segments = self.getTranscriptionText().split('\n')
-
-        # Store checkboxes, associated with the index in the original text
         self.segment_selections = []
         for idx, segment in enumerate(initial_segments):
-            if segment.strip():  # Ignore empty lines
+            if segment.strip():
                 var = IntVar()
                 chk = CTkCheckBox(scrollable_frame, text=segment, variable=var)
                 chk.pack(anchor='w', padx=5, pady=2)
@@ -507,6 +504,7 @@ class audioMenu(CTkFrame):
 
         def apply_labels(speaker):
             """Applies speaker labels with color coding."""
+
             current_text = self.getTranscriptionText()
             current_segments = current_text.split('\n')
 
@@ -515,8 +513,18 @@ class audioMenu(CTkFrame):
                     # Append the speaker label only if it's not already labeled
                     current_segments[idx] = f"{speaker}: {current_segments[idx]}"
                     var.set(0)  # Reset checkbox
+                    line = current_segments[idx]
+                    # Check for existing timestamp at the beginning of the line
+                    match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', line)
+                    if match:
+                        timestamp = match.group(1)
+                        rest = match.group(2)
+                        current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
+                    else:
+                        current_segments[idx] = f"{speaker}: {line}"
+                    var.set(0)  # Reset the checkbox
 
-            # Update the transcriptionBox with the modified text
+
             new_transcription_text = "\n".join(current_segments)
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", new_transcription_text)
@@ -531,9 +539,8 @@ class audioMenu(CTkFrame):
             
             unlockItem(self.applyAliasesButton)
 
-        # Buttons for applying speaker labels
-        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1"), fg_color=SPEAKER_COLORS["Speaker 1"], text_color="white").pack(side='left', padx=10, pady=10)
-        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2"), fg_color=SPEAKER_COLORS["Speaker 2"], text_color="white").pack(side='right', padx=10, pady=10)
+        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
+        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
@@ -649,9 +656,15 @@ class audioMenu(CTkFrame):
                                                 initialfile=self.exporter.getDefaultFilename() + ".docx")
         if downloadFile:
             text = self.getTranscriptionText()
+            
+            text_without_timestamps = re.sub(r'\[\d+:\d+\] ', '', text)
+            
             if self.grammarCheckPerformed:
-                text = self.getGrammarText()
-            self.exporter.exportToWord(text, downloadFile.name)
+                grammar_text = self.getGrammarText()
+                grammar_text_without_timestamps = re.sub(r'\[\d+:\d+\] ', '', grammar_text)
+                self.exporter.exportToWord(grammar_text_without_timestamps, downloadFile.name)
+            else:
+                self.exporter.exportToWord(text_without_timestamps, downloadFile.name)
 
     @global_error_handler
     def grammarCheck(self):
