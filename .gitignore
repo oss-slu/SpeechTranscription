@@ -9,3 +9,4 @@ diarization.txt
 user_settings.txt
 venv/
 myenv/
+nltk_data/
