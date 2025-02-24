@@ -332,8 +332,20 @@ class audioMenu(CTkFrame):
         
         for var, idx in self.segment_selections:
             if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
-                current_segments[idx] = f"{speaker}: {current_segments[idx]}"
+                # Add the speaker label only if it's not already labeled
+                line = current_segments[idx].strip()  # Remove leading/trailing spaces
+                if not line.startswith(f"{speaker}:"):  # Ensure the label is not added again
+                    current_segments[idx] = f"{speaker}: {line}"
                 var.set(0)  # Reset checkbox
+
+                # Check for existing timestamp at the beginning of the line
+                match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', current_segments[idx])
+                if match:
+                    timestamp = match.group(1)
+                    rest = match.group(2)
+                    current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
+                else:
+                    current_segments[idx] = f"{speaker}: {line}"
 
         new_transcription_text = "\n".join(current_segments)
         self.transcriptionBox.delete("0.0", "end")
@@ -511,9 +523,11 @@ class audioMenu(CTkFrame):
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
                     # Append the speaker label only if it's not already labeled
-                    current_segments[idx] = f"{speaker}: {current_segments[idx]}"
                     var.set(0)  # Reset checkbox
                     line = current_segments[idx]
+                    if not line.startswith(f"{speaker}:"):
+                        # Append the speaker label only if it's not already labeled
+                        current_segments[idx] = f"{speaker}: {line}"
                     # Check for existing timestamp at the beginning of the line
                     match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', line)
                     if match:
@@ -535,10 +549,7 @@ class audioMenu(CTkFrame):
 
             unlockItem(self.applyAliasesButton)
 
-            self.color_code_transcription()
             
-            unlockItem(self.applyAliasesButton)
-
         CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
         CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
 
