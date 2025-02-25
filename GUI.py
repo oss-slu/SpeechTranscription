@@ -710,9 +710,12 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def manageGrammarCorrection(self):
         '''Get the next grammar correction item'''
-        corrected, sentenceToCorrect = self.grammar.getNextCorrection()
-        if corrected:
-            self.conventionBox.insert("end", corrected)
+        corrected_text = self.grammar.getCorrectedText()
+        sentenceToCorrect = corrected_text.split("\n")[0] if corrected_text else None
+
+
+        if corrected_text:
+            self.conventionBox.insert("end", corrected_text)
         if sentenceToCorrect:
             self.correctionEntryBox.insert("end", sentenceToCorrect)
         else:
