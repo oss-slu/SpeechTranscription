@@ -60,7 +60,7 @@ def test_compare_input_with_output(grammar_checker):
 
             # process the input line
             grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
-            corrected, _ = grammar_checker.getNextCorrection()
+            corrected = grammar_checker.getCorrectedText()
             processed_text = grammar_checker.getInflectionalMorphemes(corrected) if corrected else ""
 
             # Print intermediate results for debugging
