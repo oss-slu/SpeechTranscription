@@ -433,7 +433,7 @@ class audioMenu(CTkFrame):
             self.is_paused = True
     
     @global_error_handler
-    def updateEndTime(duration):
+    def updateEndTime(self, duration):
         mins, secs = divmod(int(duration), 60)
         self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
     @global_error_handler
