@@ -249,7 +249,7 @@ class audioMenu(CTkFrame):
         self.audioInputFrame.grid_columnconfigure(1, weight=1)
 
         # ROW 1: Playback Controls in a Frame
-        self.playbackFrame = CTkFrame(self, height=150, width=300)
+        self.playbackFrame = CTkFrame(self, height=125, width=200)
         self.playbackFrame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
         self.playbackFrame.grid_propagate(False)  # Prevent frame from shrinking
 
