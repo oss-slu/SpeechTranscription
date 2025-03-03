@@ -438,7 +438,6 @@ class audioMenu(CTkFrame):
         self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
     @global_error_handler
     def updateCurrentTime(self, position):
-        print(f"Updating time label to: {position} seconds")  # Debugging
         mins, secs = divmod(int(position), 60)
         self.currentTimeLabel.configure(text=f"{mins:02}:{secs:02}")
 
