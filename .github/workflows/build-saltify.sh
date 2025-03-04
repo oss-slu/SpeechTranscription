@@ -33,7 +33,7 @@ brew services start mysql
 # Step 3: Install Python dependencies
 echo "Installing Python dependencies..."
 pip install --upgrade pip
-pip install -r "$BASE_DIR/requirements.txt"
+pip install -r "$(git rev-parse --show-toplevel)/requirements.txt"
 pip install pyinstaller importlib-metadata sacremoses tokenizers
 pip uninstall -y typing
 
