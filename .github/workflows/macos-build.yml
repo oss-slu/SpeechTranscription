@@ -58,6 +58,20 @@ jobs:
       - name: Uninstall typing package
         run: |
           python -m pip uninstall -y typing
+      ###############################
+      - name: Set Up Python Virtual Environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          echo "VIRTUAL_ENV=$(pwd)/venv" >> $GITHUB_ENV
+      - name: Verify Python Site-Packages
+        run: |
+          python -c "import site; print(site.getsitepackages())"
+      - name: Install Dependencies
+        run: |
+          source $VIRTUAL_ENV/bin/activate
+          pip install -r requirements.txt                       
+      ###############################          
 #      - name: Install Specific Python Version
 #        uses: actions/setup-python@v4
 #        with:
