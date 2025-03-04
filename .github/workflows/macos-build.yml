@@ -115,7 +115,7 @@ jobs:
             --hidden-import "torchvision" \
             --hidden-import "pytorch_lightning" \
             --hidden-import "pyannote.audio" \
-            "$BASE_DIR/GUI.py"
+            GUI.py
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         run: |
