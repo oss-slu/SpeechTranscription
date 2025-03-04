@@ -1,76 +1,89 @@
 #!/bin/bash
 
-set -e
-
+set -e  # Exit script on any error
 LOG_FILE="build.log"
-exec > >(tee -i ${LOG_FILE}) 2>&1
+exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
 
-# Step 1: Check and install Homebrew if not already installed
+# Determine script and base directories
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+BASE_DIR="$SCRIPT_DIR/.."
+
+# Detect virtual environment
+if [[ -z "$VIRTUAL_ENV" ]]; then
+    echo "Virtual environment not activated. Please activate it before running the script."
+    exit 1
+fi
+VENV_NAME=$(basename "$VIRTUAL_ENV")
+
+echo "Using virtual environment: $VENV_NAME"
+
+# Step 1: Check and install Homebrew if not installed
 if ! command -v brew &> /dev/null; then
-    echo "Homebrew not found, installing Homebrew..."
+    echo "Homebrew not found, installing..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
     echo "Homebrew is already installed."
 fi
 
-# Step 2: Install MySQL and other dependencies
-echo "Installing MySQL and other dependencies..."
+# Step 2: Install dependencies
+echo "Installing dependencies..."
 brew install mysql pkg-config portaudio ffmpeg
 brew services start mysql
 
-# Step 3: Virtual Environment Setup (optional)
-#echo "Setting up virtual environment..."
-#python3 -m venv venv
-#source venv/bin/activate
-
-# Step 4: Install Python dependencies
+# Step 3: Install Python dependencies
 echo "Installing Python dependencies..."
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r "$BASE_DIR/requirements.txt"
 pip install pyinstaller importlib-metadata sacremoses tokenizers
 pip uninstall -y typing
 
-# Step 5: Install NLTK and resolve SSL issues
-echo "Installing NLTK and resolving SSL issues..."
+# Step 4: Install NLTK and resolve SSL issues
+echo "Installing NLTK and fixing SSL issues..."
 pip install nltk certifi
 CERT_PATH=$(python -m certifi)
 export SSL_CERT_FILE=${CERT_PATH}
 export REQUESTS_CA_BUNDLE=${CERT_PATH}
 python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('averaged_perceptron_tagger', quiet=True)"
 
-# Step 6: Build the macOS executable with PyInstaller
-echo "Building the macOS executable with PyInstaller..."
-pyinstaller --name Saltify --windowed --noconfirm --onefile --debug all -c \
-  --copy-metadata torch --copy-metadata tqdm --copy-metadata regex \
-  --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging \
-  --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers \
-  --copy-metadata importlib_metadata --collect-data sv_ttk \
-  --add-data "images:images" \
-  --add-data "build_assets/en-model.slp:pattern/text/en" \
-  --add-data "CTkXYFrame:CTkXYFrame" \
-  --add-binary "$(brew --prefix portaudio)/lib/libportaudio.dylib:." \
-  --add-binary "$(which ffmpeg):." \
-  --add-binary "$(which ffprobe):." \
-  GUI.py
+# Step 5: Build the macOS executable with PyInstaller
+echo "Building the macOS executable..."
+pyinstaller --onefile --windowed \
+  --add-data "$BASE_DIR/images:images" \
+  --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
+  --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
+  --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
+  --add-binary "/opt/homebrew/bin/ffmpeg:." \
+  --add-binary "/opt/homebrew/bin/ffprobe:." \
+  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
+  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/whisper:whisper" \
+  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/filelock:filelock" \
+  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
+  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pyannote:pyannote" \
+  --hidden-import "lightning_fabric" \
+  --hidden-import "torch" \
+  --hidden-import "torchvision" \
+  --hidden-import "pytorch_lightning" \
+  --hidden-import "pyannote.audio" \
+  "$BASE_DIR/GUI.py"
 
-# Step 7: Check for .txt file and rename if necessary
+# Step 6: Fix potential PyInstaller .txt issue
 if [[ -f dist/Saltify.txt ]]; then
   echo "Found Saltify.txt instead of executable. Renaming..."
   mv dist/Saltify.txt dist/Saltify
 fi
 
-# Step 8: Move the executable
+# Step 7: Organize build output
 OUTPUT_DIR="dist/Saltify_$(date +'%Y%m%d_%H%M%S')"
 mkdir -p "${OUTPUT_DIR}"
 mv dist/Saltify "${OUTPUT_DIR}"
 
-# Step 9: Ensure permissions are correct
+# Step 8: Ensure correct permissions
 chmod +x "${OUTPUT_DIR}/Saltify"
 
-# Step 10: Clean up build files
+# Step 9: Clean up temporary files
 echo "Cleaning up..."
 rm -rf build *.spec
 
-# Step 11: Notify user
+# Step 10: Notify user
 osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
 echo "Build complete. The executable is located in ${OUTPUT_DIR}."

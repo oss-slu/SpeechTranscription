@@ -38,6 +38,9 @@ jobs:
         run: |
           export MYSQLCLIENT_CFLAGS='pkg-config mysqlclient --cflags'
           export MYSQLCLIENT_LDFLAGS='pkg-config mysqlclient --libs'
+      - name: Check MySQL Status
+        run: |
+          mysqladmin ping || (echo "MySQL failed to start!" && exit 1)
       # Step 5: Install Java (if required)
       - name: Install Java
         run: |
@@ -95,25 +98,30 @@ jobs:
       # Step 8: Build the executable
       - name: Build executable
         run: |
-          pyinstaller --name Saltify --windowed --noconfirm --onefile -c \
-            --copy-metadata torch --copy-metadata tqdm --copy-metadata regex \
-            --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging \
-            --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers \
-            --copy-metadata importlib_metadata --collect-data sv_ttk \
-            --recursive-copy-metadata "openai-whisper" --collect-data whisper \
-            --add-data "images:images" \
-            --add-data "build_assets/en-model.slp:pattern/text/en" \
-            --add-data "CTkXYFrame:CTkXYFrame" \
-            --add-binary "$PORTAUDIO_PATH:." \
-            --add-binary "$FFMPEG_PATH:." \
-            --add-binary "$FFPROBE_PATH:." \
-            GUI.py
+          pyinstaller --onefile --windowed \
+            --add-data "$BASE_DIR/images:images" \
+            --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
+            --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
+            --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
+            --add-binary "/opt/homebrew/bin/ffmpeg:." \
+            --add-binary "/opt/homebrew/bin/ffprobe:." \
+            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
+            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/whisper:whisper" \
+            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/filelock:filelock" \
+            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
+            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pyannote:pyannote" \
+            --hidden-import "lightning_fabric" \
+            --hidden-import "torch" \
+            --hidden-import "torchvision" \
+            --hidden-import "pytorch_lightning" \
+            --hidden-import "pyannote.audio" \
+            "$BASE_DIR/GUI.py"
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
-        #run: ./.github/workflows/build-saltify.sh
         run: |
+          git update-index --chmod=+x .github/workflows/build-saltify.sh
           chmod +x .github/workflows/build-saltify.sh
-          ./.github/workflows/build-saltify.sh        
+          ./.github/workflows/build-saltify.sh                
       # Step 10: Upload the built artifact
       - name: Upload macOS Build Artifact
         uses: actions/upload-artifact@v4
@@ -125,5 +133,4 @@ jobs:
       - name: Verify PyInstaller build output
         run: |
           echo "Contents of dist folder:"
-          ls -la dist/
-        
+          ls -la dist/ 
