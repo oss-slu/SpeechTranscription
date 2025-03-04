@@ -97,9 +97,24 @@ jobs:
           echo "PORTAUDIO_PATH=$(brew --prefix portaudio)/lib/libportaudio.dylib" >> $GITHUB_ENV
           echo "FFMPEG_PATH=$(which ffmpeg)" >> $GITHUB_ENV
           echo "FFPROBE_PATH=$(which ffprobe)" >> $GITHUB_ENV      
+      ###############################
+      - name: Verify Installed Packages
+        run: |
+          python -c "import lightning_fabric; print('lightning_fabric is installed')"
+
+      - name: Debug Python Path
+        run: |
+          python -c "import sys; print(sys.path)"
+
+      - name: Debug Virtual Environment Path
+        run: |
+          echo "VIRTUAL_ENV: $VIRTUAL_ENV"
+          ls -lah $VIRTUAL_ENV/lib/python3.11/site-packages || echo "No site-packages found"
+      ###############################
       # Step 8: Build the executable
       - name: Build executable
         run: |
+          SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
           pyinstaller --onefile --windowed \
             --add-data "$(pwd)/images:images" \
             --add-data "$(pwd)/build_assets/en-model.slp:pattern/text/en" \
