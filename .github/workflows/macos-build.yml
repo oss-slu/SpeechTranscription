@@ -127,6 +127,10 @@ jobs:
         run: |
           echo "VIRTUAL_ENV: $VIRTUAL_ENV"
           ls -lah $VIRTUAL_ENV/lib/python3.11/site-packages || echo "No site-packages found"
+      - name: List files in the working directory
+        run: |
+          echo "Current directory: $(pwd)"
+          ls -la $(pwd)
       ###############################
       # Step 8: Build the executable
       - name: Build executable
@@ -151,10 +155,12 @@ jobs:
             --hidden-import "pyannote.audio" \
             "$(pwd)/src/GUI.py"
       #######################################   
-      - name: List files in the working directory
+      - name: Verify GUI.py existence
         run: |
-          echo "Current directory: $(pwd)"
-          ls -la $(pwd)
+         if [ ! -f "$(pwd)/GUI.py" ]; then
+           echo "Error: GUI.py not found at $(pwd)/GUI.py"
+           exit 1
+         fi    
       - name: Debug File Paths
         run: |
          ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription
