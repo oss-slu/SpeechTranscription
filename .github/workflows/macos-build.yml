@@ -149,14 +149,12 @@ jobs:
             --hidden-import "torchvision" \
             --hidden-import "pytorch_lightning" \
             --hidden-import "pyannote.audio" \
-            "$(pwd)/GUI.py"
+            "$(pwd)/src/GUI.py"
       #######################################   
-      - name: Verify GUI.py existence
+      - name: List files in the working directory
         run: |
-         if [ ! -f "$(pwd)/GUI.py" ]; then
-           echo "Error: GUI.py not found at $(pwd)/GUI.py"
-           exit 1
-         fi    
+          echo "Current directory: $(pwd)"
+          ls -la $(pwd)
       - name: Debug File Paths
         run: |
          ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription
