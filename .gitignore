@@ -8,3 +8,9 @@ ffmpeg
 diarization.txt
 user_settings.txt
 venv/
+myenv/
+GUI.spec
+build/
+lightning_fabric/
+lightning_fabric/
+nltk_data/
