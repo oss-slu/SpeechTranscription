@@ -151,6 +151,12 @@ jobs:
             --hidden-import "pyannote.audio" \
             "$(pwd)/GUI.py"
       #######################################   
+      - name: Verify GUI.py existence
+        run: |
+         if [ ! -f "$(pwd)/GUI.py" ]; then
+           echo "Error: GUI.py not found at $(pwd)/GUI.py"
+           exit 1
+         fi    
       - name: Debug File Paths
         run: |
          ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription
