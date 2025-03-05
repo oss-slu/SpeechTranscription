@@ -8,6 +8,7 @@ exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 BASE_DIR=$(git rev-parse --show-toplevel)
 echo "Base directory: $BASE_DIR"
+echo "Script directory: $SCRIPT_DIR"
 
 # Detect virtual environment
 if [[ -z "$VIRTUAL_ENV" ]]; then
@@ -49,9 +50,9 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 # Step 5: Build the macOS executable with PyInstaller
 echo "Building the macOS executable..."
 pyinstaller --onefile --windowed \
-  --add-data "$BASE_DIR/images:images" \
-  --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
-  --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
+  --add-data "$(pwd)/images:images" \
+  --add-data "$(pwd)/build_assets/en-model.slp:pattern/text/en" \
+  --add-data "$(pwd)/CTkXYFrame:CTkXYFrame" \
   --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
   --add-binary "/opt/homebrew/bin/ffmpeg:." \
   --add-binary "/opt/homebrew/bin/ffprobe:." \
@@ -65,7 +66,7 @@ pyinstaller --onefile --windowed \
   --hidden-import "torchvision" \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
-  "$BASE_DIR/GUI.py"
+  "$(pwd)/GUI.py"
 
 # Step 6: Fix potential PyInstaller .txt issue
 if [[ -f dist/Saltify.txt ]]; then
