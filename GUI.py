@@ -16,7 +16,7 @@ import sys
 import re
 import customtkinter as ctk
 
-WIDTH = 1340
+WIDTH = 1500
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
 
@@ -152,7 +152,7 @@ class mainGUI(CTk):
 
     def __init__(self):
         super().__init__()
-
+        self.after(100, lambda: self.geometry("1350x740")) # Forces gui to be this size
         self.currentAudioNum = 0
         self.audioButtonList: list[CTkButton] = []
         self.audioMenuList: list[audioMenu] = []
@@ -160,25 +160,25 @@ class mainGUI(CTk):
         self.title('Speech Transcription')
         try:
             if os.path.getsize(SETTINGS_FILE) != 0:
-                file = open(SETTINGS_FILE, "r")
-                set_appearance_mode(file.read())
-                file.close()
+                with open(SETTINGS_FILE, "r") as file:
+                    set_appearance_mode(file.read())
             else:
                 set_appearance_mode("dark")
         except FileNotFoundError:
             print("Settings file not found. Defaulting to dark mode.")
             set_appearance_mode("dark")
+        
         set_default_color_theme("blue")
         deactivate_automatic_dpi_awareness()
-        self.resizable(False, False)
+        self.resizable(False, False)  
 
-        self.geometry(str(WIDTH) + 'x' + str(HEIGHT))
+        # Set the geometry after all configurations
+        self.geometry(f"{WIDTH}x{HEIGHT}")
 
         self.userFrame = userMenu(master=self)
         self.userFrame.grid(row=0, column=0, padx=1, sticky=NW)
 
-        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, height=60, columnspan=2,
-                                           lock=False)
+        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, height=60, columnspan=2, lock=False)
 
         self.audioFrame = CTkFrame(self)
         
@@ -249,7 +249,7 @@ class audioMenu(CTkFrame):
         self.audioInputFrame.grid_columnconfigure(1, weight=1)
 
         # ROW 1: Playback Controls in a Frame
-        self.playbackFrame = CTkFrame(self, height=125, width=200)
+        self.playbackFrame = CTkFrame(self, height=125, width=250)
         self.playbackFrame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
         self.playbackFrame.grid_propagate(False)  # Prevent frame from shrinking
 
