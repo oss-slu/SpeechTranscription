@@ -134,7 +134,7 @@ jobs:
       - name: Verify GUI.py location
         run: |
           echo "Listing files in src directory:"
-          ls -la $(pwd)/src
+          ls -la $(pwd)/
   
       ###############################
       # Step 8: Build the executable
