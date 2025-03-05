@@ -131,6 +131,11 @@ jobs:
         run: |
           echo "Current directory: $(pwd)"
           ls -la $(pwd)
+      - name: Verify GUI.py location
+        run: |
+          echo "Listing files in src directory:"
+          ls -la $(pwd)/src
+  
       ###############################
       # Step 8: Build the executable
       - name: Build executable
@@ -153,14 +158,8 @@ jobs:
             --hidden-import "torchvision" \
             --hidden-import "pytorch_lightning" \
             --hidden-import "pyannote.audio" \
-            "$(pwd)/src/GUI.py"
-      #######################################   
-      - name: Verify GUI.py existence
-        run: |
-         if [ ! -f "$(pwd)/GUI.py" ]; then
-           echo "Error: GUI.py not found at $(pwd)/GUI.py"
-           exit 1
-         fi    
+            "$(pwd)/GUI.py"
+      #######################################     
       - name: Debug File Paths
         run: |
          ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription
