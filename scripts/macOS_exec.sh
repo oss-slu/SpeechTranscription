@@ -1,11 +1,9 @@
-#!/bin/bash
-
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 BASE_DIR="$SCRIPT_DIR/.."
 
 VENV_NAME=$(basename "$VIRTUAL_ENV")
 
-pyinstaller --onefile --windowed \
+pyinstaller --onefile --noconsole \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
