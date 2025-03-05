@@ -6,7 +6,8 @@ exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
 
 # Determine script and base directories
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-BASE_DIR="$SCRIPT_DIR/.."
+BASE_DIR=$(git rev-parse --show-toplevel)
+echo "Base directory: $BASE_DIR"
 
 # Detect virtual environment
 if [[ -z "$VIRTUAL_ENV" ]]; then
@@ -33,7 +34,7 @@ brew services start mysql
 # Step 3: Install Python dependencies
 echo "Installing Python dependencies..."
 pip install --upgrade pip
-pip install -r "$(git rev-parse --show-toplevel)/requirements.txt"
+pip install -r "$BASE_DIR/requirements.txt"
 pip install pyinstaller importlib-metadata sacremoses tokenizers
 pip uninstall -y typing
 
