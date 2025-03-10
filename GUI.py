@@ -9,6 +9,15 @@ from CTkXYFrame.CTkXYFrame.ctk_xyframe import *  # Uses Third party license foun
 import threading
 import matplotlib.pyplot as plt
 import time
+
+import sys
+import os
+
+if getattr(sys, 'frozen', False):
+    app_path = sys._MEIPASS
+else:
+    app_path = os.path.abspath(".")
+
 import webbrowser
 import traceback
 import os
@@ -16,9 +25,23 @@ import sys
 import re
 import customtkinter as ctk
 
+
 WIDTH = 1340
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
+
+#LOCK_ICON = customtkinter.CTkImage(Image.open("images/locked_icon.png"), Image.open("images/locked_icon.png"), (30, 30))
+#UNLOCK_ICON = customtkinter.CTkImage(Image.open("images/unlocked_icon.png"), Image.open("images/unlocked_icon.png"), (30, 30))
+#CLEAR_ICON = customtkinter.CTkImage(Image.open("images/clear_icon.png"), Image.open("images/clear_icon.png"), (30, 30))
+
+LOCK_ICON_PATH = os.path.join(app_path, "images", "locked_icon.png")
+UNLOCK_ICON_PATH = os.path.join(app_path, "images", "unlocked_icon.png")
+CLEAR_ICON_PATH = os.path.join(app_path, "images", "clear_icon.png")
+
+LOCK_ICON = customtkinter.CTkImage(Image.open(LOCK_ICON_PATH), size=(30, 30))
+UNLOCK_ICON = customtkinter.CTkImage(Image.open(UNLOCK_ICON_PATH), size=(30, 30))
+CLEAR_ICON = customtkinter.CTkImage(Image.open(CLEAR_ICON_PATH), size=(30, 30))
+
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
@@ -69,6 +92,7 @@ def show_error_popup(master, error_message):
 
     file_bug_button = CTkButton(popup, text="File a Bug", command=file_bug)
     file_bug_button.pack(pady=20)
+
 
 def plotAudio(time, signal):
     '''Plots the waveform of audio'''
