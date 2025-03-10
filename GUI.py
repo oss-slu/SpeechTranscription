@@ -93,6 +93,9 @@ class mainGUI(CTk):
 
             self.changeAudioWindow(self.currentAudioNum)
             self.currentAudioNum += 1
+            # Enable the Upload and Record buttons for the new session
+            unlockItem(self.audioMenuList[-1].uploadButton)
+            unlockItem(self.audioMenuList[-1].recordButton)
 
     @global_error_handler
     def changeAudioWindow(self, num):
@@ -126,8 +129,8 @@ class mainGUI(CTk):
         Help Guide:
         
         - New Audio: Create a new audio session.
-        - Upload: Upload an audio file.
-        - Record: Record a new audio file.
+        - Upload: Upload an audio file. (Disabled after first upload to prevent modifications, but enabled again after starting a new session)
+        - Record: Record a new audio file. (Disabled after first recording to prevent modifications, but enabled again after starting a new session)
         - <<: Rewind the audio by 5 seconds.
         - ⏯: Play and Pause the audio.
         - >>: Fast forward the audio by 5 seconds.
@@ -143,7 +146,6 @@ class mainGUI(CTk):
         - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
         """
 
-        # Instead of a scrollable frame, use a regular frame
         helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400)
         helpLabel.pack(padx=10, pady=10)
 
@@ -646,7 +648,9 @@ class audioMenu(CTkFrame):
             if self.audio and self.audio.filePath:
                 self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
                 print(f"Slider enabled with range: 0 to {self.audioLength} seconds.")
-
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
 
     @global_error_handler
     def recordAudio(self):
@@ -661,6 +665,9 @@ class audioMenu(CTkFrame):
             unlockItem(self.downloadAudioButton)
             filename, time, signal = self.audio.stop()
             plotAudio(time, signal)
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
 
     @global_error_handler
     def transcribe(self):
