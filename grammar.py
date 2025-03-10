@@ -1,62 +1,65 @@
 import addConventions
 import nltk
-import threading
-import time
-
+from threading import Thread
+from functools import partial
 
 class GrammarChecker:
+    tokenizedSentences = []
+    checkAllSentences = False
+    grammarCheckedText = ""  # To store grammar-checked transcription
+    
     def __init__(self):
-        self.tokenizedSentences = []
-        self.checkAllSentences = False
-        self.processed_text = None  # Store processed text for quick retrieval
-        self.grammar_thread = None  # Track background thread
-
-    def checkGrammar(self, transcriptionText: str, checkAllSentences: bool):
-        """Starts grammar check immediately in a background thread"""
-        self.checkAllSentences = checkAllSentences
+        self.isGrammarChecked = False  # Flag to track if grammar has been checked
+    
+    # Function to trigger grammar check in the background
+    def triggerGrammarCheck(self, transcriptionText: str, checkAllSentences: bool):
+        # Start grammar check in the background without affecting transcription performance
+        self.isGrammarChecked = False
         self.tokenizedSentences = nltk.sent_tokenize(transcriptionText)
-        self.processed_text = "Processing..."
+        self.checkAllSentences = checkAllSentences
+        
+        # Use partial or lambda to pass arguments to checkGrammar function in the thread
+        grammarThread = Thread(target=partial(self.checkGrammar, transcriptionText, checkAllSentences))
+        grammarThread.start()
 
-        # Process grammar check in a separate thread
-        if not self.grammar_thread or not self.grammar_thread.is_alive():
-            self.grammar_thread = threading.Thread(target=self._processGrammar, daemon=True)
-            self.grammar_thread.start()
+    # Background function to check grammar
+    def checkGrammar(self, transcriptionText: str, checkAllSentences: bool):
+        self.tokenizedSentences = nltk.sent_tokenize(transcriptionText)
+        self.checkAllSentences = checkAllSentences
+        corrected = ""
 
-    def _processGrammar(self):
-        """Runs grammar checking in the background"""
-        corrected_sentences = []
-        for sentence in self.tokenizedSentences:
-            corrected_sentence = addConventions.correctSentence(sentence)
-            if corrected_sentence != sentence or self.checkAllSentences:
-                corrected_sentences.append(corrected_sentence)
+        while len(self.tokenizedSentences):
+            sentenceToCorrect = addConventions.correctSentence(self.tokenizedSentences[0])
+            if (self.tokenizedSentences[0] != sentenceToCorrect) or self.checkAllSentences:
+                corrected += str(sentenceToCorrect) + "\n"
             else:
-                corrected_sentences.append(sentence)
+                corrected += str(self.tokenizedSentences[0]) + "\n"
+            del self.tokenizedSentences[0]
+        
+        self.grammarCheckedText = corrected  # Store the grammar-checked text
+        self.isGrammarChecked = True  # Mark grammar check as complete
 
-        # Store the processed text for quick access
-        self.processed_text = "\n".join(corrected_sentences)
+    # Function to retrieve the grammar-checked text when Grammar Check button is clicked
+    def getGrammarCheckedText(self):
+        if self.isGrammarChecked:
+            return self.grammarCheckedText
+        else:
+            return "Grammar check is still in progress. Please wait."
 
-    def getCorrectedText(self):
-        """Returns pre-processed corrected text"""
-        return self.processed_text if self.processed_text else "Processing..."
+    # Function to get next correction (as per original functionality)
+    def getNextCorrection(self):
+        corrected = ""
+        if len(self.tokenizedSentences) == 0:
+            return (None, None)
+        while len(self.tokenizedSentences):
+            sentenceToCorrect = addConventions.correctSentence(self.tokenizedSentences[0])
+            if (self.tokenizedSentences[0] != sentenceToCorrect) or self.checkAllSentences:
+                del self.tokenizedSentences[0]
+                return (corrected, str(sentenceToCorrect))
+            else:
+                corrected += str(self.tokenizedSentences[0]) + "\n"
+                del self.tokenizedSentences[0]
+        return (corrected, None)
     
     def getInflectionalMorphemes(self, converting: str):
-        return addConventions.addInflectionalMorphemes(converting) 
-
-# Step 1: Creates an instance of GrammarChecker
-grammar_checker = GrammarChecker()
-
-# Step 2: Automatically start grammar checking when transcription begins
-def startTranscription(transcriptionText: str):
-    grammar_checker.checkGrammar(transcriptionText=transcriptionText, checkAllSentences=True)
-
-# Step 3: Retrieve the corrected text when the Grammar Check button is clicked
-def getGrammarCheckedText():
-    return grammar_checker.getCorrectedText()
-
-# Example usage
-transcriptionText = "Your transcription text here"
-startTranscription(transcriptionText)  # Automatically starts grammar checking
-
-# When user clicks the Grammar Check button:
-corrected_text = getGrammarCheckedText()
-print(corrected_text)  # Instantly displays the corrected text
+        return addConventions.addInflectionalMorphemes(converting)
