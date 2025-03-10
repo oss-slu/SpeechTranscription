@@ -193,6 +193,7 @@ class mainGUI(CTk):
 class userMenu(CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+
         self.configure(width = WIDTH / 5)
         self.configure(height = HEIGHT)
 
