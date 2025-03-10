@@ -154,7 +154,7 @@ class mainGUI(CTk):
 
     def __init__(self):
         super().__init__()
-        self.after(100, lambda: self.geometry("1350x740")) # Forces gui to be this size
+        self.after(100, lambda: self.geometry("1375x740")) # Forces gui to be this size
         self.currentAudioNum = 0
         self.audioButtonList: list[CTkButton] = []
         self.audioMenuList: list[audioMenu] = []
@@ -193,7 +193,6 @@ class mainGUI(CTk):
 class userMenu(CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-
         self.configure(width = WIDTH / 5)
         self.configure(height = HEIGHT)
 
