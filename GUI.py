@@ -522,17 +522,14 @@ class audioMenu(CTkFrame):
        
     @global_error_handler
     def startProgressBar(self):
-        self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
-        self.transcribeButton.configure(height=100)
-        self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        """Starts the progress bar animation without resizing the transcribe button."""
+        self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
         self.progressBar.start()
-
     @global_error_handler
     def stopProgressBar(self):
+        """Stops and hides the progress bar."""
         self.progressBar.stop()
         self.progressBar.grid_remove()
-        self.transcribeButton.configure(height=200)
-        self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
 
     @global_error_handler
     def labelSpeakers(self):
