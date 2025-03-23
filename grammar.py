@@ -1,65 +1,47 @@
 import addConventions
 import nltk
-from threading import Thread
-from functools import partial
+import threading
 
 class GrammarChecker:
-    tokenizedSentences = []
-    checkAllSentences = False
-    grammarCheckedText = ""  # To store grammar-checked transcription
-    
     def __init__(self):
-        self.isGrammarChecked = False  # Flag to track if grammar has been checked
-    
-    # Function to trigger grammar check in the background
-    def triggerGrammarCheck(self, transcriptionText: str, checkAllSentences: bool):
-        # Start grammar check in the background without affecting transcription performance
-        self.isGrammarChecked = False
-        self.tokenizedSentences = nltk.sent_tokenize(transcriptionText)
-        self.checkAllSentences = checkAllSentences
-        
-        # Use partial or lambda to pass arguments to checkGrammar function in the thread
-        grammarThread = Thread(target=partial(self.checkGrammar, transcriptionText, checkAllSentences))
-        grammarThread.start()
+        self.tokenizedSentences = []
+        self.correctedSentences = []
+        self.checkAllSentences = False
+        self.isProcessed = False  # Flag to check if grammar processing is completed
 
-    # Background function to check grammar
     def checkGrammar(self, transcriptionText: str, checkAllSentences: bool):
-        self.tokenizedSentences = nltk.sent_tokenize(transcriptionText)
+        """
+        Starts grammar checking as soon as transcription begins.
+        Runs in a separate thread to prevent blocking the transcription process.
+        """
         self.checkAllSentences = checkAllSentences
-        corrected = ""
-
-        while len(self.tokenizedSentences):
-            sentenceToCorrect = addConventions.correctSentence(self.tokenizedSentences[0])
-            if (self.tokenizedSentences[0] != sentenceToCorrect) or self.checkAllSentences:
-                corrected += str(sentenceToCorrect) + "\n"
-            else:
-                corrected += str(self.tokenizedSentences[0]) + "\n"
-            del self.tokenizedSentences[0]
+        self.tokenizedSentences = nltk.sent_tokenize(transcriptionText)
+        self.correctedSentences = []
+        self.isProcessed = False
         
-        self.grammarCheckedText = corrected  # Store the grammar-checked text
-        self.isGrammarChecked = True  # Mark grammar check as complete
+        # Run grammar check in the background
+        thread = threading.Thread(target=self._processGrammar)
+        thread.start()
 
-    # Function to retrieve the grammar-checked text when Grammar Check button is clicked
-    def getGrammarCheckedText(self):
-        if self.isGrammarChecked:
-            return self.grammarCheckedText
-        else:
-            return "Grammar check is still in progress. Please wait."
-
-    # Function to get next correction (as per original functionality)
-    def getNextCorrection(self):
-        corrected = ""
-        if len(self.tokenizedSentences) == 0:
-            return (None, None)
-        while len(self.tokenizedSentences):
-            sentenceToCorrect = addConventions.correctSentence(self.tokenizedSentences[0])
-            if (self.tokenizedSentences[0] != sentenceToCorrect) or self.checkAllSentences:
-                del self.tokenizedSentences[0]
-                return (corrected, str(sentenceToCorrect))
+    def _processGrammar(self):
+        """Processes grammar checking in the background."""
+        for sentence in self.tokenizedSentences:
+            correctedSentence = addConventions.correctSentence(sentence)
+            if self.checkAllSentences or sentence != correctedSentence:
+                self.correctedSentences.append(correctedSentence)
             else:
-                corrected += str(self.tokenizedSentences[0]) + "\n"
-                del self.tokenizedSentences[0]
-        return (corrected, None)
+                self.correctedSentences.append(sentence)
+        self.isProcessed = True  # Mark processing as complete
+
+    def getNextCorrection(self):
+        """Retrieves the next corrected sentence instantly without delay."""
+        if not self.isProcessed:
+            return (None, None)  # Ensure processing is completed before fetching corrections
+        
+        if not self.correctedSentences:
+            return (None, None)
+        
+        return ("", self.correctedSentences.pop(0))
     
     def getInflectionalMorphemes(self, converting: str):
         return addConventions.addInflectionalMorphemes(converting)

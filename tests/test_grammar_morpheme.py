@@ -60,10 +60,8 @@ def test_compare_input_with_output(grammar_checker):
             total_line_tests += 1
 
             # process the input line
-            grammar_checker.triggerGrammarCheck(input_line.strip(), checkAllSentences=False)
-            while not grammar_checker.isGrammarChecked:
-                time.sleep(0.1)  # Sleep briefly to avoid busy-waiting
-            corrected = grammar_checker.getGrammarCheckedText()  # Use getGrammarCheckedText()
+            grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False)
+            corrected, _ = grammar_checker.getNextCorrection()
             processed_text = grammar_checker.getInflectionalMorphemes(corrected) if corrected else ""
 
             # Print intermediate results for debugging
