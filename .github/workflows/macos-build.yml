@@ -55,15 +55,6 @@ jobs:
           if ! java -version; then
             brew install openjdk@11
           fi
-      # Step 6: Install dependencies
-      - name: Install Python dependencies
-        run: |
-          pip install -r $GITHUB_WORKSPACE/requirements.txt
-          pip install pyinstaller importlib-metadata sacremoses tokenizers
-      # Uninstall incompatible typing package
-      - name: Uninstall typing package
-        run: |
-          python -m pip uninstall -y typing
       ###############################
       - name: Set Up Python Virtual Environment
         run: |
