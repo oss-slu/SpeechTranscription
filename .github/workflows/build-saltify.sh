@@ -38,6 +38,7 @@ pip install --upgrade pip
 pip install -r "$BASE_DIR/requirements.txt"
 pip install pyinstaller importlib-metadata sacremoses tokenizers
 pip uninstall -y typing
+pip install lightning_fabric
 
 # Step 4: Install NLTK and resolve SSL issues
 echo "Installing NLTK and fixing SSL issues..."
