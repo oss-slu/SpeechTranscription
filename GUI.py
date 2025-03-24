@@ -418,21 +418,33 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def playAudio(self):
         '''Starts or resumes audio playback from the current position.'''
-        if not self.is_playing:
-            print(f"Starting playback from {round(self.current_position, 2)} seconds...")
+        if not self.is_playing and not self.is_paused:
+            print(f"🎶 Starting playback from {round(self.current_position, 2)} seconds...")
             self.is_playing = True
             self.is_paused = False
             threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()
+            # Start updating the scrub bar position while playing
             self.updatePlayback()
-            
+
+        elif self.is_paused:  # In case we resume after pausing
+            print(f"🎶 Resuming playback from {round(self.current_position, 2)} seconds...")
+            self.is_playing = True
+            self.is_paused = False
+            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()
+
     @global_error_handler
     def pauseAudio(self):
         '''Pauses the currently playing audio.'''
         if self.is_playing and not self.is_paused:
-            print("Pausing audio...")
-            self.audio.pause()
+            print("⏸️ Pausing audio...")
+            self.audio.pause()  # Pause the audio at the current position
             self.is_playing = False
             self.is_paused = True
+
+            # Update the scrub bar when paused (don't reset the position)
+            self.updatePlayback()
+
+
     
     @global_error_handler
     def updateEndTime(self, duration):
@@ -473,14 +485,19 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def updatePlayback(self):
-        '''Continuously updates the playback position and time display.'''
-        with self.lock:
-            if self.is_playing and not self.is_paused:
-                self.current_position += 0.3  # Increment playback position
-                self.timelineSlider.set(self.current_position)  # Update the slider
-                self.updateCurrentTime(self.current_position)  # Update the time label
+        '''Update playback position and scrub bar dynamically.'''
+        if self.is_playing:
+            # Update playback position every 100ms (adjust as needed)
+            threading.Timer(0.1, self.updatePlayback).start()
+
+            # Update the current position
+            self.current_position = self.audio.getCurrentPosition()
+            self.scrubBar.set(self.current_position)  # Assuming `scrubBar` is your progress bar widget
+            self.updateTimerDisplay()
+
+            # Continue updating the timer
             if self.is_playing:
-                self.master.after(300, self.updatePlayback)  # Continue updating
+                self.updateTimerDisplay()
 
     @global_error_handler
     def updateButtons(self):
@@ -672,28 +689,65 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def transcribe(self):
         '''Transcribes audio, then prints to the transcription box'''
-        self.startProgressBar()
-        filename = self.audio.normalizeUploadedFile()
-        transcribedAudio = diarizationAndTranscription.transcribe(filename)
+        
+        # Stop audio playback before starting transcription
+        if self.is_playing or self.is_paused:
+            print("🎶 Pausing audio before transcription...")
+            self.pauseAudio()  # Pause the audio if it's playing
 
-        self.transcriptionBox.configure(state="normal")
-        unlockItem(self.transcriptionBox)
-        unlockItem(self.labelSpeakersButton)
-        self.transcriptionBox.delete("0.0", "end")
-        self.transcriptionBox.insert("end", transcribedAudio + "\n")
-        self.color_code_transcription()
-        unlockItem(self.grammarButton)
-        unlockItem(self.exportButton)
-        self.stopProgressBar()
+        self.startProgressBar()  # Start the transcription progress bar animation
+
+        # Normalize the audio file
+        filename = self.audio.normalizeUploadedFile()
+        print(f"🎵 Normalized audio file: {filename}")
+
+        try:
+            # Perform transcription asynchronously
+            transcribedAudio = diarizationAndTranscription.transcribe(filename)
+            print("🎤 Transcription completed!")
+
+            # After transcription is complete, update the UI with the transcribed text
+            self.updateTranscriptionUI(transcribedAudio)
+        except Exception as e:
+            print(f"Error during transcription: {e}")
+            self.updateTranscriptionUI("Error during transcription.")
 
     @global_error_handler
     def transcriptionThread(self):
         '''Creates thread that executes the transcribe function'''
-        if self.audio.playing or not self.audio.paused:
-            self.audio.stopPlayback()
-            if self.playback_thread is not None and self.playback_thread.is_alive():
-                self.playback_thread.join()
-        threading.Thread(target=self.transcribe).start()
+
+        # Ensure no audio is playing or paused before starting transcription
+        if self.is_playing or self.is_paused:
+            print("🎶 Pausing audio before transcription...")
+            self.pauseAudio()
+
+        # Start the transcription process in a background thread
+        print("📝 Starting transcription thread...")
+        threading.Thread(target=self.transcribe, daemon=True).start()
+
+
+    @global_error_handler
+    def updateTranscriptionUI(self, transcribedAudio):
+        '''Updates UI with transcribed text and stops the progress bar'''
+
+        # Use `after` to schedule the UI update safely in the main thread
+        self.after(0, self._updateTranscriptionBox, transcribedAudio)
+
+    @global_error_handler
+    def _updateTranscriptionBox(self, transcribedAudio):
+        '''Helper function to actually update the transcription box in the main thread'''
+        print("📝 Updating transcription box with result...")
+        self.transcriptionBox.configure(state="normal")
+        unlockItem(self.transcriptionBox)
+        self.transcriptionBox.delete("1.0", "end")  # Clear the transcription box
+        self.transcriptionBox.insert("end", transcribedAudio + "\n")  # Insert the transcription text
+        self.transcriptionBox.configure(state="disabled")  # Lock the transcription box to prevent editing
+
+        # Stop progress bar animation
+        self.stopProgressBar()
+        print("✅ Transcription complete and UI updated!")
+
+
 
     @global_error_handler
     def downloadRecordedAudio(self):
