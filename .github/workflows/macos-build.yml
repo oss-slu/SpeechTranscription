@@ -33,13 +33,13 @@ jobs:
           brew install mysql pkg-config 
           brew install portaudio
           brew install ffmpeg
-          brew services start mysql
           pip install pyaudio
       # Set MySQL environment variables
       - name: Set MySQL environment variables
         run: |
           export MYSQLCLIENT_CFLAGS='pkg-config mysqlclient --cflags'
           export MYSQLCLIENT_LDFLAGS='pkg-config mysqlclient --libs'
+          brew services start mysql
       - name: Check MySQL Status
         run: |
           mysqladmin ping || (echo "MySQL failed to start!" && exit 1)
