@@ -137,48 +137,48 @@ jobs:
           ls -la $(pwd)/
   
       ###############################
-      # Step 8: Build the executable
-      - name: Build executable
-        run: |
-          SITE_PACKAGES=$($VIRTUAL_ENV/bin/python -c 'import site; print(site.getsitepackages()[0])')
-          pyinstaller --onefile --windowed \
-            --add-data "$(pwd)/images:images" \
-            --add-data "$(pwd)/build_assets/en-model.slp:pattern/text/en" \
-            --add-data "$(pwd)/CTkXYFrame:CTkXYFrame" \
-            --add-binary "$PORTAUDIO_PATH:." \
-            --add-binary "$FFMPEG_PATH:." \
-            --add-binary "$FFPROBE_PATH:." \
-            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
-            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/whisper:whisper" \
-            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/filelock:filelock" \
-            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
-            --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pyannote:pyannote" \
-            --hidden-import "lightning_fabric" \
-            --hidden-import "torch" \
-            --hidden-import "torchvision" \
-            --hidden-import "pytorch_lightning" \
-            --hidden-import "pyannote.audio" \
-            "$(pwd)/GUI.py"
-      #######################################     
-      - name: Debug File Paths
-        run: |
-         ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription
-         ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription/.github/workflows       
-      - name: Debug Directory Structure
-        run: |
-          echo "Current Directory: $(pwd)"
-          echo "Listing Files and Directories:"
-          ls -R
-      - name: Verify Required Files and Directories
-        run: |
-          if [ ! -d "$BASE_DIR/images" ]; then
-            echo "Error: Directory $BASE_DIR/images not found!"
-            exit 1
-          fi
-          if [ ! -d "$BASE_DIR/build_assets" ]; then
-            echo "Error: Directory $BASE_DIR/build_assets not found!"
-            exit 1
-          fi      
+      # # Step 8: Build the executable
+      # - name: Build executable
+      #   run: |
+      #     SITE_PACKAGES=$($VIRTUAL_ENV/bin/python -c 'import site; print(site.getsitepackages()[0])')
+      #     pyinstaller --onefile --windowed \
+      #       --add-data "$(pwd)/images:images" \
+      #       --add-data "$(pwd)/build_assets/en-model.slp:pattern/text/en" \
+      #       --add-data "$(pwd)/CTkXYFrame:CTkXYFrame" \
+      #       --add-binary "$PORTAUDIO_PATH:." \
+      #       --add-binary "$FFMPEG_PATH:." \
+      #       --add-binary "$FFPROBE_PATH:." \
+      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
+      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/whisper:whisper" \
+      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/filelock:filelock" \
+      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
+      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pyannote:pyannote" \
+      #       --hidden-import "lightning_fabric" \
+      #       --hidden-import "torch" \
+      #       --hidden-import "torchvision" \
+      #       --hidden-import "pytorch_lightning" \
+      #       --hidden-import "pyannote.audio" \
+      #       "$(pwd)/GUI.py"
+      # #######################################     
+      # - name: Debug File Paths
+      #   run: |
+      #    ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription
+      #    ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription/.github/workflows       
+      # - name: Debug Directory Structure
+      #   run: |
+      #     echo "Current Directory: $(pwd)"
+      #     echo "Listing Files and Directories:"
+      #     ls -R
+      # - name: Verify Required Files and Directories
+      #   run: |
+      #     if [ ! -d "$BASE_DIR/images" ]; then
+      #       echo "Error: Directory $BASE_DIR/images not found!"
+      #       exit 1
+      #     fi
+      #     if [ ! -d "$BASE_DIR/build_assets" ]; then
+      #       echo "Error: Directory $BASE_DIR/build_assets not found!"
+      #       exit 1
+      #     fi      
       #######################################      
 
       # Step 9: Run the Saltify build script
