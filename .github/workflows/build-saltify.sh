@@ -34,15 +34,14 @@ brew services start mysql
 
 # Step 3: Install Python dependencies
 echo "Installing Python dependencies..."
-pip install --upgrade pip
-pip install -r "$BASE_DIR/requirements.txt"
-pip install pyinstaller importlib-metadata sacremoses tokenizers
-pip uninstall -y typing
-pip install lightning_fabric
+python -m pip install --upgrade pip
+python -m pip install -r "$BASE_DIR/requirements.txt"
+python -m pip install pyinstaller importlib-metadata sacremoses tokenizers
+python -m pip uninstall -y typing
 
 # Step 4: Install NLTK and resolve SSL issues
 echo "Installing NLTK and fixing SSL issues..."
-pip install nltk certifi
+python -m pip install nltk certifi
 CERT_PATH=$(python -m certifi)
 export SSL_CERT_FILE=${CERT_PATH}
 export REQUESTS_CA_BUNDLE=${CERT_PATH}
