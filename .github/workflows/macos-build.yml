@@ -145,7 +145,7 @@ jobs:
       #       --add-binary "$PORTAUDIO_PATH:." \
       #       --add-binary "$FFMPEG_PATH:." \
       #       --add-binary "$FFPROBE_PATH:." \
-      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
+      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning-fabric:lightning_fabric" \
       #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/whisper:whisper" \
       #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/filelock:filelock" \
       #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
@@ -177,7 +177,9 @@ jobs:
       #       exit 1
       #     fi      
       #######################################      
-
+      - name: Debug the location
+        run: | 
+          ls /Users/runner/work/SpeechTranscription/SpeechTranscription/venv/lib/python3.11/site-packages/lightning-fabric
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         run: |
