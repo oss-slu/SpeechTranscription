@@ -112,22 +112,22 @@ jobs:
           echo "FFMPEG_PATH=$(which ffmpeg)" >> $GITHUB_ENV
           echo "FFPROBE_PATH=$(which ffprobe)" >> $GITHUB_ENV      
       ###############################
-      - name: Verify Installed Packages
-        run: |
-          python -c "import lightning_fabric; print('lightning_fabric is installed')"
+      # - name: Verify Installed Packages
+      #   run: |
+      #     python -c "import lightning_fabric; print('lightning_fabric is installed')"
 
-      - name: Debug Python Path
-        run: |
-          python -c "import sys; print(sys.path)"
+      # - name: Debug Python Path
+      #   run: |
+      #     python -c "import sys; print(sys.path)"
 
-      - name: Debug Virtual Environment Path
-        run: |
-          echo "VIRTUAL_ENV: $VIRTUAL_ENV"
-          ls -lah $VIRTUAL_ENV/lib/python3.11/site-packages || echo "No site-packages found"
-      - name: List files in the working directory
-        run: |
-          echo "Current directory: $(pwd)"
-          ls -la $(pwd)
+      # - name: Debug Virtual Environment Path
+      #   run: |
+      #     echo "VIRTUAL_ENV: $VIRTUAL_ENV"
+      #     ls -lah $VIRTUAL_ENV/lib/python3.11/site-packages || echo "No site-packages found"
+      # - name: List files in the working directory
+      #   run: |
+      #     echo "Current directory: $(pwd)"
+      #     ls -la $(pwd)
       - name: Verify GUI.py location
         run: |
           echo "Listing files in src directory:"
