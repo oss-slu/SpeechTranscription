@@ -27,19 +27,24 @@ jobs:
           if ! command -v brew &> /dev/null; then
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           fi
+#########################################
+      - name: Installing Homebrew services
+        run :
+          brew service list
+#########################################
       # Step 4: Install MySQL and other Homebrew packages
       - name: Install MySQL and required packages
         run: |
           brew install mysql pkg-config 
           brew install portaudio
           brew install ffmpeg
+          brew services start mysql          
           pip install pyaudio
       # Set MySQL environment variables
       - name: Set MySQL environment variables
         run: |
           export MYSQLCLIENT_CFLAGS='pkg-config mysqlclient --cflags'
           export MYSQLCLIENT_LDFLAGS='pkg-config mysqlclient --libs'
-          brew services start mysql
       - name: Check MySQL Status
         run: |
           mysqladmin ping || (echo "MySQL failed to start!" && exit 1)
