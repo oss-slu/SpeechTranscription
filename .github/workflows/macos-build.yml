@@ -30,7 +30,7 @@ jobs:
 #########################################
       - name: Installing Homebrew services
         run :
-          brew service list
+          brew services list
 #########################################
       # Step 4: Install MySQL and other Homebrew packages
       - name: Install MySQL and required packages
