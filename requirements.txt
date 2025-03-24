@@ -20,7 +20,7 @@ matplotlib
 numpy
 simple_diarizer
 python-dotenv
-lightning_fabric
+lightning-fabric 
 pillow
 
 # For testing purposes
