@@ -179,7 +179,7 @@ jobs:
       #######################################      
       - name: Debug the location
         run: | 
-          ls /Users/runner/work/SpeechTranscription/SpeechTranscription/venv/lib/python3.11/site-packages/lightning-fabric
+          ls /Users/runner/work/SpeechTranscription/SpeechTranscription/venv/lib/python3.11/site-packages
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         run: |
