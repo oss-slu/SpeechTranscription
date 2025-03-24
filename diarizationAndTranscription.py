@@ -102,3 +102,13 @@ def diarizeAndTranscribe(audioFile):
     else:
         print("Failed to diarize and transcribe: access token not found")
     
+# New function to handle the user choice
+def transcribeWithOption(audioFile, enableDiarization=False):
+    if enableDiarization:
+        confirmation = input("Diarization will likely be slower than just transcription. Do you want to continue? (yes/no): ")
+        if confirmation.lower() == 'yes':
+            return diarizeAndTranscribe(audioFile)
+        else:
+            return transcribe(audioFile)
+    else:
+        return transcribe(audioFile)
