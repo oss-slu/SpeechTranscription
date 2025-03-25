@@ -4,6 +4,13 @@ set -e  # Exit script on any error
 LOG_FILE="build.log"
 exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
 
+# Activate the virtual environment
+source "$(pwd)/venv/bin/activate"
+echo "Virtual Environment Activated!"
+echo "Python version: $(python --version)"
+echo "Installed packages:"
+pip list
+
 # Determine script and base directories
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 BASE_DIR=$(git rev-parse --show-toplevel)
