@@ -59,7 +59,11 @@ export SSL_CERT_FILE=${CERT_PATH}
 export REQUESTS_CA_BUNDLE=${CERT_PATH}
 python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('averaged_perceptron_tagger', quiet=True)"
 
-# Step 5: Build the macOS executable with PyInstaller
+# Step 5: Check contents of dist/ before renaming
+echo "Checking contents of dist/ before renaming:"
+ls -la dist/
+
+# Step 6: Build the macOS executable with PyInstaller
 echo "Building the macOS executable..."
 pyinstaller --onefile --windowed \
   --add-data "$(pwd)/images:images" \
@@ -80,24 +84,31 @@ pyinstaller --onefile --windowed \
   --hidden-import "pyannote.audio" \
   "$(pwd)/GUI.py"
 
-# Step 6: Fix potential PyInstaller .txt issue
+# Step 7: Fix potential PyInstaller .txt issue
 if [[ -f dist/Saltify.txt ]]; then
   echo "Found Saltify.txt instead of executable. Renaming..."
   mv dist/Saltify.txt dist/Saltify
 fi
 
-# Step 7: Organize build output
+# Step 8: Organize build output
 OUTPUT_DIR="dist/Saltify_$(date +'%Y%m%d_%H%M%S')"
 mkdir -p "${OUTPUT_DIR}"
+
+# Check if the Saltify executable exists
+if [ ! -f "dist/Saltify" ]; then
+  echo "Error: dist/Saltify executable not found!"
+  exit 1
+fi
+
 mv dist/Saltify "${OUTPUT_DIR}"
 
-# Step 8: Ensure correct permissions
+# Step 9: Ensure correct permissions
 chmod +x "${OUTPUT_DIR}/Saltify"
 
-# Step 9: Clean up temporary files
+# Step 10: Clean up temporary files
 echo "Cleaning up..."
 rm -rf build *.spec
 
-# Step 10: Notify user
+# Step 11: Notify user
 osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
 echo "Build complete. The executable is located in ${OUTPUT_DIR}."
