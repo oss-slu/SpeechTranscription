@@ -88,8 +88,52 @@ pyinstaller --onefile --windowed \
   --hidden-import "pyannote.audio" \
   "$(pwd)/GUI.py"
 
-echo "PyInstaller build log:"
-tail -n 20 ${LOG_FILE}
+# echo "PyInstaller build log:"
+# tail -n 20 ${LOG_FILE}
+
+# # Step 7: Fix potential PyInstaller .txt issue in dist/
+# if [[ -f "dist/Saltify.txt" ]]; then
+#   echo "Found Saltify.txt instead of executable. Renaming..."
+#   mv dist/Saltify.txt dist/Saltify
+# fi
+
+# # Step 8: Organize build output into release directory
+# RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
+# mkdir -p "${RELEASE_DIR}"
+
+# # Check if the Saltify executable exists in dist/
+# if [ ! -f "dist/Saltify" ]; then
+#   echo "Error: dist/Saltify executable not found!"
+#   exit 1
+# fi
+
+# # Move executable to release directory
+# mv dist/Saltify "${RELEASE_DIR}"
+
+# # Step 9: Ensure correct permissions
+# chmod +x "${RELEASE_DIR}/Saltify"
+
+# # Step 10: Clean up temporary files
+# echo "Cleaning up..."
+# rm -rf build *.spec dist/
+
+# # Step 11: Notify user
+# osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
+# echo "Build complete. The executable is located in ${RELEASE_DIR}."
+
+LOG_FILE="build.log"
+
+echo "Building executable with PyInstaller..."
+pyinstaller --onefile --name=Saltify main.py | tee ${LOG_FILE}
+
+echo "Full PyInstaller log:"
+cat ${LOG_FILE}
+
+# Ensure the dist directory exists
+if [ ! -d "dist" ]; then
+  echo "Error: dist/ directory not found! PyInstaller might have failed."
+  exit 1
+fi
 
 # Step 7: Fix potential PyInstaller .txt issue in dist/
 if [[ -f "dist/Saltify.txt" ]]; then
@@ -97,15 +141,15 @@ if [[ -f "dist/Saltify.txt" ]]; then
   mv dist/Saltify.txt dist/Saltify
 fi
 
-# Step 8: Organize build output into release directory
-RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
-mkdir -p "${RELEASE_DIR}"
-
-# Check if the Saltify executable exists in dist/
+# Check if the Saltify executable exists
 if [ ! -f "dist/Saltify" ]; then
   echo "Error: dist/Saltify executable not found!"
   exit 1
 fi
+
+# Step 8: Organize build output into release directory
+RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
+mkdir -p "${RELEASE_DIR}"
 
 # Move executable to release directory
 mv dist/Saltify "${RELEASE_DIR}"
@@ -117,6 +161,9 @@ chmod +x "${RELEASE_DIR}/Saltify"
 echo "Cleaning up..."
 rm -rf build *.spec dist/
 
-# Step 11: Notify user
-osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
+# Step 11: Notify user (only on local machine)
+if [[ -z "$CI" ]]; then
+  osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
+fi
+
 echo "Build complete. The executable is located in ${RELEASE_DIR}."
