@@ -202,8 +202,25 @@ jobs:
         run: |
           git update-index --chmod=+x .github/workflows/build-saltify.sh
           chmod +x .github/workflows/build-saltify.sh
-          ./.github/workflows/build-saltify.sh                
-      # Step 10: Upload the built artifact
+          ./.github/workflows/build-saltify.sh
+      #checking
+      # Step 10: Check the dist folder and move the executable to release
+      - name: Verify PyInstaller build output
+        run: |
+          echo "Contents of dist folder:"
+          ls -la dist/
+      - name: Move the executable to release directory
+        run: |
+          if [ -f "dist/Saltify" ]; then
+            echo "Moving executable to release directory..."
+            RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"              mkdir -p "$RELEASE_DIR"
+            mv dist/Saltify "$RELEASE_DIR"
+            chmod +x "$RELEASE_DIR/Saltify"
+          else
+            echo "Error: dist/Saltify executable not found!"
+            exit 1
+          fi          
+      # Step 11: Upload the built artifact
       - name: Upload macOS Build Artifact
         uses: actions/upload-artifact@v4
         if: always()

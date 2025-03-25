@@ -62,9 +62,7 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 # Step 5: Check contents of dist/ before renaming
 if [ -d "dist" ]; then
   echo "Checking contents of dist/ before renaming:"
-echo "Checking contents of dist/ before renaming:"
   ls -la dist/
-ls -la dist/
 else
   echo "dist/ directory does not exist. Skipping listing."
 fi
@@ -93,30 +91,31 @@ pyinstaller --onefile --windowed \
 echo "PyInstaller build log:"
 tail -n 20 ${LOG_FILE}
 
-# Step 7: Fix potential PyInstaller .txt issue
-if [[ -f dist/Saltify.txt ]]; then
+# Step 7: Fix potential PyInstaller .txt issue in dist/
+if [[ -f "dist/Saltify.txt" ]]; then
   echo "Found Saltify.txt instead of executable. Renaming..."
-  mv release/Saltify.txt release/Saltify
+  mv dist/Saltify.txt dist/Saltify
 fi
 
-# Step 8: Organize build output
+# Step 8: Organize build output into release directory
 RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
 mkdir -p "${RELEASE_DIR}"
 
-# Check if the Saltify executable exists
-if [ ! -f "release/Saltify" ]; then
-  echo "Error: release/Saltify executable not found!"
+# Check if the Saltify executable exists in dist/
+if [ ! -f "dist/Saltify" ]; then
+  echo "Error: dist/Saltify executable not found!"
   exit 1
 fi
 
-mv release/Saltify "${RELEASE_DIR}"
+# Move executable to release directory
+mv dist/Saltify "${RELEASE_DIR}"
 
 # Step 9: Ensure correct permissions
 chmod +x "${RELEASE_DIR}/Saltify"
 
 # Step 10: Clean up temporary files
 echo "Cleaning up..."
-rm -rf build *.spec
+rm -rf build *.spec dist/
 
 # Step 11: Notify user
 osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
