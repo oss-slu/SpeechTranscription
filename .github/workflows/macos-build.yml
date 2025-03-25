@@ -180,11 +180,11 @@ jobs:
       - name: Ensure dist folder exists
         run: |
           mkdir -p dist
-      - name: Debug PyInstaller
-        run: |
-          source $VIRTUAL_ENV/bin/activate
-          pyinstaller --clean --log-level=DEBUG --onefile --windowed "$(pwd)/GUI.py" > pyinstaller_debug.log 2>&1
-          cat pyinstaller_debug.log        
+      # - name: Debug PyInstaller
+      #   run: |
+      #     source $VIRTUAL_ENV/bin/activate
+      #     pyinstaller --clean --log-level=DEBUG --onefile --windowed "$(pwd)/GUI.py" > pyinstaller_debug.log 2>&1
+      #     cat pyinstaller_debug.log        
       - name: Print PyInstaller Build Log
         run: |
           echo "PyInstaller build log:"
