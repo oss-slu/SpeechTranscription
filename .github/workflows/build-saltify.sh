@@ -121,6 +121,9 @@ pyinstaller --onefile --windowed \
 # osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
 # echo "Build complete. The executable is located in ${RELEASE_DIR}."
 
+# Ensure required directories exist
+mkdir -p dist release
+
 echo "Full PyInstaller log:"
 cat ${LOG_FILE}
 
@@ -156,3 +159,4 @@ if [[ -z "$CI" ]]; then
 fi
 
 echo "Build complete. The executable is located in ${RELEASE_DIR}."
+
