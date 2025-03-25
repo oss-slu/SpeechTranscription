@@ -176,10 +176,16 @@ jobs:
       #       echo "Error: Directory $BASE_DIR/build_assets not found!"
       #       exit 1
       #     fi      
-      #######################################   
-      - name: Ensure dist folder exists
+      #######################################  
+      - name: Build Executable with PyInstaller
         run: |
-          mkdir -p dist
+          pyinstaller --onefile --name=Saltify main.py | tee build.log
+          cat build.log
+      - name: Verify Executable Exists
+        run: ls -l dist/   
+      # - name: Ensure dist folder exists
+      #   run: |
+      #     mkdir -p dist
       # - name: Debug PyInstaller
       #   run: |
       #     source $VIRTUAL_ENV/bin/activate
@@ -189,28 +195,23 @@ jobs:
       #   run: |
       #     echo "PyInstaller build log:"
       #     cat pyinstaller_build.log    
-      - name: Verify GUI.py exists
-        run: |
-          echo "Checking if GUI.py exists..."
-          ls -la $(pwd)/
-          [ -f "$(pwd)/GUI.py" ] || (echo "Error: GUI.py not found!" && exit 1)        
-      - name: Check PyInstaller Output
-        run: |
-          echo "Contents of dist folder after PyInstaller:"
-          ls -la dist/ || echo "dist/ folder does not exist"            
-      - name: Debug the location
-        run: | 
-          ls /Users/runner/work/SpeechTranscription/SpeechTranscription/venv/lib/python3.11/site-packages
-      - name: Debug Installed Packages
-        run: |
-          ls -la $VIRTUAL_ENV/lib/python3.11/site-packages
-          python -c "import site; print(site.getsitepackages())"            
+      # - name: Check PyInstaller Output
+      #   run: |
+      #     echo "Contents of dist folder after PyInstaller:"
+      #     ls -la dist/ || echo "dist/ folder does not exist"            
+      # - name: Debug the location
+      #   run: | 
+      #     ls /Users/runner/work/SpeechTranscription/SpeechTranscription/venv/lib/python3.11/site-packages
+      # - name: Debug Installed Packages
+      #   run: |
+      #     ls -la $VIRTUAL_ENV/lib/python3.11/site-packages
+      #     python -c "import site; print(site.getsitepackages())"            
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         run: |
           git update-index --chmod=+x .github/workflows/build-saltify.sh
           chmod +x .github/workflows/build-saltify.sh
-          ./.github/workflows/build-saltify.sh
+          ./.github/workflows/build-saltify.sh     
       #checking
       # Step 10: Check the dist folder and move the executable to release
       - name: Verify PyInstaller build output
