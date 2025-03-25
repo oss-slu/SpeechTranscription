@@ -181,7 +181,11 @@ jobs:
       #       echo "Error: Directory $BASE_DIR/build_assets not found!"
       #       exit 1
       #     fi      
-      #######################################      
+      #######################################   
+      - name: Check PyInstaller Output
+        run: |
+          echo "Contents of dist folder after PyInstaller:"
+          ls -la dist/ || echo "dist/ folder does not exist"            
       - name: Debug the location
         run: | 
           ls /Users/runner/work/SpeechTranscription/SpeechTranscription/venv/lib/python3.11/site-packages
