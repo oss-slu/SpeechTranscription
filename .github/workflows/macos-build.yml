@@ -185,10 +185,10 @@ jobs:
       #     source $VIRTUAL_ENV/bin/activate
       #     pyinstaller --clean --log-level=DEBUG --onefile --windowed "$(pwd)/GUI.py" > pyinstaller_debug.log 2>&1
       #     cat pyinstaller_debug.log        
-      - name: Print PyInstaller Build Log
-        run: |
-          echo "PyInstaller build log:"
-          cat pyinstaller_build.log    
+      # - name: Print PyInstaller Build Log
+      #   run: |
+      #     echo "PyInstaller build log:"
+      #     cat pyinstaller_build.log    
       - name: Verify GUI.py exists
         run: |
           echo "Checking if GUI.py exists..."
