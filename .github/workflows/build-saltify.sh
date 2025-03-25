@@ -96,27 +96,23 @@ tail -n 20 ${LOG_FILE}
 # Step 7: Fix potential PyInstaller .txt issue
 if [[ -f dist/Saltify.txt ]]; then
   echo "Found Saltify.txt instead of executable. Renaming..."
-  mv dist/Saltify.txt dist/Saltify
+  mv release/Saltify.txt release/Saltify
 fi
 
 # Step 8: Organize build output
-if [ ! -d "dist" ]; then
-  echo "Error: dist directory not found!"
-  exit 1
-fi
-OUTPUT_DIR="dist/Saltify_$(date +'%Y%m%d_%H%M%S')"
-mkdir -p "${OUTPUT_DIR}"
+RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
+mkdir -p "${RELEASE_DIR}"
 
 # Check if the Saltify executable exists
-if [ ! -f "dist/Saltify" ]; then
-  echo "Error: dist/Saltify executable not found!"
+if [ ! -f "release/Saltify" ]; then
+  echo "Error: release/Saltify executable not found!"
   exit 1
 fi
 
-mv dist/Saltify "${OUTPUT_DIR}"
+mv release/Saltify "${RELEASE_DIR}"
 
 # Step 9: Ensure correct permissions
-chmod +x "${OUTPUT_DIR}/Saltify"
+chmod +x "${RELEASE_DIR}/Saltify"
 
 # Step 10: Clean up temporary files
 echo "Cleaning up..."
@@ -124,4 +120,4 @@ rm -rf build *.spec
 
 # Step 11: Notify user
 osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
-echo "Build complete. The executable is located in ${OUTPUT_DIR}."
+echo "Build complete. The executable is located in ${RELEASE_DIR}."
