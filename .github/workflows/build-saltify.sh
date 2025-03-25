@@ -90,6 +90,9 @@ pyinstaller --onefile --windowed \
   --hidden-import "pyannote.audio" \
   "$(pwd)/GUI.py"
 
+echo "PyInstaller build log:"
+tail -n 20 ${LOG_FILE}
+
 # Step 7: Fix potential PyInstaller .txt issue
 if [[ -f dist/Saltify.txt ]]; then
   echo "Found Saltify.txt instead of executable. Renaming..."
@@ -97,6 +100,10 @@ if [[ -f dist/Saltify.txt ]]; then
 fi
 
 # Step 8: Organize build output
+if [ ! -d "dist" ]; then
+  echo "Error: dist directory not found!"
+  exit 1
+fi
 OUTPUT_DIR="dist/Saltify_$(date +'%Y%m%d_%H%M%S')"
 mkdir -p "${OUTPUT_DIR}"
 
