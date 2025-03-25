@@ -68,12 +68,12 @@ pyinstaller --onefile --windowed \
   --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
   --add-binary "/opt/homebrew/bin/ffmpeg:." \
   --add-binary "/opt/homebrew/bin/ffprobe:." \
-  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning-fabric:lightning-fabric" \
+  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
   --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/whisper:whisper" \
   --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/filelock:filelock" \
   --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
   --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pyannote:pyannote" \
-  --hidden-import "lightning-fabric" \
+  --hidden-import "lightning_fabric" \
   --hidden-import "torch" \
   --hidden-import "torchvision" \
   --hidden-import "pytorch_lightning" \

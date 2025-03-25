@@ -185,6 +185,18 @@ jobs:
       - name: Debug the location
         run: | 
           ls /Users/runner/work/SpeechTranscription/SpeechTranscription/venv/lib/python3.11/site-packages
+      - name: Debug Installed Packages
+        run: |
+          ls -la $VIRTUAL_ENV/lib/python3.11/site-packages
+          python -c "import site; print(site.getsitepackages())" 
+      - name: Confirm lightning_fabric Path
+        run: |
+          if [ -d "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric" ]; then
+            echo "lightning_fabric found!"
+          else
+            echo "lightning_fabric NOT FOUND!"
+            exit 1
+          fi               
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         run: |
