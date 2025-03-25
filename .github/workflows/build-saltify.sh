@@ -4,9 +4,14 @@ set -e  # Exit script on any error
 LOG_FILE="build.log"
 exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
 
-# Activate the virtual environment
+# Activate virtual environment
 source "$(pwd)/venv/bin/activate"
+
 echo "Virtual Environment Activated!"
+echo "Installing dependencies..."
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
 echo "Python version: $(python --version)"
 echo "Installed packages:"
 pip list
