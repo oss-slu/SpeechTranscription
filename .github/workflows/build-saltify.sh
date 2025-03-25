@@ -121,19 +121,8 @@ pyinstaller --onefile --windowed \
 # osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
 # echo "Build complete. The executable is located in ${RELEASE_DIR}."
 
-LOG_FILE="build.log"
-
-echo "Building executable with PyInstaller..."
-pyinstaller --onefile --name=Saltify main.py | tee ${LOG_FILE}
-
 echo "Full PyInstaller log:"
 cat ${LOG_FILE}
-
-# Ensure the dist directory exists
-if [ ! -d "dist" ]; then
-  echo "Error: dist/ directory not found! PyInstaller might have failed."
-  exit 1
-fi
 
 # Step 7: Fix potential PyInstaller .txt issue in dist/
 if [[ -f "dist/Saltify.txt" ]]; then
