@@ -60,8 +60,14 @@ export REQUESTS_CA_BUNDLE=${CERT_PATH}
 python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('averaged_perceptron_tagger', quiet=True)"
 
 # Step 5: Check contents of dist/ before renaming
+if [ -d "dist" ]; then
+  echo "Checking contents of dist/ before renaming:"
 echo "Checking contents of dist/ before renaming:"
+  ls -la dist/
 ls -la dist/
+else
+  echo "dist/ directory does not exist. Skipping listing."
+fi
 
 # Step 6: Build the macOS executable with PyInstaller
 echo "Building the macOS executable..."
