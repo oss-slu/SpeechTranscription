@@ -133,11 +133,6 @@ jobs:
       #   run: |
       #     echo "Current directory: $(pwd)"
       #     ls -la $(pwd)
-      - name: Verify GUI.py location
-        run: |
-          echo "Listing files in src directory:"
-          ls -la $(pwd)/
-  
       ###############################
       # # Step 8: Build the executable
       # - name: Build executable
@@ -182,6 +177,23 @@ jobs:
       #       exit 1
       #     fi      
       #######################################   
+      - name: Ensure dist folder exists
+        run: |
+          mkdir -p dist
+      - name: Debug PyInstaller
+        run: |
+          source $VIRTUAL_ENV/bin/activate
+          pyinstaller --clean --log-level=DEBUG --onefile --windowed "$(pwd)/GUI.py" > pyinstaller_debug.log 2>&1
+          cat pyinstaller_debug.log        
+      - name: Print PyInstaller Build Log
+        run: |
+          echo "PyInstaller build log:"
+          cat pyinstaller_build.log    
+      - name: Verify GUI.py exists
+        run: |
+          echo "Checking if GUI.py exists..."
+          ls -la $(pwd)/
+          [ -f "$(pwd)/GUI.py" ] || (echo "Error: GUI.py not found!" && exit 1)        
       - name: Check PyInstaller Output
         run: |
           echo "Contents of dist folder after PyInstaller:"
@@ -192,15 +204,7 @@ jobs:
       - name: Debug Installed Packages
         run: |
           ls -la $VIRTUAL_ENV/lib/python3.11/site-packages
-          python -c "import site; print(site.getsitepackages())" 
-      - name: Confirm lightning_fabric Path
-        run: |
-          if [ -d "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric" ]; then
-            echo "lightning_fabric found!"
-          else
-            echo "lightning_fabric NOT FOUND!"
-            exit 1
-          fi               
+          python -c "import site; print(site.getsitepackages())"            
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         run: |
