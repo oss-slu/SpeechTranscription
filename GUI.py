@@ -485,20 +485,14 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def updatePlayback(self):
-        '''Update playback position and scrub bar dynamically.'''
-        if self.is_playing:
-            # Update playback position every 100ms (adjust as needed)
-            threading.Timer(0.1, self.updatePlayback).start()
-
-            # Update the current position
-            self.current_position = self.audio.getCurrentPosition()
-            self.scrubBar.set(self.current_position)  # Assuming `scrubBar` is your progress bar widget
-            self.updateTimerDisplay()
-
-            # Continue updating the timer
+        '''Continuously updates the playback position and time display.'''
+        with self.lock:
+            if self.is_playing and not self.is_paused:
+                self.current_position += 0.3  # Increment playback position
+                self.timelineSlider.set(self.current_position)  # Update the slider
+                self.updateCurrentTime(self.current_position)  # Update the time label
             if self.is_playing:
-                self.updateTimerDisplay()
-
+                self.master.after(300, self.updatePlayback)  # Continue updating
     @global_error_handler
     def updateButtons(self):
         '''Updates the state of the play/pause button based on whether the audio is currently playing or paused.'''
