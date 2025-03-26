@@ -4,75 +4,65 @@ set -e  # Exit script on any error
 LOG_FILE="build.log"
 exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
 
-# Activate virtual environment
-source "$(pwd)/venv/bin/activate"
-
-echo "Virtual Environment Activated!"
-echo "Installing dependencies..."
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-
-echo "Python version: $(python --version)"
-echo "Installed packages:"
-pip list
-
 # Determine script and base directories
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 BASE_DIR=$(git rev-parse --show-toplevel)
 echo "Base directory: $BASE_DIR"
 echo "Script directory: $SCRIPT_DIR"
 
-# Detect virtual environment
+# Activate virtual environment
 if [[ -z "$VIRTUAL_ENV" ]]; then
     echo "Virtual environment not activated. Please activate it before running the script."
     exit 1
 fi
-VENV_NAME=$(basename "$VIRTUAL_ENV")
+source "$VIRTUAL_ENV/bin/activate"
+echo "Using virtual environment: $(basename "$VIRTUAL_ENV")"
 
-echo "Using virtual environment: $VENV_NAME"
+# Upgrade pip and install dependencies
+echo "Installing dependencies..."
+pip install --upgrade pip
+pip install -r "$BASE_DIR/requirements.txt"
 
-# Step 1: Check and install Homebrew if not installed
+# Ensure Homebrew is installed
 if ! command -v brew &> /dev/null; then
     echo "Homebrew not found, installing..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
-    echo "Homebrew is already installed."
+    echo "Updating Homebrew..."
+    brew update
 fi
 
-# Step 2: Install dependencies
-echo "Installing dependencies..."
-brew install mysql pkg-config portaudio ffmpeg
+# Install required packages
+for pkg in mysql pkg-config portaudio ffmpeg; do
+    if ! brew list $pkg &>/dev/null; then
+        brew install $pkg
+    else
+        echo "$pkg is already installed."
+    fi
+done
 brew services start mysql
 
-# Step 3: Install Python dependencies
-echo "Installing Python dependencies..."
-python -m pip install --upgrade pip
-python -m pip install -r "$BASE_DIR/requirements.txt"
-python -m pip install pyinstaller importlib-metadata sacremoses tokenizers
-python -m pip uninstall -y typing
+# Install additional Python dependencies
+pip install pyinstaller importlib-metadata sacremoses tokenizers
+pip uninstall -y typing
+pip install nltk certifi
 
-# Step 4: Install NLTK and resolve SSL issues
-echo "Installing NLTK and fixing SSL issues..."
-python -m pip install nltk certifi
+# Fix SSL issues for NLTK
+echo "Fixing SSL issues..."
 CERT_PATH=$(python -m certifi)
 export SSL_CERT_FILE=${CERT_PATH}
 export REQUESTS_CA_BUNDLE=${CERT_PATH}
 python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('averaged_perceptron_tagger', quiet=True)"
 
-# Step 5: Check contents of dist/ before renaming
-if [ -d "dist" ]; then
-  echo "Checking contents of dist/ before renaming:"
-  ls -la dist/
-else
-  echo "dist/ directory does not exist. Skipping listing."
-fi
+# Ensure required directories exist
+mkdir -p dist release
 
-# Step 6: Build the macOS executable with PyInstaller
+# Build the macOS executable
 echo "Building the macOS executable..."
 pyinstaller --onefile --windowed \
-  --add-data "$(pwd)/images:images" \
-  --add-data "$(pwd)/build_assets/en-model.slp:pattern/text/en" \
-  --add-data "$(pwd)/CTkXYFrame:CTkXYFrame" \
+  --add-data "$SCRIPT_DIR/images:images" \
+  --add-data "$SCRIPT_DIR/build_assets/en-model.slp:pattern/text/en" \
+  --add-data "$SCRIPT_DIR/CTkXYFrame:CTkXYFrame" \
   --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
   --add-binary "/opt/homebrew/bin/ffmpeg:." \
   --add-binary "/opt/homebrew/bin/ffprobe:." \
@@ -86,77 +76,30 @@ pyinstaller --onefile --windowed \
   --hidden-import "torchvision" \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
-  "$(pwd)/GUI.py"
+  "$SCRIPT_DIR/GUI.py"
 
-# echo "PyInstaller build log:"
-# tail -n 20 ${LOG_FILE}
-
-# # Step 7: Fix potential PyInstaller .txt issue in dist/
-# if [[ -f "dist/Saltify.txt" ]]; then
-#   echo "Found Saltify.txt instead of executable. Renaming..."
-#   mv dist/Saltify.txt dist/Saltify
-# fi
-
-# # Step 8: Organize build output into release directory
-# RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
-# mkdir -p "${RELEASE_DIR}"
-
-# # Check if the Saltify executable exists in dist/
-# if [ ! -f "dist/Saltify" ]; then
-#   echo "Error: dist/Saltify executable not found!"
-#   exit 1
-# fi
-
-# # Move executable to release directory
-# mv dist/Saltify "${RELEASE_DIR}"
-
-# # Step 9: Ensure correct permissions
-# chmod +x "${RELEASE_DIR}/Saltify"
-
-# # Step 10: Clean up temporary files
-# echo "Cleaning up..."
-# rm -rf build *.spec dist/
-
-# # Step 11: Notify user
-# osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
-# echo "Build complete. The executable is located in ${RELEASE_DIR}."
-
-# Ensure required directories exist
-mkdir -p dist release
-
-echo "Full PyInstaller log:"
-cat ${LOG_FILE}
-
-# Step 7: Fix potential PyInstaller .txt issue in dist/
-if [[ -f "dist/Saltify.txt" ]]; then
-  echo "Found Saltify.txt instead of executable. Renaming..."
-  mv dist/Saltify.txt dist/Saltify
-fi
-
-# Check if the Saltify executable exists
+# Check build output
 if [ ! -f "dist/Saltify" ]; then
-  echo "Error: dist/Saltify executable not found!"
-  exit 1
+    echo "Error: dist/Saltify executable not found!"
+    ls -la dist/
+    exit 1
 fi
 
-# Step 8: Organize build output into release directory
+# Organize build output into release directory
 RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
 mkdir -p "${RELEASE_DIR}"
-
-# Move executable to release directory
 mv dist/Saltify "${RELEASE_DIR}"
-
-# Step 9: Ensure correct permissions
 chmod +x "${RELEASE_DIR}/Saltify"
 
-# Step 10: Clean up temporary files
-echo "Cleaning up..."
+# Clean up temporary files
 rm -rf build *.spec dist/
-
-# Step 11: Notify user (only on local machine)
-if [[ -z "$CI" ]]; then
-  osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
-fi
 
 echo "Build complete. The executable is located in ${RELEASE_DIR}."
 
+# Notify user (only if not running in CI/CD)
+if [[ -z "$CI" || -z "$GITHUB_ACTIONS" ]]; then
+    osascript -e 'display notification "Build Complete!" with title "Saltify Build Script"'
+fi
+
+echo "Full PyInstaller log:"
+tail -n 20 ${LOG_FILE}
