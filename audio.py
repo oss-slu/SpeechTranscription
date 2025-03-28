@@ -231,7 +231,7 @@ class AudioManager:
 
             transcript = ""
             for i, chunk in enumerate(chunks):
-                text = self.run_transcription_model(chunk)  # Replace with actual transcription function
+                text = self.transcribe_audio(progress_callback) # Replace with actual transcription function
                 transcript += text + " "
 
                 # Update processed time based on chunk length
