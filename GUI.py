@@ -350,7 +350,7 @@ class audioMenu(CTkFrame):
         """ Runs actual transcription and updates progress dynamically """
         total_duration = self.audio.getAudioDuration()  # Get total audio duration
         
-        def progress_callback(processed_time):
+        def progress_callback(progress):
             """ Updates progress bar based on on transcription progress """
             self.after(100, self.progressBar.set, progress)
         
