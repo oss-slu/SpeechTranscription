@@ -6,6 +6,7 @@ from grammar import GrammarChecker
 from export import Exporter
 from PIL import Image
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *  # Uses Third party license found in CtkXYFrame/ folder
+from threading import Thread 
 import threading
 import matplotlib.pyplot as plt
 import time
@@ -13,6 +14,8 @@ import webbrowser
 import traceback
 import re
 import customtkinter as ctk
+from customtkinter import CTkProgressBar
+
 
 WIDTH = 1340
 HEIGHT = 740
@@ -316,7 +319,11 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
+        # self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
+        self.progressBar = CTkProgressBar(self, width=200, height=20)
+        self.progressBar.grid(row=3, column=0, columnspan=2, pady=10)  # Placing below Transcribe button
+        self.progressBar.set(0)  # Initialize at 0%
+        self.progressBar.grid_remove()  # Hide initially
 
         self.grammarCheckPerformed = False
 
@@ -328,6 +335,37 @@ class audioMenu(CTkFrame):
         self.last_scrub_time = 0  # For debouncing scrubbing events
 
         self.lock = threading.Lock()
+
+    def startTranscription(self):
+        """ Starts transcription and updates progress dynamically """
+        self.transcribeButton.configure(state="disabled", text="Transcribing...")
+        self.progressBar.grid()  # Show progress bar
+        self.progressBar.set(0) # Reset to 0 only once
+
+        # Run transcription in a separate thread
+        transcription_thread = Thread(target=self.transcriptionThread, daemon=True)
+        transcription_thread.start()
+
+    def transcriptionThread(self):
+        """ Runs actual transcription and updates progress dynamically """
+        total_duration = self.audio.getAudioDuration()  # Get total audio duration
+        
+        def progress_callback(processed_time):
+            """ Updates progress bar based on on transcription progress """
+            self.after(100, self.progressBar.set, progress)
+        
+        # Start transcription with progress tracking
+        self.audio.transcribe_audio(progress_callback)
+
+        # Once transcription is complete
+        self.after(100, self.transcriptionComplete)
+       
+    def transcriptionComplete(self):
+        """ Handles UI updates when transcription is done """
+        self.transcribeButton.configure(state="normal", text="✔️ Done!")
+        self.progressBar.set(1.0)  # Ensure progress is 100%
+
+
 
     def apply_labels(self, speaker):
         """Applies speaker labels with color coding."""
