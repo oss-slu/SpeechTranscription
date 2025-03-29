@@ -336,37 +336,6 @@ class audioMenu(CTkFrame):
 
         self.lock = threading.Lock()
 
-    def startTranscription(self):
-        """ Starts transcription and updates progress dynamically """
-        self.transcribeButton.configure(state="disabled", text="Transcribing...")
-        self.progressBar.grid()  # Show progress bar
-        self.progressBar.set(0) # Reset to 0 only once
-
-        # Run transcription in a separate thread
-        transcription_thread = Thread(target=self.transcriptionThread, daemon=True)
-        transcription_thread.start()
-
-    def transcriptionThread(self):
-        """ Runs actual transcription and updates progress dynamically """
-        total_duration = self.audio.getAudioDuration()  # Get total audio duration
-        
-        def progress_callback(progress):
-            """ Updates progress bar based on on transcription progress """
-            self.after(100, self.progressBar.set, progress)
-        
-        # Start transcription with progress tracking
-        self.audio.transcribe_audio(progress_callback)
-
-        # Once transcription is complete
-        self.after(100, self.transcriptionComplete)
-       
-    def transcriptionComplete(self):
-        """ Handles UI updates when transcription is done """
-        self.transcribeButton.configure(state="normal", text="✔️ Done!")
-        self.progressBar.set(1.0)  # Ensure progress is 100%
-
-
-
     def apply_labels(self, speaker):
         """Applies speaker labels with color coding."""
         current_text = self.getTranscriptionText()
@@ -676,13 +645,57 @@ class audioMenu(CTkFrame):
         self.stopProgressBar()
 
     @global_error_handler
+    def startTranscription(self):
+        """Starts transcription with real-time progress tracking"""
+        self.transcribeButton.configure(state="disabled", text="Transcribing...")
+        self.progressBar.grid()  # Show progress bar
+        self.progressBar.set(0) # Reset progress
+
+        # Run transcription in a separate thread
+        transcription_thread = Thread(target=self.transcriptionThread, daemon=True)
+        transcription_thread.start()
+
+    @global_error_handler
     def transcriptionThread(self):
-        '''Creates thread that executes the transcribe function'''
+        """Handles transcription, updates progress, and estimates remaining time"""
         if self.audio.playing or not self.audio.paused:
             self.audio.stopPlayback()
             if self.playback_thread is not None and self.playback_thread.is_alive():
                 self.playback_thread.join()
-        threading.Thread(target=self.transcribe).start()
+
+      
+        # Start progress tracking
+        total_duration = self.audio.getAudioDuration()  # Get total audio duration in seconds
+        start_time = time.time()
+
+        def progress_callback(progress):
+            """Updates progress bar and estimated time remaining"""
+            elapsed_time = time.time() - start_time
+            remaining_time = max(0, int((1 - progress) * total_duration - elapsed_time))
+
+            self.after(100, lambda: self.updateProgressBar(progress, remaining_time))
+    
+        # Start transcription with progress tracking
+        self.audio.transcribe_audio(progress_callback)
+
+        # Once transcription is complete
+        self.after(100, self.transcriptionComplete)
+
+    @global_error_handler      
+    def transcriptionComplete(self):
+        """Handles UI updates when transcription is done"""
+        self.transcribeButton.configure(state="normal", text="✔️ Done!")
+        self.progressBar.set(1.0)  # Ensure progress reaches 100%
+
+    @global_error_handler
+    def updateProgressBar(self, progress, remaining_time):
+        """Updates the progress bar and displays estimated time remaining"""
+        self.progressBar.set(progress)
+
+        if remaining_time > 0:
+            self.transcribeButton.configure(text=f"⏳ Transcribing... {remaining_time}s left")
+        else:
+            self.transcribeButton.configure(text="Finalizing...")
 
     @global_error_handler
     def downloadRecordedAudio(self):
