@@ -3,8 +3,11 @@ import wave
 import pyaudio
 from pydub import AudioSegment
 from pydub.effects import normalize
+from threading import Thread 
+import threading
 import numpy as np
 import tkinter.messagebox as msgbox
+
 
 class AudioManager:
     CHUNK = 1024
