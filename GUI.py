@@ -418,31 +418,42 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def playAudio(self):
         '''Starts or resumes audio playback from the current position.'''
-        if not self.is_playing and not self.is_paused:
-            print(f"🎶 Starting playback from {round(self.current_position, 2)} seconds...")
-            self.is_playing = True
-            self.is_paused = False
-            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()
-            # Start updating the scrub bar position while playing
+        
+        if self.is_playing:
+            print("⚠️ Already playing, ignoring duplicate play request.")
+            return  # Prevent multiple play calls
+
+        print(f"🎶 Starting playback from {round(self.current_position, 2)} seconds...")
+        self.is_playing = True
+        self.is_paused = False
+
+        # Ensure only one playback thread exists
+        if not hasattr(self, "playback_thread") or self.playback_thread is None or not self.playback_thread.is_alive():
+            self.playback_thread = threading.Thread(target=self._playAudioThread, daemon=True)
+            self.playback_thread.start()
+
+            # Start updating the scrub bar
             self.updatePlayback()
 
-        elif self.is_paused:  # In case we resume after pausing
-            print(f"🎶 Resuming playback from {round(self.current_position, 2)} seconds...")
-            self.is_playing = True
-            self.is_paused = False
-            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()
+    def _playAudioThread(self):
+        '''Helper function to run audio playback in a thread.'''
+        self.audio.play(self.current_position)
 
     @global_error_handler
     def pauseAudio(self):
         '''Pauses the currently playing audio.'''
-        if self.is_playing and not self.is_paused:
-            print("⏸️ Pausing audio...")
-            self.audio.pause()  # Pause the audio at the current position
-            self.is_playing = False
-            self.is_paused = True
+        
+        if not self.is_playing:
+            print("⚠️ Audio already paused, ignoring duplicate pause request.")
+            return  # Prevent unnecessary pause calls
 
-            # Update the scrub bar when paused (don't reset the position)
-            self.updatePlayback()
+        print("⏸️ Pausing audio...")
+        self.audio.pause()  # Actually pause the audio
+        self.is_playing = False
+        self.is_paused = True
+
+        # Ensure the scrub bar position updates when paused
+        self.updatePlayback()
 
 
     
@@ -493,6 +504,7 @@ class audioMenu(CTkFrame):
                 self.updateCurrentTime(self.current_position)  # Update the time label
             if self.is_playing:
                 self.master.after(300, self.updatePlayback)  # Continue updating
+
     @global_error_handler
     def updateButtons(self):
         '''Updates the state of the play/pause button based on whether the audio is currently playing or paused.'''
