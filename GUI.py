@@ -14,7 +14,9 @@ import traceback
 import os
 import sys
 import re
+import tkinter as tk
 import customtkinter as ctk 
+
 
 WIDTH = 1500
 HEIGHT = 740
@@ -283,8 +285,8 @@ class audioMenu(CTkFrame):
         self.timelineSlider.configure(state="disabled")
 
         # ROW 2: Transcribe (and progress bar)
-        self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125,
-                                             font=("Arial", 40))
+        self.transcribeButton = ctk.CTkButton(self, text="Transcribe", command=self.transcriptionThread, font=("Arial", 40))
+        self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2, padx=10, pady=10)  # Keeps button visible
 
         # ROW 4: Labelling Transcription buttons
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True)  # For speaker labeling
@@ -337,8 +339,13 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        self.progressBar = ctk.CTkProgressBar(self, width=225, mode="indeterminate")
-        self.progressBar.set(0)  # Start at 0%
+        
+        # Progress Bar Canvas (Added More Padding Below the Button)
+        self.progressCanvas = tk.Canvas(self, width=225, height=20, bg="white", highlightthickness=0)
+
+        self.running = False  # Flag to control animation
+        self.stripe_offset = 0  # Offset to move stripes
+        self.progress = 0  # Current progress percentage
 
         self.grammarCheckPerformed = False
 
@@ -523,31 +530,62 @@ class audioMenu(CTkFrame):
        
     @global_error_handler
     def startProgressBar(self):
-        """Starts the animated progress bar while transcription is running."""
-        self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
-        self.transcribeButton.configure(height=100)
-        self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        """Starts the animated gradient striped progress bar with better spacing."""
+        self.transcribeButton.configure(height=100)  # Keep button visible
+        self.progressCanvas.grid(row=3, column=0, columnspan=2, padx=10, pady=(30, 0), sticky="n")
+        self.running = True
+        self.progress = 0
+        self.animate_striped_progress()
 
-        # Set progress bar to "indeterminate" for animated effect
-        self.progressBar.configure(mode="indeterminate")
-        self.progressBar.start()  # Start animation
+    def animate_striped_progress(self):
+        """Creates a moving striped gradient effect on the progress bar."""
+        if not self.running:
+            return  # Stop animation if needed
+
+        self.progressCanvas.delete("all")  # Clear previous frame
+
+        stripe_width = 20  # Width of each stripe
+        num_stripes = 15  # Number of stripes
+        self.stripe_offset = (self.stripe_offset + 3) % stripe_width  # Move stripes
+
+        # Define two gradient shades of blue
+        color1 = "#1E90FF"  # Lighter blue
+        color2 = "#104E8B"  # Darker blue
+
+        # Draw diagonal stripes
+        for i in range(-stripe_width, 225, stripe_width):
+            x1 = i + self.stripe_offset
+            x2 = x1 + stripe_width
+            self.progressCanvas.create_polygon(
+                x1, 0, x2, 0, x2 - 10, 20, x1 - 10, 20,
+                fill=color1 if (i // stripe_width) % 2 == 0 else color2, outline=""
+            )
+
+        # Draw a progress overlay
+        self.progressCanvas.create_rectangle(0, 0, 225 * self.progress, 20, fill="blue", outline="")
+
+        self.progressCanvas.update_idletasks()  # Force UI update
+        self.progressCanvas.after(50, self.animate_striped_progress)  # Schedule next frame
 
 
     @global_error_handler
     def update_progress_bar(self, progress):
-        """Switch progress bar to determinate mode and update progress visually."""
-        self.progressBar.stop()  # Stop animated effect
-        self.progressBar.configure(mode="determinate")  # Switch to solid bar mode
-        self.progressBar.set(progress)  # Set progress (0 = 0%, 1 = 100%)
+        """Switches to a solid fill as progress reaches 100%."""
+        self.progress = progress  # Store progress value
+
+        if progress >= 1.0:  # If fully completed, stop animation
+            self.running = False
+            self.progressCanvas.delete("all")
+            self.progressCanvas.create_rectangle(0, 0, 225, 20, fill="blue", outline="")
+            self.progressCanvas.update_idletasks()
 
     @global_error_handler
     def stopProgressBar(self):
-        """Ensure the progress bar is fully filled and then remove it."""
-        self.update_progress_bar(1.0)  # Ensure bar reaches 100%
-        time.sleep(0.5)  # Short delay to show full bar before removal
-        self.progressBar.grid_remove()  # Hide progress bar
-        self.transcribeButton.configure(height=200)
-        self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
+        """Ensure progress bar is fully filled before hiding it."""
+        self.update_progress_bar(1.0)
+        time.sleep(0.5)  # Short delay to show solid fill
+        self.progressCanvas.grid_remove()
+        self.transcribeButton.configure(height=200)  # Reset button size
 
 
     @global_error_handler
@@ -687,15 +725,17 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def transcribe(self):
-        """Transcribes audio, then updates the transcription box."""
-        self.startProgressBar()  # Start animated progress bar
+        """Simulates transcription process."""
+        self.startProgressBar()  # Start striped animation
 
         def progress_thread():
             filename = self.audio.normalizeUploadedFile()
             transcribedAudio = diarizationAndTranscription.transcribe(filename)
 
-            # Switch progress bar to determinate mode before stopping
-            self.update_progress_bar(1.0)  
+            # Simulate progress
+            for i in range(101):
+                time.sleep(0.05)
+                self.update_progress_bar(i / 100)
 
             # Update UI with transcription result
             self.transcriptionBox.configure(state="normal")
@@ -709,16 +749,12 @@ class audioMenu(CTkFrame):
 
             # Stop and remove progress bar
             self.stopProgressBar()
-        
+
         threading.Thread(target=progress_thread, daemon=True).start()
 
     @global_error_handler
     def transcriptionThread(self):
         """Creates a thread that executes the transcribe function."""
-        if self.audio.playing or not self.audio.paused:
-            self.audio.stopPlayback()
-            if self.playback_thread is not None and self.playback_thread.is_alive():
-                self.playback_thread.join()
         threading.Thread(target=self.transcribe, daemon=True).start()
 
     @global_error_handler
