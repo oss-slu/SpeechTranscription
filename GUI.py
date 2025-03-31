@@ -337,7 +337,9 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
+        self.progressBar = CTkProgressBar(self, width=225, mode="determinate")
+        self.progressBar.set(0)  # Start at 0%
+
 
         self.grammarCheckPerformed = False
 
@@ -525,7 +527,19 @@ class audioMenu(CTkFrame):
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
         self.transcribeButton.configure(height=100)
         self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        self.progressBar.start()
+        self.progressBar.set(0)  # Reset progress
+
+        def progress_thread():
+            for i in range(101):  # Simulate progress from 0% to 100%
+                time.sleep(0.1)  # Simulate processing time
+                self.update_progress_bar(i / 100)  # Update bar visually
+
+        threading.Thread(target=progress_thread, daemon=True).start()
+
+    @global_error_handler
+    def update_progress_bar(self, progress):
+        """Update progress bar value (0 to 1)."""
+        self.progressBar.set(progress)  # Set progress (0 = 0%, 1 = 100%)
 
     @global_error_handler
     def stopProgressBar(self):
