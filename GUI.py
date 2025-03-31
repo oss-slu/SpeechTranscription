@@ -233,14 +233,15 @@ class audioMenu(CTkFrame):
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
-        
-
 
         # ROW 0: Frame for Audio Upload/Record buttons
         self.audioInputFrame = CTkFrame(self, height=80)
         self.audioInputFrame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N + E + W)
-        self.audioInputLabel = CTkLabel(self.audioInputFrame, text="Input Audio Source Here", font=("Arial", 18))
-        self.audioInputLabel.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
+
+        # Textbox for File Name Display & Editing
+        self.fileNameEntry = CTkEntry(self.audioInputFrame, placeholder_text="Enter file name here", font=("Arial", 18))
+        self.fileNameEntry.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N + E + W)
+
         self.uploadButton = createButton(self.audioInputFrame, "Upload", 1, 0, self.uploadAudio, height=80,
                                          font=("Arial", 18), lock=False)
         self.recordButton = createButton(self.audioInputFrame, "Record", 1, 1, self.recordAudio, height=80,
@@ -636,6 +637,11 @@ class audioMenu(CTkFrame):
             time, signal = self.audio.upload(filename)
             plotAudio(time, signal)
 
+            # Set the file name in the textbox
+            base_name = os.path.basename(filename)
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, base_name)
+
             # Get audio duration and update end time label
             self.audioLength = self.audio.getAudioDuration(filename)
             mins, secs = divmod(int(self.audioLength), 60)
@@ -665,6 +671,11 @@ class audioMenu(CTkFrame):
             unlockItem(self.downloadAudioButton)
             filename, time, signal = self.audio.stop()
             plotAudio(time, signal)
+
+            # Set the default file name for recorded audio
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, "RECORDING - 1.wav")
+
             # Disable the Upload and Record buttons
             lockItem(self.uploadButton)
             lockItem(self.recordButton)
@@ -698,8 +709,9 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def downloadRecordedAudio(self):
         '''Download file of recorded audio'''
+        default_name = self.fileNameEntry.get() or "downloaded_audio.wav"
         downloadFile = filedialog.asksaveasfile(defaultextension=".wav", filetypes=[("Wave File", ".wav"), ("All Files", ".*")],
-                                                initialfile="downloaded_audio.wav")
+                                                initialfile=default_name)
         if downloadFile:
             self.audio.saveAudioFile(downloadFile.name)
 
