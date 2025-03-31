@@ -14,7 +14,7 @@ import traceback
 import os
 import sys
 import re
-import customtkinter as ctk
+import customtkinter as ctk 
 
 WIDTH = 1500
 HEIGHT = 740
@@ -337,9 +337,8 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        self.progressBar = CTkProgressBar(self, width=225, mode="determinate")
+        self.progressBar = ctk.CTkProgressBar(self, width=225, mode="indeterminate")
         self.progressBar.set(0)  # Start at 0%
-
 
         self.grammarCheckPerformed = False
 
@@ -524,29 +523,32 @@ class audioMenu(CTkFrame):
        
     @global_error_handler
     def startProgressBar(self):
+        """Starts the animated progress bar while transcription is running."""
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
         self.transcribeButton.configure(height=100)
         self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        self.progressBar.set(0)  # Reset progress
 
-        def progress_thread():
-            for i in range(101):  # Simulate progress from 0% to 100%
-                time.sleep(0.1)  # Simulate processing time
-                self.update_progress_bar(i / 100)  # Update bar visually
+        # Set progress bar to "indeterminate" for animated effect
+        self.progressBar.configure(mode="indeterminate")
+        self.progressBar.start()  # Start animation
 
-        threading.Thread(target=progress_thread, daemon=True).start()
 
     @global_error_handler
     def update_progress_bar(self, progress):
-        """Update progress bar value (0 to 1)."""
+        """Switch progress bar to determinate mode and update progress visually."""
+        self.progressBar.stop()  # Stop animated effect
+        self.progressBar.configure(mode="determinate")  # Switch to solid bar mode
         self.progressBar.set(progress)  # Set progress (0 = 0%, 1 = 100%)
 
     @global_error_handler
     def stopProgressBar(self):
-        self.progressBar.stop()
-        self.progressBar.grid_remove()
+        """Ensure the progress bar is fully filled and then remove it."""
+        self.update_progress_bar(1.0)  # Ensure bar reaches 100%
+        time.sleep(0.5)  # Short delay to show full bar before removal
+        self.progressBar.grid_remove()  # Hide progress bar
         self.transcribeButton.configure(height=200)
         self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
+
 
     @global_error_handler
     def labelSpeakers(self):
@@ -685,29 +687,39 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def transcribe(self):
-        '''Transcribes audio, then prints to the transcription box'''
-        self.startProgressBar()
-        filename = self.audio.normalizeUploadedFile()
-        transcribedAudio = diarizationAndTranscription.transcribe(filename)
+        """Transcribes audio, then updates the transcription box."""
+        self.startProgressBar()  # Start animated progress bar
 
-        self.transcriptionBox.configure(state="normal")
-        unlockItem(self.transcriptionBox)
-        unlockItem(self.labelSpeakersButton)
-        self.transcriptionBox.delete("0.0", "end")
-        self.transcriptionBox.insert("end", transcribedAudio + "\n")
-        self.color_code_transcription()
-        unlockItem(self.grammarButton)
-        unlockItem(self.exportButton)
-        self.stopProgressBar()
+        def progress_thread():
+            filename = self.audio.normalizeUploadedFile()
+            transcribedAudio = diarizationAndTranscription.transcribe(filename)
+
+            # Switch progress bar to determinate mode before stopping
+            self.update_progress_bar(1.0)  
+
+            # Update UI with transcription result
+            self.transcriptionBox.configure(state="normal")
+            unlockItem(self.transcriptionBox)
+            unlockItem(self.labelSpeakersButton)
+            self.transcriptionBox.delete("0.0", "end")
+            self.transcriptionBox.insert("end", transcribedAudio + "\n")
+            self.color_code_transcription()
+            unlockItem(self.grammarButton)
+            unlockItem(self.exportButton)
+
+            # Stop and remove progress bar
+            self.stopProgressBar()
+        
+        threading.Thread(target=progress_thread, daemon=True).start()
 
     @global_error_handler
     def transcriptionThread(self):
-        '''Creates thread that executes the transcribe function'''
+        """Creates a thread that executes the transcribe function."""
         if self.audio.playing or not self.audio.paused:
             self.audio.stopPlayback()
             if self.playback_thread is not None and self.playback_thread.is_alive():
                 self.playback_thread.join()
-        threading.Thread(target=self.transcribe).start()
+        threading.Thread(target=self.transcribe, daemon=True).start()
 
     @global_error_handler
     def downloadRecordedAudio(self):
