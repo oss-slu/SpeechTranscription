@@ -3,11 +3,8 @@ import wave
 import pyaudio
 from pydub import AudioSegment
 from pydub.effects import normalize
-from threading import Thread 
-import threading
 import numpy as np
 import tkinter.messagebox as msgbox
-
 
 class AudioManager:
     CHUNK = 1024
@@ -221,30 +218,12 @@ class AudioManager:
         # Reinitialize PyAudio to prepare for future playback
         self.p = pyaudio.PyAudio()
 
-    def transcribe_audio(self, progress_callback=None):
-        """ Transcribes the audio file and updates progress dynamically """
+    def transcribe_audio(self):
+        """Starts transcription and updates progress bar."""
+        self.startProgressBar()
 
-        total_duration = self.getAudioDuration()  # Get total duration in seconds
-        processed_time = 0  # Track processed time
+        for progress in range(101):  # Replace this with actual transcription progress
+            time.sleep(0.1)  # Simulated delay
+            self.update_progress_bar(progress / 100)  
 
-        try:
-            audio = AudioSegment.from_file(self.filePath)  # Load audio
-            chunk_length_ms = 3000  # Process in 3-second chunks
-            chunks = [audio[i : i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
-
-            transcript = ""
-            for i, chunk in enumerate(chunks):
-                text = self.transcribe_audio(progress_callback) # Replace with actual transcription function
-                transcript += text + " "
-
-                # Update processed time based on chunk length
-                processed_time += chunk_length_ms / 1000  # Convert ms to seconds
-
-                # Send progress update if callback exists
-                if progress_callback:
-                    progress_callback(processed_time / total_duration)  # Send percentage progress
-
-            return transcript
-        except Exception as e:
-            print(f"Error in transcription: {e}")
-            return ""
+        self.stopProgressBar()  # Hide when done

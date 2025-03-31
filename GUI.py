@@ -6,30 +6,35 @@ from grammar import GrammarChecker
 from export import Exporter
 from PIL import Image
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *  # Uses Third party license found in CtkXYFrame/ folder
-from threading import Thread 
 import threading
 import matplotlib.pyplot as plt
 import time
 import webbrowser
 import traceback
+import os
+import sys
 import re
 import customtkinter as ctk
-from customtkinter import CTkProgressBar
 
-
-WIDTH = 1340
+WIDTH = 1500
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
 def scale_image(image_path, size=(30, 30)):
     #Makes sure resize the image
-    image = Image.open(image_path)
+    image = Image.open(resource_path(image_path))
     image = image.resize(size)
     return customtkinter.CTkImage(light_image=image, dark_image=image, size=size)
 
 LOCK_ICON = scale_image("images/locked_icon.png", size=(30, 30))
-UNLOCK_ICON = scale_image("images/unlocked_icon.png", size =(30, 30))
-CLEAR_ICON = scale_image("images/clear_icon.png", size = (30, 30))
+UNLOCK_ICON = scale_image("images/unlocked_icon.png", size=(30, 30))
+CLEAR_ICON = scale_image("images/clear_icon.png", size=(30, 30))
 
 # Global error handler
 def global_error_handler(func):
@@ -88,6 +93,9 @@ class mainGUI(CTk):
 
             self.changeAudioWindow(self.currentAudioNum)
             self.currentAudioNum += 1
+            # Enable the Upload and Record buttons for the new session
+            unlockItem(self.audioMenuList[-1].uploadButton)
+            unlockItem(self.audioMenuList[-1].recordButton)
 
     @global_error_handler
     def changeAudioWindow(self, num):
@@ -121,8 +129,8 @@ class mainGUI(CTk):
         Help Guide:
         
         - New Audio: Create a new audio session.
-        - Upload: Upload an audio file.
-        - Record: Record a new audio file.
+        - Upload: Upload an audio file. (Disabled after first upload to prevent modifications, but enabled again after starting a new session)
+        - Record: Record a new audio file. (Disabled after first recording to prevent modifications, but enabled again after starting a new session)
         - <<: Rewind the audio by 5 seconds.
         - ⏯: Play and Pause the audio.
         - >>: Fast forward the audio by 5 seconds.
@@ -138,7 +146,6 @@ class mainGUI(CTk):
         - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
         """
 
-        # Instead of a scrollable frame, use a regular frame
         helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400)
         helpLabel.pack(padx=10, pady=10)
 
@@ -147,7 +154,7 @@ class mainGUI(CTk):
 
     def __init__(self):
         super().__init__()
-
+        self.after(100, lambda: self.geometry("1375x740")) # Forces gui to be this size
         self.currentAudioNum = 0
         self.audioButtonList: list[CTkButton] = []
         self.audioMenuList: list[audioMenu] = []
@@ -155,25 +162,25 @@ class mainGUI(CTk):
         self.title('Speech Transcription')
         try:
             if os.path.getsize(SETTINGS_FILE) != 0:
-                file = open(SETTINGS_FILE, "r")
-                set_appearance_mode(file.read())
-                file.close()
+                with open(SETTINGS_FILE, "r") as file:
+                    set_appearance_mode(file.read())
             else:
                 set_appearance_mode("dark")
         except FileNotFoundError:
             print("Settings file not found. Defaulting to dark mode.")
             set_appearance_mode("dark")
+        
         set_default_color_theme("blue")
         deactivate_automatic_dpi_awareness()
-        self.resizable(False, False)
+        self.resizable(False, False)  
 
-        self.geometry(str(WIDTH) + 'x' + str(HEIGHT))
+        # Set the geometry after all configurations
+        self.geometry(f"{WIDTH}x{HEIGHT}")
 
         self.userFrame = userMenu(master=self)
         self.userFrame.grid(row=0, column=0, padx=1, sticky=NW)
 
-        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, height=60, columnspan=2,
-                                           lock=False)
+        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, height=60, columnspan=2, lock=False)
 
         self.audioFrame = CTkFrame(self)
         
@@ -244,7 +251,7 @@ class audioMenu(CTkFrame):
         self.audioInputFrame.grid_columnconfigure(1, weight=1)
 
         # ROW 1: Playback Controls in a Frame
-        self.playbackFrame = CTkFrame(self, height=100, width=200)
+        self.playbackFrame = CTkFrame(self, height=125, width=250)
         self.playbackFrame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
         self.playbackFrame.grid_propagate(False)  # Prevent frame from shrinking
 
@@ -259,6 +266,21 @@ class audioMenu(CTkFrame):
         self.playbackFrame.grid_columnconfigure(0, weight=1)
         self.playbackFrame.grid_columnconfigure(1, weight=1)
         self.playbackFrame.grid_columnconfigure(2, weight=1)
+
+
+        # Timestamp Labels (Start Time, Current Time, End Time)
+        self.startTimeLabel = CTkLabel(self.playbackFrame, text="00:00", font=("Arial", 12))
+        self.startTimeLabel.grid(row=2, column=0, padx=5, sticky="w")
+
+        self.currentTimeLabel = CTkLabel(self.playbackFrame, text="00:00", font=("Arial", 12))  # Centered
+        self.currentTimeLabel.grid(row=2, column=1,padx = 5)
+
+        self.endTimeLabel = CTkLabel(self.playbackFrame, text="--:--", font=("Arial", 12))  # Updated dynamically
+        self.endTimeLabel.grid(row=2, column=2, padx=5, sticky = "e")
+
+        self.timelineSlider = CTkSlider(self.playbackFrame, from_=0, to=100, command=self.scrubAudio)
+        self.timelineSlider.grid(row=1, column=0, columnspan=3, padx=10, pady=(5,0), sticky="ew")
+        self.timelineSlider.configure(state="disabled")
 
         # ROW 2: Transcribe (and progress bar)
         self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125,
@@ -282,10 +304,6 @@ class audioMenu(CTkFrame):
         self.correctionEntryBox.grid(row=5, column=4, padx=10, sticky=E + W)
         lockItem(self.correctionEntryBox)
 
-        # ROW 6 Timeline Slider (Audio Scrubbing)
-        self.timelineSlider = CTkSlider(self, from_=0, to=100, command=self.scrubAudio)
-        self.timelineSlider.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
-        self.timelineSlider.configure(state="disabled")
 
         # Transcription Box Control and Frame
         self.transcriptionBoxFrame = CTkFrame(self)
@@ -319,11 +337,9 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        # self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
-        self.progressBar = CTkProgressBar(self, width=200, height=20)
-        self.progressBar.grid(row=3, column=0, columnspan=2, pady=10)  # Placing below Transcribe button
-        self.progressBar.set(0)  # Initialize at 0%
-        self.progressBar.grid_remove()  # Hide initially
+        self.progressBar = CTkProgressBar(self, width=225, mode="determinate")
+        self.progressBar.set(0)  # Start at 0%
+
 
         self.grammarCheckPerformed = False
 
@@ -335,7 +351,6 @@ class audioMenu(CTkFrame):
         self.last_scrub_time = 0  # For debouncing scrubbing events
 
         self.lock = threading.Lock()
-
 
     def apply_labels(self, speaker):
         """Applies speaker labels with color coding."""
@@ -420,40 +435,54 @@ class audioMenu(CTkFrame):
             self.audio.pause()
             self.is_playing = False
             self.is_paused = True
-
-
+    
+    @global_error_handler
+    def updateEndTime(self, duration):
+        mins, secs = divmod(int(duration), 60)
+        self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
+    @global_error_handler
+    def updateCurrentTime(self, position):
+        mins, secs = divmod(int(position), 60)
+        self.currentTimeLabel.configure(text=f"{mins:02}:{secs:02}")
 
     @global_error_handler
     def forwardAudio(self):
-        '''Skips forward by 5 seconds.'''
+        '''Skips forward by 5 seconds and updates UI properly.'''
         if self.audio.playing:
             max_position = self.audio.getAudioDuration()
-            self.audio.current_position = min(self.audio.current_position + 5, max_position)
-            print(f"Skipping forward to {self.audio.current_position} seconds.")
-            self.audio.seek(self.audio.current_position)
-        else:
-            print("Audio is not currently playing.")
+            new_position = min(self.audio.current_position + 5, max_position)
+
+            print(f"Skipping forward to {new_position} seconds.")
+            
+            self.audio.seek(new_position)  # Move audio position
+            self.current_position = new_position  # Sync UI
+            self.timelineSlider.set(self.current_position)  # Move slider
+            self.updateCurrentTime(self.current_position)  # Update time label
 
     @global_error_handler
     def backwardAudio(self):
-        '''Rewinds by 5 seconds.'''
+        '''Rewinds by 5 seconds and updates UI properly.'''
         if self.audio.playing:
-            self.audio.current_position = max(0, self.audio.current_position - 5)
-            print(f"Rewinding to {self.audio.current_position} seconds.")
-            self.audio.seek(self.audio.current_position)
-        else:
-            print("Audio is not currently playing.")
+            new_position = max(0, self.audio.current_position - 5)
+
+            print(f"Rewinding to {new_position} seconds.")
+            
+            self.audio.seek(new_position)  # Move audio position
+            self.current_position = new_position  # Sync UI
+            self.timelineSlider.set(self.current_position)  # Move slider
+            self.updateCurrentTime(self.current_position)  # Update time label
+
 
     @global_error_handler
     def updatePlayback(self):
-        '''Continuously updates playback position.'''
-        if self.is_playing and not self.is_paused:
-            self.current_position += 0.3
-            self.timelineSlider.set(self.current_position)
-
-        if self.is_playing:
-            self.master.after(300, self.updatePlayback)
-
+        '''Continuously updates the playback position and time display.'''
+        with self.lock:
+            if self.is_playing and not self.is_paused:
+                self.current_position += 0.3  # Increment playback position
+                self.timelineSlider.set(self.current_position)  # Update the slider
+                self.updateCurrentTime(self.current_position)  # Update the time label
+            if self.is_playing:
+                self.master.after(300, self.updatePlayback)  # Continue updating
 
     @global_error_handler
     def updateButtons(self):
@@ -498,7 +527,19 @@ class audioMenu(CTkFrame):
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
         self.transcribeButton.configure(height=100)
         self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        self.progressBar.start()
+        self.progressBar.set(0)  # Reset progress
+
+        def progress_thread():
+            for i in range(101):  # Simulate progress from 0% to 100%
+                time.sleep(0.1)  # Simulate processing time
+                self.update_progress_bar(i / 100)  # Update bar visually
+
+        threading.Thread(target=progress_thread, daemon=True).start()
+
+    @global_error_handler
+    def update_progress_bar(self, progress):
+        """Update progress bar value (0 to 1)."""
+        self.progressBar.set(progress)  # Set progress (0 = 0%, 1 = 100%)
 
     @global_error_handler
     def stopProgressBar(self):
@@ -603,16 +644,27 @@ class audioMenu(CTkFrame):
         if filename:
             print("File uploaded: ", filename)
             unlockItem(self.playPauseButton)
-            unlockItem(self.playPauseButton)
             unlockItem(self.transcribeButton)
             unlockItem(self.downloadAudioButton)
+
             time, signal = self.audio.upload(filename)
             plotAudio(time, signal)
+
+            # Get audio duration and update end time label
             self.audioLength = self.audio.getAudioDuration(filename)
+            mins, secs = divmod(int(self.audioLength), 60)
+            self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
+
+            # Reset current time to 0:00
+            self.updateCurrentTime(0)
+
+            # Enable and configure the timeline slider
             if self.audio and self.audio.filePath:
                 self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
                 print(f"Slider enabled with range: 0 to {self.audioLength} seconds.")
-
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
 
     @global_error_handler
     def recordAudio(self):
@@ -627,6 +679,9 @@ class audioMenu(CTkFrame):
             unlockItem(self.downloadAudioButton)
             filename, time, signal = self.audio.stop()
             plotAudio(time, signal)
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
 
     @global_error_handler
     def transcribe(self):
@@ -645,49 +700,14 @@ class audioMenu(CTkFrame):
         unlockItem(self.exportButton)
         self.stopProgressBar()
 
-
-    @global_error_handler
-    def startTranscription(self):
-        """ Starts transcription and updates progress dynamically """
-        self.transcribeButton.configure(state="disabled", text="Transcribing...")
-        self.progressBar.grid()  # Show progress bar
-        self.progressBar.set(0) # Reset to 0 only once
-
-        # Run transcription in a separate thread
-        transcription_thread = Thread(target=self.transcriptionThread, daemon=True)
-        transcription_thread.start()
-
     @global_error_handler
     def transcriptionThread(self):
-        """Creates a thread that executes transcription and updates progress dynamically."""
-
+        '''Creates thread that executes the transcribe function'''
         if self.audio.playing or not self.audio.paused:
             self.audio.stopPlayback()
             if self.playback_thread is not None and self.playback_thread.is_alive():
                 self.playback_thread.join()
-
-        def transcribe_with_progress():
-            """ Runs actual transcription and updates progress dynamically """
-            total_duration = self.audio.getAudioDuration()  # Get total audio duration
-
-            def progress_callback(progress):
-                """ Updates progress bar dynamically """
-                self.after(100, self.progressBar.set, progress)
-
-            # Start transcription with progress tracking
-            self.audio.transcribe_audio(progress_callback)
-
-            # Once transcription is complete
-            self.after(100, self.transcriptionComplete)
-
-        # Start the transcription in a new thread
-        threading.Thread(target=transcribe_with_progress, daemon=True).start()
-
-    @global_error_handler
-    def transcriptionComplete(self):
-        """ Handles UI updates when transcription is done """
-        self.transcribeButton.configure(state="normal", text="✔️ Done!")
-        self.progressBar.set(1.0)  # Ensure progress is 100%
+        threading.Thread(target=self.transcribe).start()
 
     @global_error_handler
     def downloadRecordedAudio(self):
