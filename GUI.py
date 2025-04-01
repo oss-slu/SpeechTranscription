@@ -285,8 +285,8 @@ class audioMenu(CTkFrame):
         self.timelineSlider.configure(state="disabled")
 
         # ROW 2: Transcribe (and progress bar)
-        self.transcribeButton = ctk.CTkButton(self, text="Transcribe", command=self.transcriptionThread, font=("Arial", 40))
-        self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2, padx=10, pady=10)  # Keeps button visible
+        self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125,
+                                             font=("Arial", 40))
 
         # ROW 4: Labelling Transcription buttons
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True)  # For speaker labeling
