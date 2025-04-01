@@ -531,8 +531,9 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def startProgressBar(self):
         """Starts the animated gradient striped progress bar with better spacing."""
+        self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
         self.transcribeButton.configure(height=100)  # Keep button visible
-        self.progressCanvas.grid(row=3, column=0, columnspan=2, padx=10, pady=(30, 0), sticky="n")
+        self.progressCanvas.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
         self.running = True
         self.progress = 0
         self.animate_striped_progress()
@@ -586,6 +587,7 @@ class audioMenu(CTkFrame):
         time.sleep(0.5)  # Short delay to show solid fill
         self.progressCanvas.grid_remove()
         self.transcribeButton.configure(height=200)  # Reset button size
+        self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
 
 
     @global_error_handler
