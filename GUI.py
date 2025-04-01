@@ -320,6 +320,7 @@ class audioMenu(CTkFrame):
         self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
         self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N + E + S + W)
         self.transcriptionBox.insert("0.0", text="Text will generate here")
+        self.transcriptionBox.bind("<Button-1>", self.on_transcription_click)
         lockItem(self.transcriptionBox)
 
         # Conventions Box Control and Frame
@@ -368,6 +369,44 @@ class audioMenu(CTkFrame):
         self.transcriptionBox.insert("0.0", new_transcription_text)
         self.color_code_transcription()
         unlockItem(self.applyAliasesButton)
+
+    @global_error_handler
+    def on_transcription_click(self, event):
+        """Handles click events on the transcription box to seek audio playback."""
+        # Get the clicked position's index
+        index = self.transcriptionBox.index(f"@{event.x},{event.y}")
+        line_num = index.split('.')[0]
+        line_start = f"{line_num}.0"
+        line_end = f"{line_num}.end"
+        line_text = self.transcriptionBox.get(line_start, line_end).strip()
+        
+        # Extract timestamp using regex
+        match = re.match(r'\[(\d+:\d+)\]', line_text)
+        if match:
+            timestamp_str = match.group(1)
+            minutes, seconds = map(int, timestamp_str.split(':'))
+            total_seconds = minutes * 60 + seconds
+            
+            # Check if audio is available
+            if not self.audio.filePath:
+                return
+            
+            # Pause audio if currently playing
+            was_playing = self.is_playing and not self.is_paused
+            if was_playing:
+                self.pauseAudio()
+            
+            # Update current position and seek audio
+            self.current_position = total_seconds
+            self.audio.seek(total_seconds)
+            
+            # Update UI elements
+            self.timelineSlider.set(total_seconds)
+            self.updateCurrentTime(total_seconds)
+            
+            # Resume playback if it was playing
+            if was_playing:
+                self.playAudio()
 
     def color_code_transcription(self):
         """Applies color to different speakers' transcriptions."""
@@ -419,21 +458,44 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def playAudio(self):
         '''Starts or resumes audio playback from the current position.'''
-        if not self.is_playing:
-            print(f"Starting playback from {round(self.current_position, 2)} seconds...")
-            self.is_playing = True
-            self.is_paused = False
-            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()
+        
+        if self.is_playing:
+            print("⚠️ Already playing, ignoring duplicate play request.")
+            return  # Prevent multiple play calls
+
+        print(f"🎶 Starting playback from {round(self.current_position, 2)} seconds...")
+        self.is_playing = True
+        self.is_paused = False
+
+        # Ensure only one playback thread exists
+        if not hasattr(self, "playback_thread") or self.playback_thread is None or not self.playback_thread.is_alive():
+            self.playback_thread = threading.Thread(target=self._playAudioThread, daemon=True)
+            self.playback_thread.start()
+
+            # Start updating the scrub bar
             self.updatePlayback()
-            
+
+    def _playAudioThread(self):
+        '''Helper function to run audio playback in a thread.'''
+        self.audio.play(self.current_position)
+
     @global_error_handler
     def pauseAudio(self):
         '''Pauses the currently playing audio.'''
-        if self.is_playing and not self.is_paused:
-            print("Pausing audio...")
-            self.audio.pause()
-            self.is_playing = False
-            self.is_paused = True
+        
+        if not self.is_playing:
+            print("⚠️ Audio already paused, ignoring duplicate pause request.")
+            return  # Prevent unnecessary pause calls
+
+        print("⏸️ Pausing audio...")
+        self.audio.pause()  # Actually pause the audio
+        self.is_playing = False
+        self.is_paused = True
+
+        # Ensure the scrub bar position updates when paused
+        self.updatePlayback()
+
+
     
     @global_error_handler
     def updateEndTime(self, duration):
@@ -683,28 +745,65 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def transcribe(self):
         '''Transcribes audio, then prints to the transcription box'''
-        self.startProgressBar()
-        filename = self.audio.normalizeUploadedFile()
-        transcribedAudio = diarizationAndTranscription.transcribe(filename)
+        
+        # Stop audio playback before starting transcription
+        if self.is_playing or self.is_paused:
+            print("🎶 Pausing audio before transcription...")
+            self.pauseAudio()  # Pause the audio if it's playing
 
-        self.transcriptionBox.configure(state="normal")
-        unlockItem(self.transcriptionBox)
-        unlockItem(self.labelSpeakersButton)
-        self.transcriptionBox.delete("0.0", "end")
-        self.transcriptionBox.insert("end", transcribedAudio + "\n")
-        self.color_code_transcription()
-        unlockItem(self.grammarButton)
-        unlockItem(self.exportButton)
-        self.stopProgressBar()
+        self.startProgressBar()  # Start the transcription progress bar animation
+
+        # Normalize the audio file
+        filename = self.audio.normalizeUploadedFile()
+        print(f"🎵 Normalized audio file: {filename}")
+
+        try:
+            # Perform transcription asynchronously
+            transcribedAudio = diarizationAndTranscription.transcribe(filename)
+            print("🎤 Transcription completed!")
+
+            # After transcription is complete, update the UI with the transcribed text
+            self.updateTranscriptionUI(transcribedAudio)
+        except Exception as e:
+            print(f"Error during transcription: {e}")
+            self.updateTranscriptionUI("Error during transcription.")
 
     @global_error_handler
     def transcriptionThread(self):
         '''Creates thread that executes the transcribe function'''
-        if self.audio.playing or not self.audio.paused:
-            self.audio.stopPlayback()
-            if self.playback_thread is not None and self.playback_thread.is_alive():
-                self.playback_thread.join()
-        threading.Thread(target=self.transcribe).start()
+
+        # Ensure no audio is playing or paused before starting transcription
+        if self.is_playing or self.is_paused:
+            print("🎶 Pausing audio before transcription...")
+            self.pauseAudio()
+
+        # Start the transcription process in a background thread
+        print("📝 Starting transcription thread...")
+        threading.Thread(target=self.transcribe, daemon=True).start()
+
+
+    @global_error_handler
+    def updateTranscriptionUI(self, transcribedAudio):
+        '''Updates UI with transcribed text and stops the progress bar'''
+
+        # Use `after` to schedule the UI update safely in the main thread
+        self.after(0, self._updateTranscriptionBox, transcribedAudio)
+
+    @global_error_handler
+    def _updateTranscriptionBox(self, transcribedAudio):
+        '''Helper function to actually update the transcription box in the main thread'''
+        print("📝 Updating transcription box with result...")
+        self.transcriptionBox.configure(state="normal")
+        unlockItem(self.transcriptionBox)
+        self.transcriptionBox.delete("1.0", "end")  # Clear the transcription box
+        self.transcriptionBox.insert("end", transcribedAudio + "\n")  # Insert the transcription text
+        self.transcriptionBox.configure(state="disabled")  # Lock the transcription box to prevent editing
+
+        # Stop progress bar animation
+        self.stopProgressBar()
+        print("✅ Transcription complete and UI updated!")
+
+
 
     @global_error_handler
     def downloadRecordedAudio(self):
