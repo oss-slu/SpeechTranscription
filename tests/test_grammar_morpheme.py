@@ -2,6 +2,7 @@ import pytest
 import os
 import re
 import grammar
+import time
 #or run export PYTHONPATH=$(pwd) before running python tests/saltify_test.py
 
 
@@ -59,7 +60,7 @@ def test_compare_input_with_output(grammar_checker):
             total_line_tests += 1
 
             # process the input line
-            grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
+            grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False)
             corrected, _ = grammar_checker.getNextCorrection()
             processed_text = grammar_checker.getInflectionalMorphemes(corrected) if corrected else ""
 
