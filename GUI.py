@@ -412,12 +412,12 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def togglePlayPause(self):
-        '''Toggles between play and pause states.'''
-        
         if self.is_playing:
             self.pauseAudio()
         else:
             self.playAudio()
+        self.updateButtonState()
+
 
 
     @global_error_handler
@@ -427,43 +427,32 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def playAudio(self):
-        '''Starts or resumes audio playback from the current position.'''
+        if not self.audio.filePath:
+            return
+
+        if self.playback_thread and self.playback_thread.is_alive():
+            # Resume from pause
+            with self.audio.lock:
+                self.audio.paused = False
+        else:
+            # Start new playback thread
+            self.playback_thread = threading.Thread(
+                target=self.audio.play, 
+                daemon=True,
+                kwargs={'startPosition': self.current_position}
+            )
+            self.playback_thread.start()
         
-        if self.is_playing:
-            print("⚠️ Already playing, ignoring duplicate play request.")
-            return  # Prevent duplicate play calls
-        
-        print(f"🎶 Starting playback from {round(self.current_position, 2)} seconds...")
         self.is_playing = True
         self.is_paused = False
-
-        # Ensure there's only ONE playback thread running
-        if not hasattr(self, "playback_thread") or self.playback_thread is None or not self.playback_thread.is_alive():
-            self.playback_thread = threading.Thread(target=self._playAudioThread, daemon=True)
-            self.playback_thread.start()
-
-        self.updatePlayback()  # Ensure scrub bar updates
+        self.updatePlayback()
 
     @global_error_handler
     def pauseAudio(self):
-        '''Pauses the currently playing audio.'''
-        
-        if not self.is_playing:
-            print("⚠️ Audio already paused, ignoring duplicate pause request.")
-            return  # Prevent unnecessary pause calls
-
-        print("⏸️ Pausing audio...")
-        self.audio.pause()
-
+        with self.audio.lock:
+            self.audio.paused = True
         self.is_playing = False
         self.is_paused = True
-
-        # Stop any ongoing playback thread
-        if hasattr(self, "playback_thread") and self.playback_thread is not None:
-            self.playback_thread = None  
-
-        self.updatePlayback()  # Ensure scrub bar updates properly
-
 
 
     @global_error_handler
@@ -505,17 +494,16 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def updatePlayback(self):
-        '''Continuously updates the playback position and time display.'''
-        with self.lock:
-            if self.is_playing and not self.is_paused:
-                self.current_position += 0.3  # Increment playback position
-                self.timelineSlider.set(self.current_position)  # Update the slider
-                self.updateCurrentTime(self.current_position)  # Update the time label
-            if self.is_playing:
-                self.master.after(300, self.updatePlayback)  # Continue updating
+        if self.is_playing and not self.is_paused:
+            self.current_position = self.audio.get_current_position()
+            self.timelineSlider.set(self.current_position)
+            self.updateCurrentTime(self.current_position)
+            self.master.after(50, self.updatePlayback)
+        else:
+            self.timelineSlider.set(self.current_position)
 
     @global_error_handler
-    def updateButtons(self):
+    def updateButtonState(self):
         '''Updates the state of the play/pause button based on whether the audio is currently playing or paused.'''
         if self.is_playing and not self.is_paused:
             self.playPauseButton.configure(text="Pause")
@@ -524,21 +512,21 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def scrubAudio(self, value):
-        '''Scrubs audio by pausing, seeking, and preparing for smooth playback.'''
-        if not self.audio or not self.audio.filePath:
-            print("Error: Please upload an audio file before using the timeline.")
-            self.timelineSlider.set(0)
-            return
+        current_time = time.time()
+        if current_time - self.last_scrub_time < 0.1:
+            return  # Debounce
+        self.last_scrub_time = current_time
 
-        # Pause while scrubbing
-        if self.is_playing:
-            self.audio.pause()  # Pause playback
-            print("Audio paused for scrubbing.")
+        was_playing = self.is_playing
+        if was_playing:
+            self.pauseAudio()
 
-        # Update playback position
         self.current_position = float(value)
-        print(f"Scrubbed to {round(self.current_position, 2)} seconds.")
-        self.audio.setPlaybackPosition(self.current_position)
+        self.audio.seek(self.current_position)
+        self.updateCurrentTime(self.current_position)
+
+        if was_playing:
+            self.playAudio()
 
 
     def applyScrub(self):
