@@ -26,6 +26,8 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
+
+
 def scale_image(image_path, size=(30, 30)):
     #Makes sure resize the image
     image = Image.open(resource_path(image_path))
@@ -411,10 +413,17 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def togglePlayPause(self):
         '''Toggles between play and pause states.'''
-        if self.is_playing and not self.is_paused:
+        
+        if self.is_playing:
             self.pauseAudio()
         else:
             self.playAudio()
+
+
+    @global_error_handler
+    def _playAudioThread(self):
+        '''Helper function to run audio playback in a thread.'''
+        self.audio.play(self.current_position)
 
     @global_error_handler
     def playAudio(self):
@@ -422,23 +431,18 @@ class audioMenu(CTkFrame):
         
         if self.is_playing:
             print("⚠️ Already playing, ignoring duplicate play request.")
-            return  # Prevent multiple play calls
-
+            return  # Prevent duplicate play calls
+        
         print(f"🎶 Starting playback from {round(self.current_position, 2)} seconds...")
         self.is_playing = True
         self.is_paused = False
 
-        # Ensure only one playback thread exists
+        # Ensure there's only ONE playback thread running
         if not hasattr(self, "playback_thread") or self.playback_thread is None or not self.playback_thread.is_alive():
             self.playback_thread = threading.Thread(target=self._playAudioThread, daemon=True)
             self.playback_thread.start()
 
-            # Start updating the scrub bar
-            self.updatePlayback()
-
-    def _playAudioThread(self):
-        '''Helper function to run audio playback in a thread.'''
-        self.audio.play(self.current_position)
+        self.updatePlayback()  # Ensure scrub bar updates
 
     @global_error_handler
     def pauseAudio(self):
@@ -449,15 +453,19 @@ class audioMenu(CTkFrame):
             return  # Prevent unnecessary pause calls
 
         print("⏸️ Pausing audio...")
-        self.audio.pause()  # Actually pause the audio
+        self.audio.pause()
+
         self.is_playing = False
         self.is_paused = True
 
-        # Ensure the scrub bar position updates when paused
-        self.updatePlayback()
+        # Stop any ongoing playback thread
+        if hasattr(self, "playback_thread") and self.playback_thread is not None:
+            self.playback_thread = None  
+
+        self.updatePlayback()  # Ensure scrub bar updates properly
 
 
-    
+
     @global_error_handler
     def updateEndTime(self, duration):
         mins, secs = divmod(int(duration), 60)
