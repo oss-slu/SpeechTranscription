@@ -419,7 +419,6 @@ class audioMenu(CTkFrame):
         self.updateButtonState()
 
 
-
     @global_error_handler
     def _playAudioThread(self):
         '''Helper function to run audio playback in a thread.'''
@@ -755,6 +754,13 @@ class audioMenu(CTkFrame):
         self.transcriptionBox.delete("1.0", "end")  # Clear the transcription box
         self.transcriptionBox.insert("end", transcribedAudio + "\n")  # Insert the transcription text
         self.transcriptionBox.configure(state="disabled")  # Lock the transcription box to prevent editing
+
+        self.labelSpeakersButton.configure(state="normal")
+        self.applyAliasesButton.configure(state="normal")
+        self.exportButton.configure(state="normal")
+        self.grammarButton.configure(state="normal")
+        self.submitGrammarButton.configure(state="normal")
+        self.morphemesButton.configure(state="normal")
 
         # Stop progress bar animation
         self.stopProgressBar()
