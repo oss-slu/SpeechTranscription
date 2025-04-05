@@ -564,6 +564,7 @@ class audioMenu(CTkFrame):
 
         initial_segments = self.getTranscriptionText().split('\n')
         self.segment_selections = []
+
         for idx, segment in enumerate(initial_segments):
             if segment.strip():
                 var = IntVar()
@@ -578,7 +579,6 @@ class audioMenu(CTkFrame):
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
                     line = current_segments[idx]
-                    # Check for existing timestamp at the beginning of the line
                     match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', line)
                     if match:
                         timestamp = match.group(1)
@@ -586,18 +586,22 @@ class audioMenu(CTkFrame):
                         current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
                     else:
                         current_segments[idx] = f"{speaker}: {line}"
-                    var.set(0)  # Reset the checkbox
+                    var.set(0)  # Reset checkbox
 
             new_transcription_text = "\n".join(current_segments)
-            self.transcriptionBox.delete("0.0", "end")
-            self.transcriptionBox.insert("0.0", new_transcription_text)
+            self.transcriptionBox.configure(state="normal")
+            self.transcriptionBox.delete("1.0", "end")
+            self.transcriptionBox.insert("1.0", new_transcription_text)
+            self.transcriptionBox.configure(state="disabled")
 
             self.color_code_transcription()
-            
-            unlockItem(self.applyAliasesButton)
 
-        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
-        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
+        # Buttons to apply speaker labels
+        button_frame = CTkFrame(popup)
+        button_frame.pack(pady=10)
+
+        CTkButton(button_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side="left", padx=10)
+        CTkButton(button_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side="left", padx=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
@@ -623,14 +627,23 @@ class audioMenu(CTkFrame):
 
             # Fetch the current state of the transcription text
             
+            print(f"Alias 1 entered: {speaker1_alias}")
+            print(f"Alias 2 entered: {speaker2_alias}")
+
             if speaker1_alias:
                 self.speaker_aliases["Speaker 1"] = speaker1_alias
             if speaker2_alias:
                 self.speaker_aliases["Speaker 2"] = speaker2_alias
 
+            print(f"Speaker aliases now: {self.speaker_aliases}")
+
             transcription_text = self.getTranscriptionText()
+            print(f"Speaker aliases now: {self.speaker_aliases}")
+
             for speaker, alias in self.speaker_aliases.items():
                 transcription_text = transcription_text.replace(f"{speaker}:", f"{alias}:")
+
+            print("After aliasing:\n", transcription_text)
 
             # Update the transcriptionBox with the new aliases
             self.transcriptionBox.delete("0.0", "end")
