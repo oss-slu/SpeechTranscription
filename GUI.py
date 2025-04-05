@@ -625,29 +625,24 @@ class audioMenu(CTkFrame):
             speaker1_alias = speaker1_alias_entry.get().strip()
             speaker2_alias = speaker2_alias_entry.get().strip()
 
-            # Fetch the current state of the transcription text
-            
-            print(f"Alias 1 entered: {speaker1_alias}")
-            print(f"Alias 2 entered: {speaker2_alias}")
-
             if speaker1_alias:
                 self.speaker_aliases["Speaker 1"] = speaker1_alias
             if speaker2_alias:
                 self.speaker_aliases["Speaker 2"] = speaker2_alias
 
-            print(f"Speaker aliases now: {self.speaker_aliases}")
-
             transcription_text = self.getTranscriptionText()
-            print(f"Speaker aliases now: {self.speaker_aliases}")
 
             for speaker, alias in self.speaker_aliases.items():
-                transcription_text = transcription_text.replace(f"{speaker}:", f"{alias}:")
+                # This handles both cases: with or without timestamps
+                pattern = rf'(\[\d{{2}}:\d{{2}}\]\s*)?{re.escape(speaker)}:'
+                transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{alias}:", transcription_text)
 
-            print("After aliasing:\n", transcription_text)
-
-            # Update the transcriptionBox with the new aliases
+            # 🔓 Unlock, update, lock the box properly
+            self.transcriptionBox.configure(state="normal")
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", transcription_text)
+            self.transcriptionBox.configure(state="disabled")
+
             self.color_code_transcription()
             popup.destroy()
 
