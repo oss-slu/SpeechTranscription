@@ -542,8 +542,25 @@ class audioMenu(CTkFrame):
             
             unlockItem(self.applyAliasesButton)
 
-        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
-        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
+
+        # Frame to hold speaker buttons with color indicators
+        button_frame = CTkFrame(popup)
+        button_frame.pack(pady=10)
+
+        # Speaker 1 button with color background
+        speaker1_frame = CTkFrame(button_frame, fg_color="#029CFF", corner_radius=8)
+        speaker1_frame.pack(side='left', padx=10)
+        CTkLabel(speaker1_frame, text="Speaker 1", text_color="white").pack(padx=10, pady=(5, 0))
+        CTkButton(speaker1_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(pady=5, padx=10)
+
+        # Speaker 2 button with color background
+        speaker2_frame = CTkFrame(button_frame, fg_color="#FF5733", corner_radius=8)
+        speaker2_frame.pack(side='right', padx=10)
+        CTkLabel(speaker2_frame, text="Speaker 2", text_color="white").pack(padx=10, pady=(5, 0))
+        CTkButton(speaker2_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(pady=5, padx=10)
+        
+        #CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
+        #CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
