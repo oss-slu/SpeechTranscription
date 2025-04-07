@@ -322,6 +322,7 @@ class audioMenu(CTkFrame):
         self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
         self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N + E + S + W)
         self.transcriptionBox.insert("0.0", text="Text will generate here")
+        self.transcriptionBox.bind("<Button-1>", self.on_transcription_click)
         lockItem(self.transcriptionBox)
 
         # Conventions Box Control and Frame
@@ -370,6 +371,44 @@ class audioMenu(CTkFrame):
         self.transcriptionBox.insert("0.0", new_transcription_text)
         self.color_code_transcription()
         unlockItem(self.applyAliasesButton)
+
+    @global_error_handler
+    def on_transcription_click(self, event):
+        """Handles click events on the transcription box to seek audio playback."""
+        # Get the clicked position's index
+        index = self.transcriptionBox.index(f"@{event.x},{event.y}")
+        line_num = index.split('.')[0]
+        line_start = f"{line_num}.0"
+        line_end = f"{line_num}.end"
+        line_text = self.transcriptionBox.get(line_start, line_end).strip()
+        
+        # Extract timestamp using regex
+        match = re.match(r'\[(\d+:\d+)\]', line_text)
+        if match:
+            timestamp_str = match.group(1)
+            minutes, seconds = map(int, timestamp_str.split(':'))
+            total_seconds = minutes * 60 + seconds
+            
+            # Check if audio is available
+            if not self.audio.filePath:
+                return
+            
+            # Pause audio if currently playing
+            was_playing = self.is_playing and not self.is_paused
+            if was_playing:
+                self.pauseAudio()
+            
+            # Update current position and seek audio
+            self.current_position = total_seconds
+            self.audio.seek(total_seconds)
+            
+            # Update UI elements
+            self.timelineSlider.set(total_seconds)
+            self.updateCurrentTime(total_seconds)
+            
+            # Resume playback if it was playing
+            if was_playing:
+                self.playAudio()
 
     def color_code_transcription(self):
         """Applies color to different speakers' transcriptions."""
