@@ -17,7 +17,6 @@ import re
 import tkinter as tk
 import customtkinter as ctk 
 
-
 WIDTH = 1500
 HEIGHT = 740
 SETTINGS_FILE = "user_settings.txt"
@@ -235,14 +234,15 @@ class audioMenu(CTkFrame):
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
-        
-
 
         # ROW 0: Frame for Audio Upload/Record buttons
         self.audioInputFrame = CTkFrame(self, height=80)
         self.audioInputFrame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N + E + W)
-        self.audioInputLabel = CTkLabel(self.audioInputFrame, text="Input Audio Source Here", font=("Arial", 18))
-        self.audioInputLabel.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
+
+        # Textbox for File Name Display & Editing
+        self.fileNameEntry = CTkEntry(self.audioInputFrame, placeholder_text="Enter file name here", font=("Arial", 18))
+        self.fileNameEntry.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N + E + W)
+
         self.uploadButton = createButton(self.audioInputFrame, "Upload", 1, 0, self.uploadAudio, height=80,
                                          font=("Arial", 18), lock=False)
         self.recordButton = createButton(self.audioInputFrame, "Record", 1, 1, self.recordAudio, height=80,
@@ -321,6 +321,7 @@ class audioMenu(CTkFrame):
         self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
         self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N + E + S + W)
         self.transcriptionBox.insert("0.0", text="Text will generate here")
+        self.transcriptionBox.bind("<Button-1>", self.on_transcription_click)
         lockItem(self.transcriptionBox)
 
         # Conventions Box Control and Frame
@@ -376,6 +377,44 @@ class audioMenu(CTkFrame):
         self.color_code_transcription()
         unlockItem(self.applyAliasesButton)
 
+    @global_error_handler
+    def on_transcription_click(self, event):
+        """Handles click events on the transcription box to seek audio playback."""
+        # Get the clicked position's index
+        index = self.transcriptionBox.index(f"@{event.x},{event.y}")
+        line_num = index.split('.')[0]
+        line_start = f"{line_num}.0"
+        line_end = f"{line_num}.end"
+        line_text = self.transcriptionBox.get(line_start, line_end).strip()
+        
+        # Extract timestamp using regex
+        match = re.match(r'\[(\d+:\d+)\]', line_text)
+        if match:
+            timestamp_str = match.group(1)
+            minutes, seconds = map(int, timestamp_str.split(':'))
+            total_seconds = minutes * 60 + seconds
+            
+            # Check if audio is available
+            if not self.audio.filePath:
+                return
+            
+            # Pause audio if currently playing
+            was_playing = self.is_playing and not self.is_paused
+            if was_playing:
+                self.pauseAudio()
+            
+            # Update current position and seek audio
+            self.current_position = total_seconds
+            self.audio.seek(total_seconds)
+            
+            # Update UI elements
+            self.timelineSlider.set(total_seconds)
+            self.updateCurrentTime(total_seconds)
+            
+            # Resume playback if it was playing
+            if was_playing:
+                self.playAudio()
+
     def color_code_transcription(self):
         """Applies color to different speakers' transcriptions."""
         self.transcriptionBox.tag_config("Speaker 1", foreground=SPEAKER_COLORS["Speaker 1"])
@@ -417,24 +456,43 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def togglePlayPause(self):
-        '''Toggles between play and pause states.'''
-        if self.is_playing and not self.is_paused:
+        if self.is_playing:
             self.pauseAudio()
         else:
             self.playAudio()
+        self.updateButtonState()
+
+
+    @global_error_handler
+    def _playAudioThread(self):
+        '''Helper function to run audio playback in a thread.'''
+        self.audio.play(self.current_position)
 
     @global_error_handler
     def playAudio(self):
-        '''Starts or resumes audio playback from the current position.'''
-        if not self.is_playing:
-            print(f"Starting playback from {round(self.current_position, 2)} seconds...")
-            self.is_playing = True
-            self.is_paused = False
-            threading.Thread(target=self.audio.play, args=(self.current_position,), daemon=True).start()
-            self.updatePlayback()
-            
+        if not self.audio.filePath:
+            return
+
+        if self.playback_thread and self.playback_thread.is_alive():
+            # Resume from pause
+            with self.audio.lock:
+                self.audio.paused = False
+        else:
+            # Start new playback thread
+            self.playback_thread = threading.Thread(
+                target=self.audio.play, 
+                daemon=True,
+                kwargs={'startPosition': self.current_position}
+            )
+            self.playback_thread.start()
+        
+        self.is_playing = True
+        self.is_paused = False
+        self.updatePlayback()
+
     @global_error_handler
     def pauseAudio(self):
+
         '''Pauses the currently playing audio.'''
         if self.is_playing and not self.is_paused:
             print("Pausing audio...")
@@ -442,6 +500,13 @@ class audioMenu(CTkFrame):
             self.is_playing = False
             self.is_paused = True
     
+
+        with self.audio.lock:
+            self.audio.paused = True
+        self.is_playing = False
+        self.is_paused = True
+
+
     @global_error_handler
     def updateEndTime(self, duration):
         mins, secs = divmod(int(duration), 60)
@@ -491,7 +556,7 @@ class audioMenu(CTkFrame):
                 self.master.after(300, self.updatePlayback)  # Continue updating
 
     @global_error_handler
-    def updateButtons(self):
+    def updateButtonState(self):
         '''Updates the state of the play/pause button based on whether the audio is currently playing or paused.'''
         if self.is_playing and not self.is_paused:
             self.playPauseButton.configure(text="Pause")
@@ -500,21 +565,21 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def scrubAudio(self, value):
-        '''Scrubs audio by pausing, seeking, and preparing for smooth playback.'''
-        if not self.audio or not self.audio.filePath:
-            print("Error: Please upload an audio file before using the timeline.")
-            self.timelineSlider.set(0)
-            return
+        current_time = time.time()
+        if current_time - self.last_scrub_time < 0.1:
+            return  # Debounce
+        self.last_scrub_time = current_time
 
-        # Pause while scrubbing
-        if self.is_playing:
-            self.audio.pause()  # Pause playback
-            print("Audio paused for scrubbing.")
+        was_playing = self.is_playing
+        if was_playing:
+            self.pauseAudio()
 
-        # Update playback position
         self.current_position = float(value)
-        print(f"Scrubbed to {round(self.current_position, 2)} seconds.")
-        self.audio.setPlaybackPosition(self.current_position)
+        self.audio.seek(self.current_position)
+        self.updateCurrentTime(self.current_position)
+
+        if was_playing:
+            self.playAudio()
 
 
     def applyScrub(self):
@@ -601,6 +666,7 @@ class audioMenu(CTkFrame):
 
         initial_segments = self.getTranscriptionText().split('\n')
         self.segment_selections = []
+
         for idx, segment in enumerate(initial_segments):
             if segment.strip():
                 var = IntVar()
@@ -615,7 +681,6 @@ class audioMenu(CTkFrame):
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
                     line = current_segments[idx]
-                    # Check for existing timestamp at the beginning of the line
                     match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', line)
                     if match:
                         timestamp = match.group(1)
@@ -623,18 +688,22 @@ class audioMenu(CTkFrame):
                         current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
                     else:
                         current_segments[idx] = f"{speaker}: {line}"
-                    var.set(0)  # Reset the checkbox
+                    var.set(0)  # Reset checkbox
 
             new_transcription_text = "\n".join(current_segments)
-            self.transcriptionBox.delete("0.0", "end")
-            self.transcriptionBox.insert("0.0", new_transcription_text)
+            self.transcriptionBox.configure(state="normal")
+            self.transcriptionBox.delete("1.0", "end")
+            self.transcriptionBox.insert("1.0", new_transcription_text)
+            self.transcriptionBox.configure(state="disabled")
 
             self.color_code_transcription()
-            
-            unlockItem(self.applyAliasesButton)
 
-        CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
-        CTkButton(popup, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
+        # Buttons to apply speaker labels
+        button_frame = CTkFrame(popup)
+        button_frame.pack(pady=10)
+
+        CTkButton(button_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side="left", padx=10)
+        CTkButton(button_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side="left", padx=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
@@ -658,20 +727,24 @@ class audioMenu(CTkFrame):
             speaker1_alias = speaker1_alias_entry.get().strip()
             speaker2_alias = speaker2_alias_entry.get().strip()
 
-            # Fetch the current state of the transcription text
-            
             if speaker1_alias:
                 self.speaker_aliases["Speaker 1"] = speaker1_alias
             if speaker2_alias:
                 self.speaker_aliases["Speaker 2"] = speaker2_alias
 
             transcription_text = self.getTranscriptionText()
-            for speaker, alias in self.speaker_aliases.items():
-                transcription_text = transcription_text.replace(f"{speaker}:", f"{alias}:")
 
-            # Update the transcriptionBox with the new aliases
+            for speaker, alias in self.speaker_aliases.items():
+                # This handles both cases: with or without timestamps
+                pattern = rf'(\[\d{{2}}:\d{{2}}\]\s*)?{re.escape(speaker)}:'
+                transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{alias}:", transcription_text)
+
+            # 🔓 Unlock, update, lock the box properly
+            self.transcriptionBox.configure(state="normal")
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", transcription_text)
+            self.transcriptionBox.configure(state="disabled")
+
             self.color_code_transcription()
             popup.destroy()
 
@@ -725,6 +798,14 @@ class audioMenu(CTkFrame):
             lockItem(self.uploadButton)
             lockItem(self.recordButton)
 
+            # Set the default file name for recorded audio
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, "RECORDING - 1.wav")
+
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
+
     @global_error_handler
     def transcribe(self):
         """Simulates transcription process."""
@@ -762,8 +843,9 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def downloadRecordedAudio(self):
         '''Download file of recorded audio'''
+        default_name = self.fileNameEntry.get() or "downloaded_audio.wav"
         downloadFile = filedialog.asksaveasfile(defaultextension=".wav", filetypes=[("Wave File", ".wav"), ("All Files", ".*")],
-                                                initialfile="downloaded_audio.wav")
+                                                initialfile=default_name)
         if downloadFile:
             self.audio.saveAudioFile(downloadFile.name)
 

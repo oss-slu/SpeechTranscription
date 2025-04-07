@@ -5,7 +5,12 @@ from pydub import AudioSegment
 from pydub.effects import normalize
 import numpy as np
 import tkinter.messagebox as msgbox
+<<<<<<< HEAD
 import time 
+=======
+import threading
+import time
+>>>>>>> 15e6e966e3785c01cd3cfe721142552194110b6b
 
 class AudioManager:
     CHUNK = 1024
@@ -22,6 +27,7 @@ class AudioManager:
         self.p = pyaudio.PyAudio()
         self.out_stream = None
         self.wf = None
+<<<<<<< HEAD
         self.progress_bar = None  # Assuming you want a progress bar object
 
     def startProgressBar(self):
@@ -39,6 +45,12 @@ class AudioManager:
         if self.progress_bar:
             self.progress_bar.set(1)  # Set progress to 100% (complete)
             self.progress_bar.grid_forget()  # Hide the progress bar after completion
+=======
+        self.paused = False
+        self.playing = False
+        self.lock = threading.Lock()
+        self.current_position = 0.0
+>>>>>>> 15e6e966e3785c01cd3cfe721142552194110b6b
 
     def record(self):
         self.filePath = "session_output.wav"
@@ -68,56 +80,56 @@ class AudioManager:
     
     def play(self, startPosition=None):
         '''Plays audio starting from the given position in seconds.'''
-        # Ensure PyAudio is initialized
-        if not self.p:
-            self.p = pyaudio.PyAudio()
-
-        # Ensure filePath exists
-        if not self.filePath or not isinstance(self.filePath, str):
-            msgbox.showerror("Playback Error", "No audio file selected or invalid file path.")
-            return
-
-        if startPosition is not None:
-            self.current_position = startPosition
-
         try:
-            # Open the wave file if not already opened
-            if not self.wf:
-                self.wf = wave.open(self.filePath, "rb")
+            with self.lock:
+                if self.playing and not self.paused:
+                    return  # Already playing
 
-            # Set position
-            startFrame = int(self.current_position * self.wf.getframerate())
-            self.wf.setpos(startFrame)
+                # Initialize audio resources
+                if not self.wf:
+                    self.wf = wave.open(self.filePath, "rb")
+                
+                if not self.out_stream or self.out_stream.is_stopped():
+                    self.out_stream = self.p.open(
+                        format=self.p.get_format_from_width(self.wf.getsampwidth()),
+                        channels=self.wf.getnchannels(),
+                        rate=self.wf.getframerate(),
+                        output=True,
+                        frames_per_buffer=self.CHUNK,
+                    )
 
-            # Initialize output stream if not already initialized
-            if not self.out_stream:
-                self.out_stream = self.p.open(
-                    format=self.p.get_format_from_width(self.wf.getsampwidth()),
-                    channels=self.wf.getnchannels(),
-                    rate=self.wf.getframerate(),
-                    output=True,
-                    frames_per_buffer=self.CHUNK,
-                )
+                # Set initial position
+                if startPosition is not None:
+                    self.current_position = startPosition
+                self.wf.setpos(int(self.current_position * self.wf.getframerate()))
 
-            self.playing = True
-            self.paused = False
+                self.playing = True
+                self.paused = False
 
             # Playback loop
             while self.playing:
-                if not self.paused:
+                with self.lock:
+                    if self.paused:
+                        time.sleep(0.1)
+                        continue
+
                     data = self.wf.readframes(self.CHUNK)
-                    if data == b"":
+                    if not data:
                         break
-                    self.out_stream.write(data)
+
+                    # Update current position before writing to stream
+                    self.current_position = self.wf.tell() / self.wf.getframerate()
+                
+                self.out_stream.write(data)
+
         except Exception as e:
-            print(f"Error during playback: {e}")
-            msgbox.showerror("Playback Error", f"An error occurred: {e}")
+            print(f"Playback error: {e}")
         finally:
-            if not self.playing:  # Only stop playback if playback ends
-                self.stopPlayback()
+            self.stopPlayback()
 
     def pause(self):
-        self.paused = not self.paused
+        with self.lock:
+            self.paused = not self.paused
         return self.paused
     
     def upload(self, filename: str):
@@ -182,15 +194,10 @@ class AudioManager:
         self.seek(position)
 
     def seek(self, position):
-        '''Seeks to the specified position in seconds.'''
-        # Ensure wave file is initialized
-        if not self.wf:
-            try:
-                self.wf = wave.open(self.filePath, "rb")
-            except Exception as e:
-                print(f"Error reopening wave file: {e}")
-                msgbox.showerror("Error", "Cannot seek: Unable to reopen wave file.")
-                return
+        with self.lock:
+            if self.wf:
+                self.current_position = max(0, min(position, self.getAudioDuration()))
+                self.wf.setpos(int(self.current_position * self.wf.getframerate()))
 
         try:
             # Clamp the position to valid bounds
@@ -211,7 +218,8 @@ class AudioManager:
 
     def stopPlayback(self):
         '''Stops the audio playback and cleans up resources.'''
-        self.playing = False
+        with self.lock:
+            self.playing = False
         self.paused = True  # Ensure paused is True so playback can reset correctly
 
         # Stop and close the output stream
@@ -236,6 +244,7 @@ class AudioManager:
         # Reinitialize PyAudio to prepare for future playback
         self.p = pyaudio.PyAudio()
 
+<<<<<<< HEAD
     def transcribe_audio(self):
         """Starts transcription and updates progress bar."""
         self.startProgressBar()
@@ -245,3 +254,8 @@ class AudioManager:
             self.update_progress_bar(progress / 100)  
 
         self.stopProgressBar()  # Hide when done
+=======
+    def get_current_position(self):
+        with self.lock:
+            return self.current_position
+>>>>>>> 15e6e966e3785c01cd3cfe721142552194110b6b
