@@ -5,12 +5,9 @@ from pydub import AudioSegment
 from pydub.effects import normalize
 import numpy as np
 import tkinter.messagebox as msgbox
-<<<<<<< HEAD
 import time 
-=======
 import threading
-import time
->>>>>>> 15e6e966e3785c01cd3cfe721142552194110b6b
+
 
 class AudioManager:
     CHUNK = 1024
@@ -27,8 +24,8 @@ class AudioManager:
         self.p = pyaudio.PyAudio()
         self.out_stream = None
         self.wf = None
-<<<<<<< HEAD
         self.progress_bar = None  # Assuming you want a progress bar object
+        self.lock = threading.Lock()
 
     def startProgressBar(self):
         # You can create and display a progress bar here
@@ -45,12 +42,6 @@ class AudioManager:
         if self.progress_bar:
             self.progress_bar.set(1)  # Set progress to 100% (complete)
             self.progress_bar.grid_forget()  # Hide the progress bar after completion
-=======
-        self.paused = False
-        self.playing = False
-        self.lock = threading.Lock()
-        self.current_position = 0.0
->>>>>>> 15e6e966e3785c01cd3cfe721142552194110b6b
 
     def record(self):
         self.filePath = "session_output.wav"
@@ -244,7 +235,6 @@ class AudioManager:
         # Reinitialize PyAudio to prepare for future playback
         self.p = pyaudio.PyAudio()
 
-<<<<<<< HEAD
     def transcribe_audio(self):
         """Starts transcription and updates progress bar."""
         self.startProgressBar()
@@ -254,8 +244,3 @@ class AudioManager:
             self.update_progress_bar(progress / 100)  
 
         self.stopProgressBar()  # Hide when done
-=======
-    def get_current_position(self):
-        with self.lock:
-            return self.current_position
->>>>>>> 15e6e966e3785c01cd3cfe721142552194110b6b
