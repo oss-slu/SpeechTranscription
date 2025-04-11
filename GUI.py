@@ -543,21 +543,20 @@ class audioMenu(CTkFrame):
             unlockItem(self.applyAliasesButton)
 
 
-        # Frame to hold speaker buttons with color indicators
+        # Buttons to apply speaker labels
         button_frame = CTkFrame(popup)
         button_frame.pack(pady=10)
 
-        # Speaker 1 button inside a colored frame
+        # Speaker 1 button inside colored frame
         speaker1_frame = CTkFrame(button_frame, fg_color="#029CFF", corner_radius=8)
-        speaker1_frame.pack(side='left', padx=10)
-        CTkLabel(speaker1_frame, text="Speaker 1", text_color="white").pack(padx=10, pady=(5, 0))
-        CTkButton(speaker1_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
+        speaker1_frame.pack(side="left", padx=10)
+        CTkButton(speaker1_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(padx=10, pady=10)
 
-        # Speaker 2 button inside a colored frame
+        
+        # Speaker 2 button inside colored frame
         speaker2_frame = CTkFrame(button_frame, fg_color="#FF5733", corner_radius=8)
-        speaker2_frame.pack(side='right', padx=10)
-        CTkLabel(speaker2_frame, text="Speaker 2", text_color="white").pack(padx=10, pady=(5, 0))
-        CTkButton(speaker2_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side='right', padx=10, pady=10)
+        speaker2_frame.pack(side="left", padx=10)
+        CTkButton(speaker2_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(padx=10, pady=10)
 
         
         #CTkButton(popup, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side='left', padx=10, pady=10)
