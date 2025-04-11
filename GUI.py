@@ -14,7 +14,8 @@ import traceback
 import os
 import sys
 import re
-import customtkinter as ctk
+import tkinter as tk
+import customtkinter as ctk 
 
 WIDTH = 1500
 HEIGHT = 740
@@ -25,8 +26,6 @@ def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
-
-
 
 def scale_image(image_path, size=(30, 30)):
     #Makes sure resize the image
@@ -341,7 +340,13 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
+        
+        # Progress Bar Canvas (Added More Padding Below the Button)
+        self.progressCanvas = tk.Canvas(self, width=225, height=20, bg="white", highlightthickness=0)
+
+        self.running = False  # Flag to control animation
+        self.stripe_offset = 0  # Offset to move stripes
+        self.progress = 0  # Current progress percentage
 
         self.grammarCheckPerformed = False
 
@@ -487,6 +492,15 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def pauseAudio(self):
+
+        '''Pauses the currently playing audio.'''
+        if self.is_playing and not self.is_paused:
+            print("Pausing audio...")
+            self.audio.pause()
+            self.is_playing = False
+            self.is_paused = True
+    
+
         with self.audio.lock:
             self.audio.paused = True
         self.is_playing = False
@@ -532,13 +546,14 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def updatePlayback(self):
-        if self.is_playing and not self.is_paused:
-            self.current_position = self.audio.get_current_position()
-            self.timelineSlider.set(self.current_position)
-            self.updateCurrentTime(self.current_position)
-            self.master.after(50, self.updatePlayback)
-        else:
-            self.timelineSlider.set(self.current_position)
+        '''Continuously updates the playback position and time display.'''
+        with self.lock:
+            if self.is_playing and not self.is_paused:
+                self.current_position += 0.3  # Increment playback position
+                self.timelineSlider.set(self.current_position)  # Update the slider
+                self.updateCurrentTime(self.current_position)  # Update the time label
+            if self.is_playing:
+                self.master.after(300, self.updatePlayback)  # Continue updating
 
     @global_error_handler
     def updateButtonState(self):
@@ -580,17 +595,65 @@ class audioMenu(CTkFrame):
        
     @global_error_handler
     def startProgressBar(self):
+        """Starts the animated gradient striped progress bar with better spacing."""
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
-        self.transcribeButton.configure(height=100)
-        self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        self.progressBar.start()
+        self.transcribeButton.configure(height=100)  # Keep button visible
+        self.progressCanvas.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        self.running = True
+        self.progress = 0
+        self.animate_striped_progress()
+
+    def animate_striped_progress(self):
+        """Creates a moving striped gradient effect on the progress bar."""
+        if not self.running:
+            return  # Stop animation if needed
+
+        self.progressCanvas.delete("all")  # Clear previous frame
+
+        stripe_width = 20  # Width of each stripe
+        num_stripes = 15  # Number of stripes
+        self.stripe_offset = (self.stripe_offset + 3) % stripe_width  # Move stripes
+
+        # Define two gradient shades of blue
+        color1 = "#1E90FF"  # Lighter blue
+        color2 = "#104E8B"  # Darker blue
+
+        # Draw diagonal stripes
+        for i in range(-stripe_width, 225, stripe_width):
+            x1 = i + self.stripe_offset
+            x2 = x1 + stripe_width
+            self.progressCanvas.create_polygon(
+                x1, 0, x2, 0, x2 - 10, 20, x1 - 10, 20,
+                fill=color1 if (i // stripe_width) % 2 == 0 else color2, outline=""
+            )
+
+        # Draw a progress overlay
+        self.progressCanvas.create_rectangle(0, 0, 225 * self.progress, 20, fill="blue", outline="")
+
+        self.progressCanvas.update_idletasks()  # Force UI update
+        self.progressCanvas.after(50, self.animate_striped_progress)  # Schedule next frame
+
+
+    @global_error_handler
+    def update_progress_bar(self, progress):
+        """Switches to a solid fill as progress reaches 100%."""
+        self.progress = progress  # Store progress value
+
+        if progress >= 1.0:  # If fully completed, stop animation
+            self.running = False
+            self.progressCanvas.delete("all")
+            self.progressCanvas.create_rectangle(0, 0, 225, 20, fill="blue", outline="")
+            self.progressCanvas.update_idletasks()
 
     @global_error_handler
     def stopProgressBar(self):
-        self.progressBar.stop()
-        self.progressBar.grid_remove()
-        self.transcribeButton.configure(height=200)
+        """Ensure progress bar is fully filled before hiding it."""
+        self.update_progress_bar(1.0)
+        time.sleep(0.5)  # Short delay to show solid fill
+        self.progressCanvas.grid_remove()
+        self.transcribeButton.configure(height=200)  # Reset button size
         self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
+
 
     @global_error_handler
     def labelSpeakers(self):
@@ -702,11 +765,6 @@ class audioMenu(CTkFrame):
             time, signal = self.audio.upload(filename)
             plotAudio(time, signal)
 
-            # Set the file name in the textbox
-            base_name = os.path.basename(filename)
-            self.fileNameEntry.delete(0, END)
-            self.fileNameEntry.insert(0, base_name)
-
             # Get audio duration and update end time label
             self.audioLength = self.audio.getAudioDuration(filename)
             mins, secs = divmod(int(self.audioLength), 60)
@@ -736,6 +794,9 @@ class audioMenu(CTkFrame):
             unlockItem(self.downloadAudioButton)
             filename, time, signal = self.audio.stop()
             plotAudio(time, signal)
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
 
             # Set the default file name for recorded audio
             self.fileNameEntry.delete(0, END)
@@ -747,34 +808,36 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def transcribe(self):
-        '''Transcribes audio, then prints to the transcription box'''
-        
-        # Stop audio playback before starting transcription
-        if self.is_playing or self.is_paused:
-            print("🎶 Pausing audio before transcription...")
-            self.pauseAudio()  # Pause the audio if it's playing
+        """Simulates transcription process."""
+        self.startProgressBar()  # Start striped animation
 
-        self.startProgressBar()  # Start the transcription progress bar animation
-
-        # Normalize the audio file
-        filename = self.audio.normalizeUploadedFile()
-        print(f"🎵 Normalized audio file: {filename}")
-
-        try:
-            # Perform transcription asynchronously
+        def progress_thread():
+            filename = self.audio.normalizeUploadedFile()
             transcribedAudio = diarizationAndTranscription.transcribe(filename)
-            print("🎤 Transcription completed!")
 
-            # After transcription is complete, update the UI with the transcribed text
-            self.updateTranscriptionUI(transcribedAudio)
-        except Exception as e:
-            print(f"Error during transcription: {e}")
-            self.updateTranscriptionUI("Error during transcription.")
+            # Simulate progress
+            for i in range(101):
+                time.sleep(0.05)
+                self.update_progress_bar(i / 100)
+
+            # Update UI with transcription result
+            self.transcriptionBox.configure(state="normal")
+            unlockItem(self.transcriptionBox)
+            unlockItem(self.labelSpeakersButton)
+            self.transcriptionBox.delete("0.0", "end")
+            self.transcriptionBox.insert("end", transcribedAudio + "\n")
+            self.color_code_transcription()
+            unlockItem(self.grammarButton)
+            unlockItem(self.exportButton)
+
+            # Stop and remove progress bar
+            self.stopProgressBar()
+
+        threading.Thread(target=progress_thread, daemon=True).start()
 
     @global_error_handler
     def transcriptionThread(self):
-        '''Creates thread that executes the transcribe function'''
-
+        """Creates a thread that executes the transcribe function."""
         # Ensure no audio is playing or paused before starting transcription
         if self.is_playing or self.is_paused:
             print("🎶 Pausing audio before transcription...")
@@ -784,14 +847,13 @@ class audioMenu(CTkFrame):
         print("📝 Starting transcription thread...")
         threading.Thread(target=self.transcribe, daemon=True).start()
 
-
     @global_error_handler
     def updateTranscriptionUI(self, transcribedAudio):
         '''Updates UI with transcribed text and stops the progress bar'''
 
         # Use `after` to schedule the UI update safely in the main thread
         self.after(0, self._updateTranscriptionBox, transcribedAudio)
-
+    
     @global_error_handler
     def _updateTranscriptionBox(self, transcribedAudio):
         '''Helper function to actually update the transcription box in the main thread'''
@@ -812,7 +874,6 @@ class audioMenu(CTkFrame):
         # Stop progress bar animation
         self.stopProgressBar()
         print("✅ Transcription complete and UI updated!")
-
 
 
     @global_error_handler
