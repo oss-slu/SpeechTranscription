@@ -838,7 +838,43 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def transcriptionThread(self):
         """Creates a thread that executes the transcribe function."""
+        # Ensure no audio is playing or paused before starting transcription
+        if self.is_playing or self.is_paused:
+            print("🎶 Pausing audio before transcription...")
+            self.pauseAudio()
+
+        # Start the transcription process in a background thread
+        print("📝 Starting transcription thread...")
         threading.Thread(target=self.transcribe, daemon=True).start()
+
+    @global_error_handler
+    def updateTranscriptionUI(self, transcribedAudio):
+        '''Updates UI with transcribed text and stops the progress bar'''
+
+        # Use `after` to schedule the UI update safely in the main thread
+        self.after(0, self._updateTranscriptionBox, transcribedAudio)
+    
+    @global_error_handler
+    def _updateTranscriptionBox(self, transcribedAudio):
+        '''Helper function to actually update the transcription box in the main thread'''
+        print("📝 Updating transcription box with result...")
+        self.transcriptionBox.configure(state="normal")
+        unlockItem(self.transcriptionBox)
+        self.transcriptionBox.delete("1.0", "end")  # Clear the transcription box
+        self.transcriptionBox.insert("end", transcribedAudio + "\n")  # Insert the transcription text
+        self.transcriptionBox.configure(state="disabled")  # Lock the transcription box to prevent editing
+
+        self.labelSpeakersButton.configure(state="normal")
+        self.applyAliasesButton.configure(state="normal")
+        self.exportButton.configure(state="normal")
+        self.grammarButton.configure(state="normal")
+        self.submitGrammarButton.configure(state="normal")
+        self.morphemesButton.configure(state="normal")
+
+        # Stop progress bar animation
+        self.stopProgressBar()
+        print("✅ Transcription complete and UI updated!")
+
 
     @global_error_handler
     def downloadRecordedAudio(self):
