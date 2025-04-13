@@ -1,6 +1,8 @@
-from customtkinter import *
-import webbrowser
+# components/error_handler.py
 import traceback
+import webbrowser
+from customtkinter import *
+from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
 
 def global_error_handler(func):
     def wrapper(*args, **kwargs):
@@ -27,4 +29,5 @@ def show_error_popup(master, error_message):
     def file_bug():
         webbrowser.open("https://github.com/oss-slu/SpeechTranscription/issues")
 
-    CTkButton(popup, text="File a Bug", command=file_bug).pack(pady=20)
+    file_bug_button = CTkButton(popup, text="File a Bug", command=file_bug)
+    file_bug_button.pack(pady=20)
