@@ -401,8 +401,8 @@ class audioMenu(CTkFrame):
         button_frame = CTkFrame(popup)
         button_frame.pack(pady=10)
 
-        CTkButton(button_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side="left", padx=10)
-        CTkButton(button_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side="left", padx=10)
+        CTkButton(button_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1"), fg_color="#029CFF").pack(side="left", padx=10)
+        CTkButton(button_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2"), fg_color="#FF5733").pack(side="left", padx=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
