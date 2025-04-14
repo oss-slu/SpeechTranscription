@@ -10,19 +10,29 @@ import sys
 
 class mainGUI(CTk):
     @global_error_handler
-    def new_audio(self):
-        dialog = CTkInputDialog(text="Enter Name of Session", title="New Audio")
-        session_name = dialog.get_input().strip()
-        if session_name:
-            self.audioMenuList.append(audioMenu(self))
-            newButton = createButton(self.userFrame.audioTabs, session_name, len(self.audioButtonList), 0,
-                                   lambda x=self.currentAudioNum: self.changeAudioWindow(x),
-                                   width=self.userFrame.audioTabs.cget("width"), lock=False)
-            self.audioButtonList.append(newButton)
-            self.changeAudioWindow(self.currentAudioNum)
-            self.currentAudioNum += 1
-            unlockItem(self.audioMenuList[-1].uploadButton)
-            unlockItem(self.audioMenuList[-1].recordButton)
+    def new_session(self):
+        '''Automatically generates a new session with a unique name and navigates to the main page.'''
+        from datetime import datetime
+
+        # Generate session name in the format: "Session <Number> - <Date> <Time>"
+        session_number = self.currentAudioNum + 1
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        session_name = f"Session {session_number} - {current_time}"
+
+        # Create a new audio session
+        self.audioMenuList.append(audioMenu(self))
+        newButton = createButton(self.userFrame.audioTabs, session_name, len(self.audioButtonList), 0,
+                                 lambda x=self.currentAudioNum: self.changeAudioWindow(x),
+                                 width=self.userFrame.audioTabs.cget("width"), lock=False)
+        self.audioButtonList.append(newButton)
+
+        # Navigate directly to the new session
+        self.changeAudioWindow(self.currentAudioNum)
+        self.currentAudioNum += 1
+
+        # Enable the Upload and Record buttons for the new session
+        unlockItem(self.audioMenuList[-1].uploadButton)
+        unlockItem(self.audioMenuList[-1].recordButton)
 
     @global_error_handler
     def changeAudioWindow(self, num):
@@ -103,8 +113,9 @@ class mainGUI(CTk):
         self.userFrame = userMenu(master=self)
         self.userFrame.grid(row=0, column=0, padx=1, sticky=NW)
 
-        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, 
-                                         height=60, columnspan=2, lock=False)
+        # Replace "New Audio" button with "New Session" button
+        self.newSessionButton = createButton(self.userFrame, "New Session", 1, 0, self.new_session, 
+                                             height=60, columnspan=2, lock=False)
         self.audioFrame = CTkFrame(self)
         
         # Add Help Button
