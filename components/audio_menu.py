@@ -403,8 +403,8 @@ class audioMenu(CTkFrame):
 
         speaker1_alias = self.speaker_aliases.get("Speaker 1", "Speaker 1")
         speaker2_alias = self.speaker_aliases.get("Speaker 2", "Speaker 2")
-        CTkButton(button_frame, text=f"Label as {speaker1_alias}", command=lambda: apply_labels(speaker1_alias)).pack(side="left", padx=10)
-        CTkButton(button_frame, text=f"Label as {speaker2_alias}", command=lambda: apply_labels(speaker2_alias)).pack(side="right", padx=10)
+        CTkButton(button_frame, text=f"Label as {speaker1_alias}", command=lambda: apply_labels(speaker1_alias), fg_color="#029CFF").pack(side="left", padx=10)
+        CTkButton(button_frame, text=f"Label as {speaker2_alias}", command=lambda: apply_labels(speaker2_alias), fg_color="#FF5733").pack(side="right", padx=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
