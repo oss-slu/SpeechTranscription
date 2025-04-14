@@ -1,36 +1,113 @@
-# main.py
 from customtkinter import *
-from components.user_menu import userMenu
-from components.audio_menu import audioMenu
-from components.utils import createButton, lockItem, unlockItem
-from components.error_handler import global_error_handler, show_error_popup
-from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
+import diarizationAndTranscription
+from audio import AudioManager
+from client_info import ClientInfo
+from grammar import GrammarChecker
+from export import Exporter
+from PIL import Image
+from CTkXYFrame.CTkXYFrame.ctk_xyframe import *  # Uses Third party license found in CtkXYFrame/ folder
+import threading
+import matplotlib.pyplot as plt
+import time
+import webbrowser
+import traceback
 import os
 import sys
+import re
+import customtkinter as ctk
 
+WIDTH = 1500
+HEIGHT = 740
+SETTINGS_FILE = "user_settings.txt"
+
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+
+
+def scale_image(image_path, size=(30, 30)):
+    #Makes sure resize the image
+    image = Image.open(resource_path(image_path))
+    image = image.resize(size)
+    return customtkinter.CTkImage(light_image=image, dark_image=image, size=size)
+
+LOCK_ICON = scale_image("images/locked_icon.png", size=(30, 30))
+UNLOCK_ICON = scale_image("images/unlocked_icon.png", size=(30, 30))
+CLEAR_ICON = scale_image("images/clear_icon.png", size=(30, 30))
+
+# Global error handler
+def global_error_handler(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"Error: {e}")
+            traceback.print_exc()  # Print the full traceback to the console
+            show_error_popup(args[0], str(e))  # args[0] is 'self' for instance methods
+    return wrapper
+
+# Function to show error pop-up
+def show_error_popup(master, error_message):
+    popup = CTkToplevel(master)
+    popup.title("ERROR")
+    popup.geometry("400x200")
+    popup.resizable(False, False)
+
+    error_label = CTkLabel(popup, text="ERROR", font=("Arial", 24, "bold"))
+    error_label.pack(pady=20)
+
+    message_label = CTkLabel(popup, text=error_message, wraplength=350)
+    message_label.pack(pady=10)
+
+    def file_bug():
+        # Open the repository's issue page with pre-filled error details
+        repo_link = "https://github.com/oss-slu/SpeechTranscription/issues"
+        # issue_title = "Bug Report: Error in Application"
+        # issue_body = f"Error Details:\n\n{error_message}\n\nStack Trace:\n\n{traceback.format_exc()}"
+        webbrowser.open(repo_link)
+
+    file_bug_button = CTkButton(popup, text="File a Bug", command=file_bug)
+    file_bug_button.pack(pady=20)
+
+def plotAudio(time, signal):
+    '''Plots the waveform of audio'''
+    plt.figure(1)
+    plt.title("Audio Wave")
+    plt.xlabel("Time")
+    plt.plot(time, signal)
+    plt.show()
+
+# Apply global error handler to all methods in the mainGUI class
 class mainGUI(CTk):
     @global_error_handler
     def new_audio(self):
         dialog = CTkInputDialog(text="Enter Name of Session", title="New Audio")
-        session_name = dialog.get_input().strip()
-        if session_name:
+        session_name = dialog.get_input().strip()  # Get input and strip any whitespace
+        if session_name:  # Check if the name is not empty after stripping
             self.audioMenuList.append(audioMenu(self))
             newButton = createButton(self.userFrame.audioTabs, session_name, len(self.audioButtonList), 0,
-                                   lambda x=self.currentAudioNum: self.changeAudioWindow(x),
-                                   width=self.userFrame.audioTabs.cget("width"), lock=False)
+                                     lambda x=self.currentAudioNum: self.changeAudioWindow(x),
+                                     width=self.userFrame.audioTabs.cget("width"), lock=False)
             self.audioButtonList.append(newButton)
+
             self.changeAudioWindow(self.currentAudioNum)
             self.currentAudioNum += 1
+            # Enable the Upload and Record buttons for the new session
             unlockItem(self.audioMenuList[-1].uploadButton)
             unlockItem(self.audioMenuList[-1].recordButton)
 
     @global_error_handler
     def changeAudioWindow(self, num):
+        print("Changing Audio to #" + str(num))
         for i, frame in enumerate(self.audioMenuList):
             if i == num:
                 self.audioFrame = frame
                 frame.grid(row=0, column=1, padx=5)
             else:
+                frame.grid()
                 frame.grid_remove()
         for i, button in enumerate(self.audioButtonList):
             if i == num:
@@ -44,7 +121,9 @@ class mainGUI(CTk):
         '''Displays a pop-up with all button functionalities.'''
         popup = CTkToplevel(self)
         popup.title("Help Guide")
-        popup.geometry("450x450")
+
+        # Adjust window size to fit all text
+        popup.geometry("450x450")  # Adjusted to fit text better
         popup.attributes("-topmost", True)
         popup.resizable(False, False)
 
@@ -77,15 +156,12 @@ class mainGUI(CTk):
 
     def __init__(self):
         super().__init__()
-        self.WIDTH = WIDTH
-        self.HEIGHT = HEIGHT
-        
-        self.after(100, lambda: self.geometry("1375x740"))
+        self.after(100, lambda: self.geometry("1375x740")) # Forces gui to be this size
         self.currentAudioNum = 0
-        self.audioButtonList = []
-        self.audioMenuList = []
+        self.audioButtonList: list[CTkButton] = []
+        self.audioMenuList: list[audioMenu] = []
+
         self.title('Speech Transcription')
-        
         try:
             if os.path.getsize(SETTINGS_FILE) != 0:
                 with open(SETTINGS_FILE, "r") as file:
@@ -93,23 +169,25 @@ class mainGUI(CTk):
             else:
                 set_appearance_mode("dark")
         except FileNotFoundError:
+            print("Settings file not found. Defaulting to dark mode.")
             set_appearance_mode("dark")
         
         set_default_color_theme("blue")
         deactivate_automatic_dpi_awareness()
-        self.resizable(False, False)
-        self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
+        self.resizable(False, False)  
+
+        # Set the geometry after all configurations
+        self.geometry(f"{WIDTH}x{HEIGHT}")
 
         self.userFrame = userMenu(master=self)
         self.userFrame.grid(row=0, column=0, padx=1, sticky=NW)
 
-        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, 
-                                         height=60, columnspan=2, lock=False)
+        self.newAudioButton = createButton(self.userFrame, "New Audio", 1, 0, self.new_audio, height=60, columnspan=2, lock=False)
+
         self.audioFrame = CTkFrame(self)
         
         # Add Help Button
-        self.helpButton = createButton(self, "Help", None, None, self.showHelpOverlay, 
-                                     height=30, width=80, lock=False)
+        self.helpButton = createButton(self, "Help", None, None, self.showHelpOverlay, height=30, width=80, lock=False)
         self.helpButton.place(relx=0, rely=1, anchor=SW, x=10, y=-10)  # Position at bottom left corner
         
         self.mainloop()
@@ -561,8 +639,8 @@ class audioMenu(CTkFrame):
         button_frame = CTkFrame(popup)
         button_frame.pack(pady=10)
 
-        CTkButton(button_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1"), fg_color="#029CFF").pack(side="left", padx=10)
-        CTkButton(button_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2"), fg_color="#FF5733").pack(side="left", padx=10)
+        CTkButton(button_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1")).pack(side="left", padx=10)
+        CTkButton(button_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2")).pack(side="left", padx=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
@@ -884,3 +962,84 @@ def lockMultipleItems(items: list):
 
 if __name__ == "__main__":
     gui = mainGUI()
+
+# class sessionInfoMenu(CTkTabview):
+#     def __init__(self, master, transcriptionBox: CTkTextbox, grammarBox: CTkTextbox):
+#         super().__init__(master)
+#         self.configure(height=200)
+#         self.add("Client Information")
+#         self.add("Examiner Information")
+#         self.add("Tables")
+        
+#         self.transcriptionBox = transcriptionBox
+#         self.grammarBox = grammarBox
+
+#         self.clientLocked = False
+
+#         self.nameBox = CTkEntry(self.tab("Client Information"), placeholder_text="Name")
+#         self.nameBox.grid(row=0,column=0, padx=10, pady=10, sticky=W+E)
+
+#         self.ageBox = CTkEntry(self.tab("Client Information"), placeholder_text="Age")
+#         self.ageBox.grid(row=0,column=1, padx=10, pady=10, sticky=W+E)
+
+#         self.genderBox = CTkEntry(self.tab("Client Information"), placeholder_text="Gender")
+#         self.genderBox.grid(row=1,column=0, padx=10, pady=10, sticky=W+E)
+
+#         self.dobBox = CTkEntry(self.tab("Client Information"), placeholder_text="Date of Birth")
+#         self.dobBox.grid(row=1,column=1, padx=10, pady=10, sticky=W+E)
+
+#         self.saveClientInfo = createButton(self.tab("Client Information"), "Lock", 2, 0, self.lockClientInfo, height=28, lock=False)
+#         self.resetClientInfoButton = createButton(self.tab("Client Information"), "Reset", 2, 1, self.resetClientInfo, height=28, lock=False)
+
+#         self.examinerLocked = False
+
+#         self.exNameBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Examiner Name")
+#         self.exNameBox.grid(row=0,column=0, padx=10, pady=10, sticky=W+E)
+
+#         self.dosBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Date of Sample")
+#         self.dosBox.grid(row=0,column=1, padx=10, pady=10, sticky=W+E)
+
+#         self.contextBox = CTkEntry(self.tab("Examiner Information"), placeholder_text="Sample Context")
+#         self.contextBox.grid(row=1,column=0, padx=10, pady=10, columnspan=2, sticky=W+E)
+
+#         self.saveExaminerInfo = createButton(self.tab("Examiner Information"), "Lock", 2, 0, self.lockExaminerInfo, height=28, lock=False)
+#         self.resetExaminerInfoButton = createButton(self.tab("Examiner Information"), "Reset", 2, 1, self.resetExaminerInfo, height=28, lock=False)
+
+#         self.lockTranscription = StringVar(value="on")
+#         self.lockTranscriptionBox = CTkSwitch(self.tab("Tables"), text="Lock Transcription?", command=self.toggleTranscription, variable=self.lockTranscription, onvalue="on", offvalue="off")
+#         self.lockTranscriptionBox.grid(row=0, column=0, columnspan=2, padx=10, pady=12, sticky=E+W)
+
+#         self.lockGrammar = StringVar(value="on")
+#         self.lockGrammarBox = CTkSwitch(self.tab("Tables"), text="Lock Grammar Check?", command=self.toggleGrammar, variable=self.lockGrammar, onvalue="on", offvalue="off")
+#         self.lockGrammarBox.grid(row=1, column=0, columnspan=2,padx=10, pady=12, sticky=E+W)
+
+#         self.clearTranscriptionBox = createButton(self.tab("Tables"), "Clear Transcription", 2, 0, height=28, lock=False)
+#         self.clearGrammarBox = createButton(self.tab("Tables"), "Clear Grammar Check", 2, 1, height=28, lock=False)
+
+#     def lockClientInfo(self):
+#         if not self.clientLocked:
+#             lockMultipleItems([self.nameBox, self.ageBox, self.genderBox, self.dobBox])
+#             self.saveClientInfo.configure(text="Unlock")
+#         else:
+#             unlockMultipleItems([self.nameBox, self.ageBox, self.genderBox, self.dobBox])
+#             self.saveClientInfo.configure(text="Lock")
+#         self.clientLocked = not self.clientLocked
+        
+#     def resetClientInfo(self):
+#         if not self.clientLocked:
+#             for item in [self.nameBox, self.ageBox, self.genderBox, self.dobBox]:
+#                 item.delete("0.0", "end")
+
+#     def lockExaminerInfo(self):
+#         if not self.examinerLocked:
+#             lockMultipleItems([self.exNameBox, self.dosBox, self.contextBox])
+#             self.saveExaminerInfo.configure(text="Unlock")
+#         else:
+#             unlockMultipleItems([self.exNameBox, self.dosBox, self.contextBox])
+#             self.saveExaminerInfo.configure(text="Lock")
+#         self.examinerLocked = not self.examinerLocked
+        
+#     def resetExaminerInfo(self):
+#         if not self.examinerLocked:
+#             for item in [self.exNameBox, self.dosBox, self.contextBox]:
+#                 item.delete("0.0", "end")
