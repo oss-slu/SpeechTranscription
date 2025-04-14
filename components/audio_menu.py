@@ -401,23 +401,28 @@ class audioMenu(CTkFrame):
         button_frame = CTkFrame(popup)
         button_frame.pack(pady=10)
 
-        CTkButton(button_frame, text="Label as Speaker 1", command=lambda: apply_labels("Speaker 1"), fg_color="#029CFF").pack(side="left", padx=10)
-        CTkButton(button_frame, text="Label as Speaker 2", command=lambda: apply_labels("Speaker 2"), fg_color="#FF5733").pack(side="left", padx=10)
+        speaker1_alias = self.speaker_aliases.get("Speaker 1", "Speaker 1")
+        speaker2_alias = self.speaker_aliases.get("Speaker 2", "Speaker 2")
+        CTkButton(button_frame, text=f"Label as {speaker1_alias}", command=lambda: apply_labels(speaker1_alias), fg_color="#029CFF").pack(side="left", padx=10)
+        CTkButton(button_frame, text=f"Label as {speaker2_alias}", command=lambda: apply_labels(speaker2_alias), fg_color="#FF5733").pack(side="right", padx=10)
 
     @global_error_handler
     def customizeSpeakerAliases(self):
         popup = CTkToplevel(self)
         popup.title("Customize Speaker Aliases")
         popup.geometry("400x200")
+        popup.minsize(400, 250)
+        popup.maxsize(600, 300)
+
 
         speaker1_alias_label = CTkLabel(popup, text="Speaker 1 Alias:")
         speaker1_alias_label.pack(pady=(10, 0))
-        speaker1_alias_entry = CTkEntry(popup)
+        speaker1_alias_entry = CTkEntry(popup, fg_color="#029CFF", text_color="white")
         speaker1_alias_entry.pack(pady=(0, 10))
 
         speaker2_alias_label = CTkLabel(popup, text="Speaker 2 Alias:")
         speaker2_alias_label.pack(pady=(10, 0))
-        speaker2_alias_entry = CTkEntry(popup)
+        speaker2_alias_entry = CTkEntry(popup, fg_color="#FF5733", text_color="white")
         speaker2_alias_entry.pack(pady=(0, 20))
 
         def applyAliases():
