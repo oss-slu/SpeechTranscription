@@ -13,6 +13,9 @@ import time
 import re
 import matplotlib.pyplot as plt
 import os
+import sys
+import tkinter as tk
+import customtkinter as ctk 
 from tkinter import filedialog, END
 from tkinter import IntVar
 
@@ -146,7 +149,12 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
+        # Progress Bar Canvas (Added More Padding Below the Button)
+        self.progressCanvas = tk.Canvas(self, width=225, height=20, bg="white", highlightthickness=0)
+
+        self.running = False  # Flag to control animation
+        self.stripe_offset = 0  # Offset to move stripes
+        self.progress = 0  # Current progress percentage
 
         self.grammarCheckPerformed = False
         self.current_position = 0
@@ -344,17 +352,65 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def startProgressBar(self):
+        """Starts the animated gradient striped progress bar with better spacing."""
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
-        self.transcribeButton.configure(height=100)
-        self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        self.progressBar.start()
+        self.transcribeButton.configure(height=100)  # Keep button visible
+        self.progressCanvas.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        self.running = True
+        self.progress = 0
+        self.animate_striped_progress()
+
+
+    def animate_striped_progress(self):
+        """Creates a moving striped gradient effect on the progress bar."""
+        if not self.running:
+            return  # Stop animation if needed
+
+        self.progressCanvas.delete("all")  # Clear previous frame
+
+        stripe_width = 20  # Width of each stripe
+        num_stripes = 15  # Number of stripes
+        self.stripe_offset = (self.stripe_offset + 3) % stripe_width  # Move stripes
+
+        # Define two gradient shades of blue
+        color1 = "#1E90FF"  # Lighter blue
+        color2 = "#104E8B"  # Darker blue
+
+        # Draw diagonal stripes
+        for i in range(-stripe_width, 225, stripe_width):
+            x1 = i + self.stripe_offset
+            x2 = x1 + stripe_width
+            self.progressCanvas.create_polygon(
+                x1, 0, x2, 0, x2 - 10, 20, x1 - 10, 20,
+                fill=color1 if (i // stripe_width) % 2 == 0 else color2, outline=""
+            )
+
+        # Draw a progress overlay
+        self.progressCanvas.create_rectangle(0, 0, 225 * self.progress, 20, fill="blue", outline="")
+
+        self.progressCanvas.update_idletasks()  # Force UI update
+        self.progressCanvas.after(50, self.animate_striped_progress)  # Schedule next frame
+
+    @global_error_handler
+    def update_progress_bar(self, progress):
+        """Switches to a solid fill as progress reaches 100%."""
+        self.progress = progress  # Store progress value
+
+        if progress >= 1.0:  # If fully completed, stop animation
+            self.running = False
+            self.progressCanvas.delete("all")
+            self.progressCanvas.create_rectangle(0, 0, 225, 20, fill="blue", outline="")
+            self.progressCanvas.update_idletasks()
 
     @global_error_handler
     def stopProgressBar(self):
-        self.progressBar.stop()
-        self.progressBar.grid_remove()
-        self.transcribeButton.configure(height=200)
+        """Ensure progress bar is fully filled before hiding it."""
+        self.update_progress_bar(1.0)
+        time.sleep(0.5)  # Short delay to show solid fill
+        self.progressCanvas.grid_remove()
+        self.transcribeButton.configure(height=200)  # Reset button size
         self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
+    
 
     @global_error_handler
     def labelSpeakers(self):
