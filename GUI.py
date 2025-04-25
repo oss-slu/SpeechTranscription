@@ -2,6 +2,7 @@
 from customtkinter import *
 from components.user_menu import userMenu
 from components.audio_menu import audioMenu
+from components.audio_menu import plotAudio
 from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
@@ -85,6 +86,20 @@ class mainGUI(CTk):
         closeButton = createButton(popup, "Close", None, None, popup.destroy, height=30, width=80, lock=False)
         closeButton.pack(pady=10)
 
+    @global_error_handler
+    def showAudioGraph(self):
+        '''Render and display the audio waveform graph.'''
+        if hasattr(self, 'audioMenuList') and self.audioMenuList:
+            current_audio_menu = self.audioMenuList[self.currentAudioNum - 1]
+            if current_audio_menu.audio.filePath:
+                # Use the createWaveformFile method to get time and signal data
+                time, signal = current_audio_menu.audio.createWaveformFile()
+                plotAudio(time, signal)
+            else:
+                show_error_popup("No audio file uploaded", "Please upload an audio file to view the graph.")
+        else:
+            show_error_popup("No session available", "Please create a session and upload an audio file to view the graph.")
+
     def __init__(self):
         super().__init__()
         self.WIDTH = WIDTH
@@ -122,6 +137,11 @@ class mainGUI(CTk):
         self.helpButton = createButton(self, "Help", None, None, self.showHelpOverlay, 
                                      height=30, width=80, lock=False)
         self.helpButton.place(relx=0, rely=1, anchor=SW, x=10, y=-10)  # Position at bottom left corner
+
+        # Add "Show Audio Graph" Button
+        self.showGraphButton = createButton(self, "Show Audio Graph", None, None, self.showAudioGraph, 
+                                            height=30, width=120, lock=False)
+        self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
         self.mainloop()
 

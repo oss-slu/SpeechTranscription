@@ -452,28 +452,34 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def uploadAudio(self):
+        '''Upload user's audio file'''
         filename = filedialog.askopenfilename()
         if filename:
             unlockItem(self.playPauseButton)
             unlockItem(self.transcribeButton)
             unlockItem(self.downloadAudioButton)
 
+            # Upload the audio without plotting the graph
             time, signal = self.audio.upload(filename)
-            plotAudio(time, signal)
 
+            # Set the file name in the textbox
             base_name = os.path.basename(filename)
             self.fileNameEntry.delete(0, END)
             self.fileNameEntry.insert(0, base_name)
 
+            # Get audio duration and update end time label
             self.audioLength = self.audio.getAudioDuration(filename)
             mins, secs = divmod(int(self.audioLength), 60)
             self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
 
+            # Reset current time to 0:00
             self.updateCurrentTime(0)
 
+            # Enable and configure the timeline slider
             if self.audio and self.audio.filePath:
                 self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
-            
+
+            # Disable the Upload and Record buttons
             lockItem(self.uploadButton)
             lockItem(self.recordButton)
 
