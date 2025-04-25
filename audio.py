@@ -1,4 +1,3 @@
-
 import customtkinter  # Only imported for typing
 import wave
 import pyaudio
@@ -19,7 +18,7 @@ class AudioManager:
     isRecording = False
     paused = True
     
-    def __init__(self, root: customtkinter.CTk):
+    def __init__(self, root: customtkinter.CTk, audio_menu=None):
         self.root = root
         self.p = pyaudio.PyAudio()
         self.out_stream = None
@@ -28,6 +27,7 @@ class AudioManager:
         self.playing = False
         self.lock = threading.Lock()
         self.current_position = 0.0
+        self.audio_menu = audio_menu  # ✅ Now it's declared properly
 
     def record(self):
         self.filePath = "session_output.wav"
