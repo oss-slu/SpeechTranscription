@@ -79,24 +79,27 @@ def diarizeAndTranscribe(audioFile):
         
         transcriptionText = ""
         timestamps = []
-        for i in range(len(captions)):
-            caption = captions[i]
+        for caption in captions:
             startTime = caption[0]
             endTime = caption[1]
-            timeRange = -1
+            midpoint = (startTime + endTime) // 2  # Better for overlap detection
+
+            # Default to UNKNOWN
             speaker = "UNKNOWN"
-            for x in range(len(dzList)):
-                duration = dzList[x][1] - dzList[x][0]
-                start = dzList[x][0]
-                end = dzList[x][1]
-                if (((start >= startTime) and (start < endTime)) or ((end >= startTime) and (end < endTime)) or ((start <= startTime) and (startTime <= end))) and (timeRange < duration):
-                    timeRange = duration
-                    speaker = dzList[x][2]
-                
+            best_match_duration = -1
+
+            for segment in dzList:
+                seg_start, seg_end, seg_speaker = segment
+                if seg_start <= midpoint <= seg_end:
+                    duration = seg_end - seg_start
+                    if duration > best_match_duration:
+                        best_match_duration = duration
+                        speaker = seg_speaker
+
+            # Format timestamp using startTime
             timestamp = f"{int(startTime // 60000)}:{int((startTime % 60000) // 1000):02}"
             timestamps.append(timestamp)
-            transcriptionText += f"{speaker} - {caption[2]}\n"
-                
+            transcriptionText += f"{speaker} - {caption[2].strip()}\n"
         transcript = formatTranscriptionWithTimestamps(transcriptionText, timestamps)
         return transcript
     else:
