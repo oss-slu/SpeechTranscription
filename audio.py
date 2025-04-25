@@ -1,3 +1,4 @@
+
 import customtkinter  # Only imported for typing
 import wave
 import pyaudio
@@ -224,12 +225,14 @@ class AudioManager:
         with self.lock:
             return self.current_position
 
+
     def transcribe_audio(self):
         """Starts transcription and updates progress bar."""
-        self.startProgressBar()
+        self.audio_menu.startProgressBar()
 
-        for progress in range(101):  # Replace this with actual transcription progress
+
+        for progress in range(101):  # Replace with actual transcription progress
             time.sleep(0.1)  # Simulated delay
-            self.update_progress_bar(progress / 100)  
+            self.audio_menu.update_progress_bar(progress / 100)
 
-        self.stopProgressBar()  # Hide when done
+        self.audio_menu.stopProgressBar()  # Hide when done
