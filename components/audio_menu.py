@@ -372,22 +372,20 @@ class audioMenu(CTkFrame):
             if segment.strip():
                 var = IntVar()
                 
-                # Create a frame for each segment to allow for color coding
                 segment_frame = CTkFrame(scrollable_frame)
                 segment_frame.pack(fill='x', padx=5, pady=2)
                 
-                # Check if the segment already has a speaker label
                 speaker_match = re.match(r'^(\[?\d+:\d+\]?)?\s*(Speaker \d+):', segment)
                 if speaker_match:
                     speaker = speaker_match.group(2)
-                    color = SPEAKER_COLORS.get(speaker, "#FFFFFF")  # Default to white if speaker not found
-                    segment_label = CTkLabel(segment_frame, text=segment, text_color=color)
+                    color = SPEAKER_COLORS.get(speaker, "#FFFFFF") 
+                    segment_label = CTkLabel(segment_frame, text=segment, text_color=color, anchor='w') 
                 else:
-                    segment_label = CTkLabel(segment_frame, text=segment)
+                    segment_label = CTkLabel(segment_frame, text=segment, anchor='w') 
                 
                 chk = CTkCheckBox(segment_frame, text="", variable=var, width=20)
                 chk.pack(side='left', padx=(0, 5))
-                segment_label.pack(side='left', fill='x', expand=True)
+                segment_label.pack(side='left', fill='x', expand=True, anchor='w')  
                 
                 self.segment_selections.append((var, idx))
 
