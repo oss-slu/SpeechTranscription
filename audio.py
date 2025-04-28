@@ -18,7 +18,7 @@ class AudioManager:
     isRecording = False
     paused = True
     
-    def __init__(self, root: customtkinter.CTk):
+    def __init__(self, root: customtkinter.CTk, audio_menu=None):
         self.root = root
         self.p = pyaudio.PyAudio()
         self.out_stream = None
@@ -27,6 +27,7 @@ class AudioManager:
         self.playing = False
         self.lock = threading.Lock()
         self.current_position = 0.0
+        self.audio_menu = audio_menu  # ✅ Now it's declared properly
 
     def record(self):
         self.filePath = "session_output.wav"
@@ -223,3 +224,15 @@ class AudioManager:
     def get_current_position(self):
         with self.lock:
             return self.current_position
+
+
+    def transcribe_audio(self):
+        """Starts transcription and updates progress bar."""
+        self.audio_menu.startProgressBar()
+
+
+        for progress in range(101):  # Replace with actual transcription progress
+            time.sleep(0.1)  # Simulated delay
+            self.audio_menu.update_progress_bar(progress / 100)
+
+        self.audio_menu.stopProgressBar()  # Hide when done
