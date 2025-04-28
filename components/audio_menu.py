@@ -96,7 +96,7 @@ class audioMenu(CTkFrame):
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True)
         self.applyAliasesButton = createButton(self, "Apply Aliases", 4, 1, self.customizeSpeakerAliases)
 
-        self.speaker_aliases = {"Speaker 1": "Speaker 1", "Speaker 2": "Speaker 2"}
+        self.speaker_aliases = {"Speaker 1": "C", "Speaker 2": "E"}
 
         # ROW 5: Export, Grammar, and correction boxes.
         self.downloadAudioButton = createButton(self, "Download Audio", 5, 0, self.downloadRecordedAudio)
@@ -441,6 +441,7 @@ class audioMenu(CTkFrame):
                 transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{alias}:", transcription_text)
 
             self.transcriptionBox.configure(state="normal")
+            unlockItem(self.transcriptionBox)
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", transcription_text)
             self.transcriptionBox.configure(state="disabled")
