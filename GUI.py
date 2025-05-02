@@ -31,9 +31,8 @@ class mainGUI(CTk):
         self.changeAudioWindow(self.currentAudioNum)
         self.currentAudioNum += 1
 
-        # Enable the Upload and Record buttons for the new session
-        unlockItem(self.audioMenuList[-1].uploadButton)
-        unlockItem(self.audioMenuList[-1].recordButton)
+        # Lock the "Show Audio Graph" button for the new session
+        lockItem(self.showGraphButton)
 
     @global_error_handler
     def changeAudioWindow(self, num):
@@ -41,6 +40,11 @@ class mainGUI(CTk):
             if i == num:
                 self.audioFrame = frame
                 frame.grid(row=0, column=1, padx=5)
+                # Unlock "Show Audio Graph" button if a file exists in the selected session
+                if frame.audio.filePath:
+                    unlockItem(self.showGraphButton)
+                else:
+                    lockItem(self.showGraphButton)
             else:
                 frame.grid_remove()
         for i, button in enumerate(self.audioButtonList):
@@ -88,17 +92,17 @@ class mainGUI(CTk):
 
     @global_error_handler
     def showAudioGraph(self):
-        '''Render and display the audio waveform graph.'''
+        '''Render and display the audio waveform graph dynamically based on the current session's audio file.'''
         if hasattr(self, 'audioMenuList') and self.audioMenuList:
             current_audio_menu = self.audioMenuList[self.currentAudioNum - 1]
             if current_audio_menu.audio.filePath:
-                # Use the createWaveformFile method to get time and signal data
+                # Dynamically generate the graph data from the audio file associated with this session
                 time, signal = current_audio_menu.audio.createWaveformFile()
                 plotAudio(time, signal)
             else:
-                show_error_popup("No audio file uploaded", "Please upload an audio file to view the graph.")
+                show_error_popup("No Audio File", "No audio file available for this session. Please upload or record an audio file.")
         else:
-            show_error_popup("No session available", "Please create a session and upload an audio file to view the graph.")
+            show_error_popup("No Session Available", "Please create a session and upload or record an audio file to view the graph.")
 
     def __init__(self):
         super().__init__()
@@ -138,9 +142,9 @@ class mainGUI(CTk):
                                      height=30, width=80, lock=False)
         self.helpButton.place(relx=0, rely=1, anchor=SW, x=10, y=-10)  # Position at bottom left corner
 
-        # Add "Show Audio Graph" Button
+        # Add "Show Audio Graph" Button (initially locked)
         self.showGraphButton = createButton(self, "Show Audio Graph", None, None, self.showAudioGraph, 
-                                            height=30, width=120, lock=False)
+                                            height=30, width=120, lock=True)
         self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
         self.mainloop()

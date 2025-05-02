@@ -2,7 +2,7 @@
 from customtkinter import *
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
 from components.utils import createButton, lockItem, unlockItem
-from components.error_handler import global_error_handler
+from components.error_handler import global_error_handler, show_error_popup
 from components.constants import LOCK_ICON, UNLOCK_ICON, CLEAR_ICON
 from audio import AudioManager
 from grammar import GrammarChecker
@@ -11,6 +11,8 @@ import diarizationAndTranscription
 import threading
 import time
 import re
+import matplotlib
+matplotlib.use('TkAgg')  # Make sure to set this before importing pyplot
 import matplotlib.pyplot as plt
 import os
 from tkinter import filedialog, END
@@ -22,12 +24,15 @@ SPEAKER_COLORS = {
 }
 
 def plotAudio(time, signal):
-    '''Plots the waveform of audio'''
-    plt.figure(1)
-    plt.title("Audio Wave")
-    plt.xlabel("Time")
-    plt.plot(time, signal)
-    plt.show()
+    '''Plots the waveform of audio in a popup window without freezing the GUI.'''
+    fig, ax = plt.subplots()
+    ax.plot(time, signal)
+    ax.set_title("Audio Wave")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Amplitude")
+    fig.canvas.manager.set_window_title("Audio Waveform")
+    plt.tight_layout()
+    fig.show()  # Opens the plot in a new window non-blockingly
 
 class audioMenu(CTkFrame):
     @global_error_handler
@@ -36,9 +41,14 @@ class audioMenu(CTkFrame):
         self.configure(width=master.WIDTH * .8)
         self.configure(height=master.HEIGHT)
 
+        # Create a unique AudioManager instance for this session
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
+
+        # Add attributes to store graph data for this session
+        self.graph_time = None
+        self.graph_signal = None
 
         # ROW 0: Frame for Audio Upload/Record buttons
         self.audioInputFrame = CTkFrame(self, height=80)
@@ -156,6 +166,64 @@ class audioMenu(CTkFrame):
         self.audio_length = 0
         self.last_scrub_time = 0
         self.lock = threading.Lock()
+
+    @global_error_handler
+    def uploadAudio(self):
+        '''Upload user's audio file'''
+        filename = filedialog.askopenfilename()
+        if filename:
+            unlockItem(self.playPauseButton)
+            unlockItem(self.transcribeButton)
+            unlockItem(self.downloadAudioButton)
+            unlockItem(self.master.showGraphButton)  # Unlock "Show Audio Graph" button after uploading
+
+            # Upload the audio and associate it with this session's AudioManager
+            time, signal = self.audio.upload(filename)
+
+            # Set the file name in the textbox
+            base_name = os.path.basename(filename)
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, base_name)
+
+            # Get audio duration and update end time label
+            self.audioLength = self.audio.getAudioDuration(filename)
+            mins, secs = divmod(int(self.audioLength), 60)
+            self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
+
+            # Reset current time to 0:00
+            self.updateCurrentTime(0)
+
+            # Enable and configure the timeline slider
+            if self.audio and self.audio.filePath:
+                self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
+
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
+
+    @global_error_handler
+    def recordAudio(self):
+        '''Record a custom audio file'''
+        if self.recordButton.cget("text") == "Record":
+            self.recordButton.configure(text="Stop")
+            self.audio.record()
+        else:
+            self.recordButton.configure(text="Record")
+            unlockItem(self.playPauseButton)
+            unlockItem(self.transcribeButton)
+            unlockItem(self.downloadAudioButton)
+            unlockItem(self.master.showGraphButton)  # Unlock "Show Audio Graph" button after recording
+
+            # Stop recording and associate it with this session's AudioManager
+            filename, time, signal = self.audio.stop()
+
+            # Set the default file name for recorded audio
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, "RECORDING - 1.wav")
+
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
 
     # All the audioMenu methods from the original GUI.py would follow here
     # (apply_labels, on_transcription_click, color_code_transcription, etc.)
@@ -449,58 +517,6 @@ class audioMenu(CTkFrame):
 
         apply_button = CTkButton(popup, text="Apply Aliases", command=applyAliases)
         apply_button.pack(pady=10)
-
-    @global_error_handler
-    def uploadAudio(self):
-        '''Upload user's audio file'''
-        filename = filedialog.askopenfilename()
-        if filename:
-            unlockItem(self.playPauseButton)
-            unlockItem(self.transcribeButton)
-            unlockItem(self.downloadAudioButton)
-
-            # Upload the audio without plotting the graph
-            time, signal = self.audio.upload(filename)
-
-            # Set the file name in the textbox
-            base_name = os.path.basename(filename)
-            self.fileNameEntry.delete(0, END)
-            self.fileNameEntry.insert(0, base_name)
-
-            # Get audio duration and update end time label
-            self.audioLength = self.audio.getAudioDuration(filename)
-            mins, secs = divmod(int(self.audioLength), 60)
-            self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
-
-            # Reset current time to 0:00
-            self.updateCurrentTime(0)
-
-            # Enable and configure the timeline slider
-            if self.audio and self.audio.filePath:
-                self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
-
-            # Disable the Upload and Record buttons
-            lockItem(self.uploadButton)
-            lockItem(self.recordButton)
-
-    @global_error_handler
-    def recordAudio(self):
-        if self.recordButton.cget("text") == "Record":
-            self.recordButton.configure(text="Stop")
-            self.audio.record()
-        else:
-            self.recordButton.configure(text="Record")
-            unlockItem(self.playPauseButton)
-            unlockItem(self.transcribeButton)
-            unlockItem(self.downloadAudioButton)
-            filename, time, signal = self.audio.stop()
-            plotAudio(time, signal)
-
-            self.fileNameEntry.delete(0, END)
-            self.fileNameEntry.insert(0, "RECORDING - 1.wav")
-
-            lockItem(self.uploadButton)
-            lockItem(self.recordButton)
 
     @global_error_handler
     def transcribe(self):
