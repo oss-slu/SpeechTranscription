@@ -441,7 +441,6 @@ class audioMenu(CTkFrame):
                 transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{alias}:", transcription_text)
 
             self.transcriptionBox.configure(state="normal")
-            unlockItem(self.transcriptionBox)
             self.transcriptionBox.delete("0.0", "end")
             self.transcriptionBox.insert("0.0", transcription_text)
             self.transcriptionBox.configure(state="disabled")
@@ -520,6 +519,11 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def updateTranscriptionUI(self, transcribedAudio):
+        # Apply default aliases
+        for speaker, alias in self.speaker_aliases.items():
+            pattern = rf'(\[\d{{2}}:\d{{2}}\]\s*)?{re.escape(speaker)}:'
+            transcribedAudio = re.sub(pattern, lambda m: f"{m.group(1) or ''}{alias}:", transcribedAudio)
+            
         self.after(0, self._updateTranscriptionBox, transcribedAudio)
 
     @global_error_handler
