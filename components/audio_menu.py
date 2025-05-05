@@ -620,7 +620,7 @@ class audioMenu(CTkFrame):
     def transcriptionThread(self):
         if self.is_playing or self.is_paused:
             self.pauseAudio()
-
+            self.playPauseButton.configure(text="Play")
         threading.Thread(target=self.transcribe, daemon=True).start()
 
     @global_error_handler
