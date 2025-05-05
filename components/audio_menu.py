@@ -2,7 +2,7 @@
 from customtkinter import *
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
 from components.utils import createButton, lockItem, unlockItem
-from components.error_handler import global_error_handler
+from components.error_handler import global_error_handler, show_error_popup
 from components.constants import LOCK_ICON, UNLOCK_ICON, CLEAR_ICON
 from audio import AudioManager
 from grammar import GrammarChecker
@@ -11,8 +11,13 @@ import diarizationAndTranscription
 import threading
 import time
 import re
+import matplotlib
+matplotlib.use('TkAgg')  # Make sure to set this before importing pyplot
 import matplotlib.pyplot as plt
 import os
+import sys
+import tkinter as tk
+import customtkinter as ctk 
 from tkinter import filedialog, END
 from tkinter import IntVar
 
@@ -22,12 +27,15 @@ SPEAKER_COLORS = {
 }
 
 def plotAudio(time, signal):
-    '''Plots the waveform of audio'''
-    plt.figure(1)
-    plt.title("Audio Wave")
-    plt.xlabel("Time")
-    plt.plot(time, signal)
-    plt.show()
+    '''Plots the waveform of audio in a popup window without freezing the GUI.'''
+    fig, ax = plt.subplots()
+    ax.plot(time, signal)
+    ax.set_title("Audio Wave")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Amplitude")
+    fig.canvas.manager.set_window_title("Audio Waveform")
+    plt.tight_layout()
+    fig.show()  # Opens the plot in a new window non-blockingly
 
 class audioMenu(CTkFrame):
     @global_error_handler
@@ -36,9 +44,14 @@ class audioMenu(CTkFrame):
         self.configure(width=master.WIDTH * .8)
         self.configure(height=master.HEIGHT)
 
+        # Create a unique AudioManager instance for this session
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
+
+        # Add attributes to store graph data for this session
+        self.graph_time = None
+        self.graph_signal = None
 
         # ROW 0: Frame for Audio Upload/Record buttons
         self.audioInputFrame = CTkFrame(self, height=80)
@@ -146,7 +159,12 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        self.progressBar = CTkProgressBar(self, width=225, mode="indeterminate")
+        # Progress Bar Canvas (Added More Padding Below the Button)
+        self.progressCanvas = tk.Canvas(self, width=225, height=20, bg="white", highlightthickness=0)
+
+        self.running = False  # Flag to control animation
+        self.stripe_offset = 0  # Offset to move stripes
+        self.progress = 0  # Current progress percentage
 
         self.grammarCheckPerformed = False
         self.current_position = 0
@@ -156,6 +174,64 @@ class audioMenu(CTkFrame):
         self.audio_length = 0
         self.last_scrub_time = 0
         self.lock = threading.Lock()
+
+    @global_error_handler
+    def uploadAudio(self):
+        '''Upload user's audio file'''
+        filename = filedialog.askopenfilename()
+        if filename:
+            unlockItem(self.playPauseButton)
+            unlockItem(self.transcribeButton)
+            unlockItem(self.downloadAudioButton)
+            unlockItem(self.master.showGraphButton)  # Unlock "Show Audio Graph" button after uploading
+
+            # Upload the audio and associate it with this session's AudioManager
+            time, signal = self.audio.upload(filename)
+
+            # Set the file name in the textbox
+            base_name = os.path.basename(filename)
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, base_name)
+
+            # Get audio duration and update end time label
+            self.audioLength = self.audio.getAudioDuration(filename)
+            mins, secs = divmod(int(self.audioLength), 60)
+            self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
+
+            # Reset current time to 0:00
+            self.updateCurrentTime(0)
+
+            # Enable and configure the timeline slider
+            if self.audio and self.audio.filePath:
+                self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
+
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
+
+    @global_error_handler
+    def recordAudio(self):
+        '''Record a custom audio file'''
+        if self.recordButton.cget("text") == "Record":
+            self.recordButton.configure(text="Stop")
+            self.audio.record()
+        else:
+            self.recordButton.configure(text="Record")
+            unlockItem(self.playPauseButton)
+            unlockItem(self.transcribeButton)
+            unlockItem(self.downloadAudioButton)
+            unlockItem(self.master.showGraphButton)  # Unlock "Show Audio Graph" button after recording
+
+            # Stop recording and associate it with this session's AudioManager
+            filename, time, signal = self.audio.stop()
+
+            # Set the default file name for recorded audio
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, "RECORDING - 1.wav")
+
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
 
     # All the audioMenu methods from the original GUI.py would follow here
     # (apply_labels, on_transcription_click, color_code_transcription, etc.)
@@ -344,17 +420,65 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def startProgressBar(self):
+        """Starts the animated gradient striped progress bar with better spacing."""
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
-        self.transcribeButton.configure(height=100)
-        self.progressBar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        self.progressBar.start()
+        self.transcribeButton.configure(height=100)  # Keep button visible
+        self.progressCanvas.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        self.running = True
+        self.progress = 0
+        self.animate_striped_progress()
+
+
+    def animate_striped_progress(self):
+        """Creates a moving striped gradient effect on the progress bar."""
+        if not self.running:
+            return  # Stop animation if needed
+
+        self.progressCanvas.delete("all")  # Clear previous frame
+
+        stripe_width = 20  # Width of each stripe
+        num_stripes = 15  # Number of stripes
+        self.stripe_offset = (self.stripe_offset + 3) % stripe_width  # Move stripes
+
+        # Define two gradient shades of blue
+        color1 = "#1E90FF"  # Lighter blue
+        color2 = "#104E8B"  # Darker blue
+
+        # Draw diagonal stripes
+        for i in range(-stripe_width, 225, stripe_width):
+            x1 = i + self.stripe_offset
+            x2 = x1 + stripe_width
+            self.progressCanvas.create_polygon(
+                x1, 0, x2, 0, x2 - 10, 20, x1 - 10, 20,
+                fill=color1 if (i // stripe_width) % 2 == 0 else color2, outline=""
+            )
+
+        # Draw a progress overlay
+        self.progressCanvas.create_rectangle(0, 0, 225 * self.progress, 20, fill="blue", outline="")
+
+        self.progressCanvas.update_idletasks()  # Force UI update
+        self.progressCanvas.after(50, self.animate_striped_progress)  # Schedule next frame
+
+    @global_error_handler
+    def update_progress_bar(self, progress):
+        """Switches to a solid fill as progress reaches 100%."""
+        self.progress = progress  # Store progress value
+
+        if progress >= 1.0:  # If fully completed, stop animation
+            self.running = False
+            self.progressCanvas.delete("all")
+            self.progressCanvas.create_rectangle(0, 0, 225, 20, fill="blue", outline="")
+            self.progressCanvas.update_idletasks()
 
     @global_error_handler
     def stopProgressBar(self):
-        self.progressBar.stop()
-        self.progressBar.grid_remove()
-        self.transcribeButton.configure(height=200)
+        """Ensure progress bar is fully filled before hiding it."""
+        self.update_progress_bar(1.0)
+        time.sleep(0.5)  # Short delay to show solid fill
+        self.progressCanvas.grid_remove()
+        self.transcribeButton.configure(height=200)  # Reset button size
         self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
+    
 
     @global_error_handler
     def labelSpeakers(self):
@@ -477,52 +601,6 @@ class audioMenu(CTkFrame):
 
         apply_button = CTkButton(popup, text="Apply Aliases", command=applyAliases)
         apply_button.pack(pady=10)
-
-    @global_error_handler
-    def uploadAudio(self):
-        filename = filedialog.askopenfilename()
-        if filename:
-            unlockItem(self.playPauseButton)
-            unlockItem(self.transcribeButton)
-            unlockItem(self.downloadAudioButton)
-
-            time, signal = self.audio.upload(filename)
-            plotAudio(time, signal)
-
-            base_name = os.path.basename(filename)
-            self.fileNameEntry.delete(0, END)
-            self.fileNameEntry.insert(0, base_name)
-
-            self.audioLength = self.audio.getAudioDuration(filename)
-            mins, secs = divmod(int(self.audioLength), 60)
-            self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
-
-            self.updateCurrentTime(0)
-
-            if self.audio and self.audio.filePath:
-                self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
-            
-            lockItem(self.uploadButton)
-            lockItem(self.recordButton)
-
-    @global_error_handler
-    def recordAudio(self):
-        if self.recordButton.cget("text") == "Record":
-            self.recordButton.configure(text="Stop")
-            self.audio.record()
-        else:
-            self.recordButton.configure(text="Record")
-            unlockItem(self.playPauseButton)
-            unlockItem(self.transcribeButton)
-            unlockItem(self.downloadAudioButton)
-            filename, time, signal = self.audio.stop()
-            plotAudio(time, signal)
-
-            self.fileNameEntry.delete(0, END)
-            self.fileNameEntry.insert(0, "RECORDING - 1.wav")
-
-            lockItem(self.uploadButton)
-            lockItem(self.recordButton)
 
     @global_error_handler
     def transcribe(self):
