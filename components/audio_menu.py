@@ -3,6 +3,7 @@ from customtkinter import *
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
 from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
+from components.error_handler import global_error_handler, show_error_popup
 from components.constants import LOCK_ICON, UNLOCK_ICON, CLEAR_ICON
 from audio import AudioManager
 from grammar import GrammarChecker
@@ -23,7 +24,9 @@ from tkinter import IntVar
 
 SPEAKER_COLORS = {
     "Speaker 1": "#029CFF",  # Light Blue
-    "Speaker 2": "#FF5733"   # Light Red
+    "Speaker 2": "#FF5733",  # Light Red
+    "C": "#029CFF",
+    "E": "#FF5733"
 }
 
 def plotAudio(time, signal):
@@ -109,7 +112,7 @@ class audioMenu(CTkFrame):
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True)
         self.applyAliasesButton = createButton(self, "Apply Aliases", 4, 1, self.customizeSpeakerAliases)
 
-        self.speaker_aliases = {"Speaker 1": "Speaker 1", "Speaker 2": "Speaker 2"}
+        self.speaker_aliases = {"Speaker 1": "C", "Speaker 2": "E"}
 
         # ROW 5: Export, Grammar, and correction boxes.
         self.downloadAudioButton = createButton(self, "Download Audio", 5, 0, self.downloadRecordedAudio)
@@ -547,17 +550,11 @@ class audioMenu(CTkFrame):
         button_frame = CTkFrame(popup)
         button_frame.pack(pady=10)
 
-        speaker1_alias = self.speaker_aliases.get("Speaker 1", "Speaker 1")
-        speaker2_alias = self.speaker_aliases.get("Speaker 2", "Speaker 2")
-        
-        # Use speaker colors for the buttons
-        CTkButton(button_frame, text=f"Label as {speaker1_alias}", 
-                command=lambda: apply_labels("Speaker 1"), 
-                fg_color=SPEAKER_COLORS["Speaker 1"]).pack(side="left", padx=10)
-        CTkButton(button_frame, text=f"Label as {speaker2_alias}", 
-                command=lambda: apply_labels("Speaker 2"), 
-                fg_color=SPEAKER_COLORS["Speaker 2"]).pack(side="right", padx=10)
-    
+        speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
+        speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
+        CTkButton(button_frame, text=f"Label as {speaker1_alias}", command=lambda: apply_labels(speaker1_alias), fg_color="#029CFF").pack(side="left", padx=10)
+        CTkButton(button_frame, text=f"Label as {speaker2_alias}", command=lambda: apply_labels(speaker2_alias), fg_color="#FF5733").pack(side="right", padx=10)
+
     @global_error_handler
     def customizeSpeakerAliases(self):
         popup = CTkToplevel(self)
@@ -588,9 +585,20 @@ class audioMenu(CTkFrame):
 
             transcription_text = self.getTranscriptionText()
 
-            for speaker, alias in self.speaker_aliases.items():
-                pattern = rf'(\[\d{{2}}:\d{{2}}\]\s*)?{re.escape(speaker)}:'
-                transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{alias}:", transcription_text)
+            # Define all possible previous speaker labels to replace
+            label_mapping = {
+                "Speaker 1": self.speaker_aliases["Speaker 1"],
+                "C": self.speaker_aliases["Speaker 1"],
+                "Child": self.speaker_aliases["Speaker 1"],
+                "Speaker 2": self.speaker_aliases["Speaker 2"],
+                "E": self.speaker_aliases["Speaker 2"],
+                "Examiner": self.speaker_aliases["Speaker 2"]
+            }
+
+            # Replace all known labels with the current alias
+            pattern = r'(\[\d{2}:\d{2}\]\s*)?(' + "|".join(re.escape(label) for label in label_mapping.keys()) + r'):'
+
+            transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{label_mapping[m.group(2)]}:", transcription_text)
 
             self.transcriptionBox.configure(state="normal")
             self.transcriptionBox.delete("0.0", "end")
