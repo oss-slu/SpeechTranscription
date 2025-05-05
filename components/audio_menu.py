@@ -3,6 +3,7 @@ from customtkinter import *
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
 from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
+from components.error_handler import global_error_handler, show_error_popup
 from components.constants import LOCK_ICON, UNLOCK_ICON, CLEAR_ICON
 from audio import AudioManager
 from grammar import GrammarChecker
@@ -497,13 +498,28 @@ class audioMenu(CTkFrame):
         for idx, segment in enumerate(initial_segments):
             if segment.strip():
                 var = IntVar()
-                chk = CTkCheckBox(scrollable_frame, text=segment, variable=var)
-                chk.pack(anchor='w', padx=5, pady=2)
+                
+                segment_frame = CTkFrame(scrollable_frame)
+                segment_frame.pack(fill='x', padx=5, pady=2)
+                
+                speaker_match = re.match(r'^(\[?\d+:\d+\]?)?\s*(Speaker \d+):', segment)
+                if speaker_match:
+                    speaker = speaker_match.group(2)
+                    color = SPEAKER_COLORS.get(speaker, "#FFFFFF") 
+                    segment_label = CTkLabel(segment_frame, text=segment, text_color=color, anchor='w') 
+                else:
+                    segment_label = CTkLabel(segment_frame, text=segment, anchor='w') 
+                
+                chk = CTkCheckBox(segment_frame, text="", variable=var, width=20)
+                chk.pack(side='left', padx=(0, 5))
+                segment_label.pack(side='left', fill='x', expand=True, anchor='w')  
+                
                 self.segment_selections.append((var, idx))
 
         def apply_labels(speaker):
             current_text = self.getTranscriptionText()
             current_segments = current_text.split('\n')
+            color = SPEAKER_COLORS.get(speaker, "#FFFFFF")  # Get color for the speaker
 
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
@@ -516,6 +532,13 @@ class audioMenu(CTkFrame):
                     else:
                         current_segments[idx] = f"{speaker}: {line}"
                     var.set(0)
+
+                    # Update the displayed text with color
+                    for widget in scrollable_frame.winfo_children():
+                        if isinstance(widget, CTkFrame):
+                            for child in widget.winfo_children():
+                                if isinstance(child, CTkLabel) and child.cget("text") == line:
+                                    child.configure(text=current_segments[idx], text_color=color)
 
             new_transcription_text = "\n".join(current_segments)
             self.transcriptionBox.configure(state="normal")
@@ -605,7 +628,7 @@ class audioMenu(CTkFrame):
     def transcriptionThread(self):
         if self.is_playing or self.is_paused:
             self.pauseAudio()
-
+            self.playPauseButton.configure(text="Play")
         threading.Thread(target=self.transcribe, daemon=True).start()
 
     @global_error_handler
