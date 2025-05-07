@@ -621,8 +621,30 @@ class audioMenu(CTkFrame):
         try:
             transcribedAudio = diarizationAndTranscription.transcribe(filename)
             self.updateTranscriptionUI(transcribedAudio)
+
+            # NEW: Automatically start grammar checking in background
+            self.cachedGrammar = None  # Clear any previous cache
+            self.cachedMorphemes = None
+            threading.Thread(target=self._precomputeGrammar, args=(transcribedAudio,), daemon=True).start()
         except Exception as e:
             self.updateTranscriptionUI("Error during transcription.")
+
+    @global_error_handler
+    def _precomputeGrammar(self, transcriptionText):
+        self.grammar.checkGrammar(transcriptionText, checkAllSentences=True)
+    
+        corrected_text = ""
+        while True:
+            corrected, sentenceToCorrect = self.grammar.getNextCorrection()
+            if corrected is None and sentenceToCorrect is None:
+                break
+            if corrected:
+                corrected_text += corrected
+            if sentenceToCorrect:
+                corrected_text += sentenceToCorrect + "\n"
+
+        self.cachedGrammar = corrected_text
+        self.cachedMorphemes = self.grammar.getInflectionalMorphemes(corrected_text)
 
     @global_error_handler
     def transcriptionThread(self):
@@ -684,9 +706,17 @@ class audioMenu(CTkFrame):
         unlockItem(self.submitGrammarButton)
         self.conventionBox.delete("1.0", "end")
         self.correctionEntryBox.delete("1.0", "end")
-        self.grammar.checkGrammar(self.getTranscriptionText(), False)
+
+        if hasattr(self, 'cachedGrammar') and self.cachedGrammar:
+            # ✅ Use precomputed grammar and skip rechecking
+            self.grammar.setCachedCorrections(self.cachedGrammar)
+        else:
+            # ❌ Only run checkGrammar if no cache exists
+            self.grammar.checkGrammar(self.getTranscriptionText(), False)
+
         self.manageGrammarCorrection()
         self.color_code_transcription()
+        self.grammarCheckPerformed = True
         self.stopProgressBar()
 
     @global_error_handler

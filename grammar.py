@@ -25,3 +25,7 @@ class GrammarChecker:
     
     def getInflectionalMorphemes(self, converting: str):
         return addConventions.addInflectionalMorphemes(converting)
+    
+    def setCachedCorrections(self, corrected_text):
+        self.checkGrammar(corrected_text, checkAllSentences=True)
+        self.currentCorrectionIndex = 0
