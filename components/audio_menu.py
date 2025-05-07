@@ -2,7 +2,8 @@
 from customtkinter import *
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
 from components.utils import createButton, lockItem, unlockItem
-from components.error_handler import global_error_handler
+from components.error_handler import global_error_handler, show_error_popup
+from components.error_handler import global_error_handler, show_error_popup
 from components.constants import LOCK_ICON, UNLOCK_ICON, CLEAR_ICON
 from audio import AudioManager
 from grammar import GrammarChecker
@@ -11,6 +12,8 @@ import diarizationAndTranscription
 import threading
 import time
 import re
+import matplotlib
+matplotlib.use('TkAgg')  # Make sure to set this before importing pyplot
 import matplotlib.pyplot as plt
 import os
 import sys
@@ -21,16 +24,21 @@ from tkinter import IntVar
 
 SPEAKER_COLORS = {
     "Speaker 1": "#029CFF",  # Light Blue
-    "Speaker 2": "#FF5733"   # Light Red
+    "Speaker 2": "#FF5733",  # Light Red
+    "C": "#029CFF",
+    "E": "#FF5733"
 }
 
 def plotAudio(time, signal):
-    '''Plots the waveform of audio'''
-    plt.figure(1)
-    plt.title("Audio Wave")
-    plt.xlabel("Time")
-    plt.plot(time, signal)
-    plt.show()
+    '''Plots the waveform of audio in a popup window without freezing the GUI.'''
+    fig, ax = plt.subplots()
+    ax.plot(time, signal)
+    ax.set_title("Audio Wave")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Amplitude")
+    fig.canvas.manager.set_window_title("Audio Waveform")
+    plt.tight_layout()
+    fig.show()  # Opens the plot in a new window non-blockingly
 
 class audioMenu(CTkFrame):
     @global_error_handler
@@ -39,9 +47,14 @@ class audioMenu(CTkFrame):
         self.configure(width=master.WIDTH * .8)
         self.configure(height=master.HEIGHT)
 
+        # Create a unique AudioManager instance for this session
         self.audio = AudioManager(master)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
+
+        # Add attributes to store graph data for this session
+        self.graph_time = None
+        self.graph_signal = None
 
         # ROW 0: Frame for Audio Upload/Record buttons
         self.audioInputFrame = CTkFrame(self, height=80)
@@ -99,7 +112,7 @@ class audioMenu(CTkFrame):
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True)
         self.applyAliasesButton = createButton(self, "Apply Aliases", 4, 1, self.customizeSpeakerAliases)
 
-        self.speaker_aliases = {"Speaker 1": "Speaker 1", "Speaker 2": "Speaker 2"}
+        self.speaker_aliases = {"Speaker 1": "C", "Speaker 2": "E"}
 
         # ROW 5: Export, Grammar, and correction boxes.
         self.downloadAudioButton = createButton(self, "Download Audio", 5, 0, self.downloadRecordedAudio)
@@ -164,6 +177,64 @@ class audioMenu(CTkFrame):
         self.audio_length = 0
         self.last_scrub_time = 0
         self.lock = threading.Lock()
+
+    @global_error_handler
+    def uploadAudio(self):
+        '''Upload user's audio file'''
+        filename = filedialog.askopenfilename()
+        if filename:
+            unlockItem(self.playPauseButton)
+            unlockItem(self.transcribeButton)
+            unlockItem(self.downloadAudioButton)
+            unlockItem(self.master.showGraphButton)  # Unlock "Show Audio Graph" button after uploading
+
+            # Upload the audio and associate it with this session's AudioManager
+            time, signal = self.audio.upload(filename)
+
+            # Set the file name in the textbox
+            base_name = os.path.basename(filename)
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, base_name)
+
+            # Get audio duration and update end time label
+            self.audioLength = self.audio.getAudioDuration(filename)
+            mins, secs = divmod(int(self.audioLength), 60)
+            self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
+
+            # Reset current time to 0:00
+            self.updateCurrentTime(0)
+
+            # Enable and configure the timeline slider
+            if self.audio and self.audio.filePath:
+                self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
+
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
+
+    @global_error_handler
+    def recordAudio(self):
+        '''Record a custom audio file'''
+        if self.recordButton.cget("text") == "Record":
+            self.recordButton.configure(text="Stop")
+            self.audio.record()
+        else:
+            self.recordButton.configure(text="Record")
+            unlockItem(self.playPauseButton)
+            unlockItem(self.transcribeButton)
+            unlockItem(self.downloadAudioButton)
+            unlockItem(self.master.showGraphButton)  # Unlock "Show Audio Graph" button after recording
+
+            # Stop recording and associate it with this session's AudioManager
+            filename, time, signal = self.audio.stop()
+
+            # Set the default file name for recorded audio
+            self.fileNameEntry.delete(0, END)
+            self.fileNameEntry.insert(0, "RECORDING - 1.wav")
+
+            # Disable the Upload and Record buttons
+            lockItem(self.uploadButton)
+            lockItem(self.recordButton)
 
     # All the audioMenu methods from the original GUI.py would follow here
     # (apply_labels, on_transcription_click, color_code_transcription, etc.)
@@ -427,13 +498,28 @@ class audioMenu(CTkFrame):
         for idx, segment in enumerate(initial_segments):
             if segment.strip():
                 var = IntVar()
-                chk = CTkCheckBox(scrollable_frame, text=segment, variable=var)
-                chk.pack(anchor='w', padx=5, pady=2)
+                
+                segment_frame = CTkFrame(scrollable_frame)
+                segment_frame.pack(fill='x', padx=5, pady=2)
+                
+                speaker_match = re.match(r'^(\[?\d+:\d+\]?)?\s*(Speaker \d+):', segment)
+                if speaker_match:
+                    speaker = speaker_match.group(2)
+                    color = SPEAKER_COLORS.get(speaker, "#FFFFFF") 
+                    segment_label = CTkLabel(segment_frame, text=segment, text_color=color, anchor='w') 
+                else:
+                    segment_label = CTkLabel(segment_frame, text=segment, anchor='w') 
+                
+                chk = CTkCheckBox(segment_frame, text="", variable=var, width=20)
+                chk.pack(side='left', padx=(0, 5))
+                segment_label.pack(side='left', fill='x', expand=True, anchor='w')  
+                
                 self.segment_selections.append((var, idx))
 
         def apply_labels(speaker):
             current_text = self.getTranscriptionText()
             current_segments = current_text.split('\n')
+            color = SPEAKER_COLORS.get(speaker, "#FFFFFF")  # Get color for the speaker
 
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
@@ -447,6 +533,13 @@ class audioMenu(CTkFrame):
                         current_segments[idx] = f"{speaker}: {line}"
                     var.set(0)
 
+                    # Update the displayed text with color
+                    for widget in scrollable_frame.winfo_children():
+                        if isinstance(widget, CTkFrame):
+                            for child in widget.winfo_children():
+                                if isinstance(child, CTkLabel) and child.cget("text") == line:
+                                    child.configure(text=current_segments[idx], text_color=color)
+
             new_transcription_text = "\n".join(current_segments)
             self.transcriptionBox.configure(state="normal")
             self.transcriptionBox.delete("1.0", "end")
@@ -457,8 +550,8 @@ class audioMenu(CTkFrame):
         button_frame = CTkFrame(popup)
         button_frame.pack(pady=10)
 
-        speaker1_alias = self.speaker_aliases.get("Speaker 1", "Speaker 1")
-        speaker2_alias = self.speaker_aliases.get("Speaker 2", "Speaker 2")
+        speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
+        speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
         CTkButton(button_frame, text=f"Label as {speaker1_alias}", command=lambda: apply_labels(speaker1_alias), fg_color="#029CFF").pack(side="left", padx=10)
         CTkButton(button_frame, text=f"Label as {speaker2_alias}", command=lambda: apply_labels(speaker2_alias), fg_color="#FF5733").pack(side="right", padx=10)
 
@@ -492,9 +585,20 @@ class audioMenu(CTkFrame):
 
             transcription_text = self.getTranscriptionText()
 
-            for speaker, alias in self.speaker_aliases.items():
-                pattern = rf'(\[\d{{2}}:\d{{2}}\]\s*)?{re.escape(speaker)}:'
-                transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{alias}:", transcription_text)
+            # Define all possible previous speaker labels to replace
+            label_mapping = {
+                "Speaker 1": self.speaker_aliases["Speaker 1"],
+                "C": self.speaker_aliases["Speaker 1"],
+                "Child": self.speaker_aliases["Speaker 1"],
+                "Speaker 2": self.speaker_aliases["Speaker 2"],
+                "E": self.speaker_aliases["Speaker 2"],
+                "Examiner": self.speaker_aliases["Speaker 2"]
+            }
+
+            # Replace all known labels with the current alias
+            pattern = r'(\[\d{2}:\d{2}\]\s*)?(' + "|".join(re.escape(label) for label in label_mapping.keys()) + r'):'
+
+            transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{label_mapping[m.group(2)]}:", transcription_text)
 
             self.transcriptionBox.configure(state="normal")
             self.transcriptionBox.delete("0.0", "end")
@@ -505,52 +609,6 @@ class audioMenu(CTkFrame):
 
         apply_button = CTkButton(popup, text="Apply Aliases", command=applyAliases)
         apply_button.pack(pady=10)
-
-    @global_error_handler
-    def uploadAudio(self):
-        filename = filedialog.askopenfilename()
-        if filename:
-            unlockItem(self.playPauseButton)
-            unlockItem(self.transcribeButton)
-            unlockItem(self.downloadAudioButton)
-
-            time, signal = self.audio.upload(filename)
-            plotAudio(time, signal)
-
-            base_name = os.path.basename(filename)
-            self.fileNameEntry.delete(0, END)
-            self.fileNameEntry.insert(0, base_name)
-
-            self.audioLength = self.audio.getAudioDuration(filename)
-            mins, secs = divmod(int(self.audioLength), 60)
-            self.endTimeLabel.configure(text=f"{mins:02}:{secs:02}")
-
-            self.updateCurrentTime(0)
-
-            if self.audio and self.audio.filePath:
-                self.timelineSlider.configure(from_=0, to=self.audioLength, state="normal")
-            
-            lockItem(self.uploadButton)
-            lockItem(self.recordButton)
-
-    @global_error_handler
-    def recordAudio(self):
-        if self.recordButton.cget("text") == "Record":
-            self.recordButton.configure(text="Stop")
-            self.audio.record()
-        else:
-            self.recordButton.configure(text="Record")
-            unlockItem(self.playPauseButton)
-            unlockItem(self.transcribeButton)
-            unlockItem(self.downloadAudioButton)
-            filename, time, signal = self.audio.stop()
-            plotAudio(time, signal)
-
-            self.fileNameEntry.delete(0, END)
-            self.fileNameEntry.insert(0, "RECORDING - 1.wav")
-
-            lockItem(self.uploadButton)
-            lockItem(self.recordButton)
 
     @global_error_handler
     def transcribe(self):
@@ -570,7 +628,7 @@ class audioMenu(CTkFrame):
     def transcriptionThread(self):
         if self.is_playing or self.is_paused:
             self.pauseAudio()
-
+            self.playPauseButton.configure(text="Play")
         threading.Thread(target=self.transcribe, daemon=True).start()
 
     @global_error_handler
