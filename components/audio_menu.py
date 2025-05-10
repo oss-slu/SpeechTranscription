@@ -620,31 +620,18 @@ class audioMenu(CTkFrame):
 
         try:
             transcribedAudio = diarizationAndTranscription.transcribe(filename)
+            threading.Thread(target=self.grammarCheckInBackground, args=(transcribedAudio,), daemon=True).start()
             self.updateTranscriptionUI(transcribedAudio)
-
-            # NEW: Automatically start grammar checking in background
-            self.cachedGrammar = None  # Clear any previous cache
-            self.cachedMorphemes = None
-            threading.Thread(target=self._precomputeGrammar, args=(transcribedAudio,), daemon=True).start()
         except Exception as e:
             self.updateTranscriptionUI("Error during transcription.")
-
-    @global_error_handler
-    def _precomputeGrammar(self, transcriptionText):
-        self.grammar.checkGrammar(transcriptionText, checkAllSentences=True)
     
-        corrected_text = ""
-        while True:
-            corrected, sentenceToCorrect = self.grammar.getNextCorrection()
-            if corrected is None and sentenceToCorrect is None:
-                break
-            if corrected:
-                corrected_text += corrected
-            if sentenceToCorrect:
-                corrected_text += sentenceToCorrect + "\n"
-
-        self.cachedGrammar = corrected_text
-        self.cachedMorphemes = self.grammar.getInflectionalMorphemes(corrected_text)
+    @global_error_handler
+    def grammarCheckInBackground(self, transcribedAudio):
+        """Perform grammar check in the background."""
+        self.grammar.checkGrammar(transcribedAudio, False)  # Run grammar check
+        self.grammarCheckPerformed = True  # Mark grammar check as done
+        # Save the grammar-checked version of the transcription
+        self.grammarCheckedText = self.grammar.getGrammarText()
 
     @global_error_handler
     def transcriptionThread(self):
@@ -707,16 +694,15 @@ class audioMenu(CTkFrame):
         self.conventionBox.delete("1.0", "end")
         self.correctionEntryBox.delete("1.0", "end")
 
-        if hasattr(self, 'cachedGrammar') and self.cachedGrammar:
-            # ✅ Use precomputed grammar and skip rechecking
-            self.grammar.setCachedCorrections(self.cachedGrammar)
+        # Check if grammar has already been processed
+        if hasattr(self, "grammarCheckedText") and self.grammarCheckedText:
+            self.conventionBox.insert("end", self.grammarCheckedText)  # Directly use grammarCheckedText
         else:
-            # ❌ Only run checkGrammar if no cache exists
+            # If grammar check is not preloaded, perform it
             self.grammar.checkGrammar(self.getTranscriptionText(), False)
 
         self.manageGrammarCorrection()
         self.color_code_transcription()
-        self.grammarCheckPerformed = True
         self.stopProgressBar()
 
     @global_error_handler
