@@ -15,10 +15,25 @@ class GrammarChecker:
         self.grammarCheckedText = self.performGrammarCheck(transcriptionText)
 
     def performGrammarCheck(self, transcriptionText: str):
-        """Perform grammar check and return the corrected version."""
-        # Perform grammar check logic here (simplified)
-        corrected_text = addConventions.correctSentence(transcriptionText)
-        return corrected_text
+        """Perform grammar check and return corrected version with timestamps preserved."""
+        corrected_lines = []
+
+        for line in transcriptionText.strip().splitlines():
+            if line.strip() == "":
+                continue  # Skip empty lines
+
+            # Expect format like: [0:10] some sentence
+            if line.startswith("[") and "]" in line:
+                timestamp_end = line.find("]") + 1
+                timestamp = line[:timestamp_end]
+                sentence = line[timestamp_end:].strip()
+                corrected_sentence = addConventions.correctSentence(sentence)
+                corrected_lines.append(f"{timestamp} {corrected_sentence}")
+            else:
+                # If there's no timestamp, just correct the whole line
+                corrected_lines.append(addConventions.correctSentence(line))
+
+        return "\n".join(corrected_lines)
 
     
     def getNextCorrection(self):
