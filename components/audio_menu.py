@@ -620,9 +620,18 @@ class audioMenu(CTkFrame):
 
         try:
             transcribedAudio = diarizationAndTranscription.transcribe(filename)
+            threading.Thread(target=self.grammarCheckInBackground, args=(transcribedAudio,), daemon=True).start()
             self.updateTranscriptionUI(transcribedAudio)
         except Exception as e:
             self.updateTranscriptionUI("Error during transcription.")
+    
+    @global_error_handler
+    def grammarCheckInBackground(self, transcribedAudio):
+        """Perform grammar check in the background."""
+        self.grammar.checkGrammar(transcribedAudio, False)  # Run grammar check
+        self.grammarCheckPerformed = True  # Mark grammar check as done
+        # Save the grammar-checked version of the transcription
+        self.grammarCheckedText = self.grammar.getGrammarText()
 
     @global_error_handler
     def transcriptionThread(self):
@@ -684,7 +693,14 @@ class audioMenu(CTkFrame):
         unlockItem(self.submitGrammarButton)
         self.conventionBox.delete("1.0", "end")
         self.correctionEntryBox.delete("1.0", "end")
-        self.grammar.checkGrammar(self.getTranscriptionText(), False)
+
+        # Check if grammar has already been processed
+        if hasattr(self, "grammarCheckedText") and self.grammarCheckedText:
+            self.conventionBox.insert("end", self.grammarCheckedText)  # Directly use grammarCheckedText
+        else:
+            # If grammar check is not preloaded, perform it
+            self.grammar.checkGrammar(self.getTranscriptionText(), False)
+
         self.manageGrammarCorrection()
         self.color_code_transcription()
         self.stopProgressBar()
