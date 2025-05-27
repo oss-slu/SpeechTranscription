@@ -59,7 +59,7 @@ mkdir -p dist release
 
 # Build the macOS executable
 echo "Building the macOS executable..."
-pyinstaller --onefile --windowed \
+pyinstaller --name=Saltify --onefile --windowed \
   --add-data "$SCRIPT_DIR/images:images" \
   --add-data "$SCRIPT_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$SCRIPT_DIR/CTkXYFrame:CTkXYFrame" \

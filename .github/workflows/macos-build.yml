@@ -177,10 +177,10 @@ jobs:
       #       exit 1
       #     fi      
       #######################################  
-      - name: Build Executable with PyInstaller
-        run: |
-          pyinstaller --onefile --windowed --name=Saltify GUI.py | tee build.log
-          cat build.log
+      # - name: Build Executable with PyInstaller
+      #   run: |
+      #     pyinstaller --onefile --windowed --name=Saltify GUI.py | tee build.log
+      #     cat build.log
       - name: Verify Executable Exists
         run: ls -l dist/   
       # - name: Ensure dist folder exists
@@ -230,14 +230,21 @@ jobs:
             exit 1
           fi          
       # Step 11: Upload the built artifact
-      - name: Upload macOS Build Artifact
+      - name: Upload latest Saltify build
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: SpeechTranscription_macos
-          path: release/Saltify
+          name: Saltify-macOS
+          path: |
+            release/Saltify_*/Saltify
+    
       # Finding why exe isnt created
-      - name: Verify PyInstaller build output
+      # - name: Verify PyInstaller build output
+      #   run: |
+      #     echo "Contents of dist folder:"
+      #     ls -la release/ 
+      - name: Verify Release Output
         run: |
-          echo "Contents of dist folder:"
-          ls -la release/ 
+          echo "Contents of release folder:"
+          ls -la release/
+    
