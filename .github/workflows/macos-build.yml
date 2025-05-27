@@ -179,7 +179,7 @@ jobs:
       #######################################  
       - name: Build Executable with PyInstaller
         run: |
-          pyinstaller --onefile --name=Saltify main.py | tee build.log
+          pyinstaller --onefile --windowed --name=Saltify GUI.py | tee build.log
           cat build.log
       - name: Verify Executable Exists
         run: ls -l dist/   
