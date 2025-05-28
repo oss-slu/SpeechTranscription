@@ -1,7 +1,7 @@
 #!/bin/bash
 
-set -e  # Exit script on any error
-LOG_FILE="build.log"
+set -x  # Exit script on any error
+LOG_FILE="$BASE_DIR/build.log"
 exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
 
 # Determine script and base directories
@@ -57,6 +57,9 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 # Ensure required directories exist
 mkdir -p dist release
 
+echo "Pre-build directory contents:"
+ls -la "$SCRIPT_DIR"
+
 # Build the macOS executable
 echo "Building the macOS executable..."
 pyinstaller --name=Saltify --onefile --windowed \
@@ -77,6 +80,9 @@ pyinstaller --name=Saltify --onefile --windowed \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
   "$SCRIPT_DIR/GUI.py"
+
+echo "Post-build dist contents:"
+ls -la dist || echo "dist not created"
 
 # Check build output
 if [ ! -f "dist/Saltify" ]; then
@@ -102,4 +108,4 @@ if [[ -z "$CI" || -z "$GITHUB_ACTIONS" ]]; then
 fi
 
 echo "Full PyInstaller log:"
-tail -n 20 ${LOG_FILE}
+tail -n 20 "$LOG_FILE"

@@ -129,8 +129,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Saltify-Build-Log
-          path: build.log
-      
+          path: ${{ github.workspace }}/build.log          
+          if-no-files-found: ignore
         
           
       ###############################
