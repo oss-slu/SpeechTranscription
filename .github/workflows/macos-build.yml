@@ -125,6 +125,12 @@ jobs:
       #Check if executable was created elsewhere   
       - name: Find Built Executables
         run: find . -type f -perm +111
+      - name: Upload Build Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saltify-Build-Log
+          path: build.log
+      
         
           
       ###############################
@@ -248,7 +254,7 @@ jobs:
         with:
           name: Saltify-macOS
           path: |
-            release/Saltify_*/Saltify
+            release/**/Saltify
     
       # Finding why exe isnt created
       # - name: Verify PyInstaller build output
