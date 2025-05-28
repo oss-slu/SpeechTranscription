@@ -7,6 +7,7 @@ BASE_DIR=$(git rev-parse --show-toplevel)
 
 LOG_FILE="$BASE_DIR/build.log"
 exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
+echo "✅ build.log initialized at: $LOG_FILE"
 
 echo "Base directory: $BASE_DIR"
 echo "Script directory: $SCRIPT_DIR"
