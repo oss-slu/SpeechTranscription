@@ -19,6 +19,7 @@ if [[ -z "$VIRTUAL_ENV" ]]; then
 fi
 source "$VIRTUAL_ENV/bin/activate"
 echo "Using virtual environment: $(basename "$VIRTUAL_ENV")"
+PYTHON_SITE=$(python -c "import site; print(site.getsitepackages()[0])")
 
 # Upgrade pip and install dependencies
 echo "Installing dependencies..."
@@ -46,7 +47,7 @@ brew services start mysql
 
 echo "Current working directory: $(pwd)"
 echo "Pre-build directory contents:"
-ls -la "$SCRIPT_DIR"
+ls -la "$BASE_DIR"
 # Install additional Python dependencies
 pip install pyinstaller importlib-metadata sacremoses tokenizers
 
@@ -68,27 +69,27 @@ mkdir -p dist release
 
 # Build the macOS executable
 echo "Building the macOS executable..."
-pyinstaller --name=Saltify --onefile --windowed \
-  --add-data "$SCRIPT_DIR/images:images" \
-  --add-data "$SCRIPT_DIR/build_assets/en-model.slp:pattern/text/en" \
-  --add-data "$SCRIPT_DIR/CTkXYFrame:CTkXYFrame" \
+pyinstaller --name=Saltify --onedir --windowed \
+  --add-data "$BASE_DIR/images:images" \
+  --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
+  --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
   --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
   --add-binary "/opt/homebrew/bin/ffmpeg:." \
   --add-binary "/opt/homebrew/bin/ffprobe:." \
-  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
-  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/whisper:whisper" \
-  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/filelock:filelock" \
-  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
-  --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pyannote:pyannote" \
+  --add-data "$PYTHON_SITE/lightning_fabric:lightning_fabric" \
+  --add-data "$PYTHON_SITE/whisper:whisper" \
+  --add-data "$PYTHON_SITE/filelock:filelock" \
+  --add-data "$PYTHON_SITE/pytorch_lightning:torchlightning" \
+  --add-data "$PYTHON_SITE/pyannote:pyannote" \
   --hidden-import "lightning_fabric" \
   --hidden-import "torch" \
   --hidden-import "torchvision" \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
-  "$SCRIPT_DIR/GUI.py"
+  "$BASE_DIR/GUI.py"
 
 # Check build output
-if [ ! -f "dist/Saltify" ]; then
+if [ ! -d "dist/Saltify" ]; then
     echo "Error: dist/Saltify executable not found!"
     ls -la dist/
     exit 1
@@ -98,7 +99,7 @@ fi
 RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
 mkdir -p "${RELEASE_DIR}"
 mv dist/Saltify "${RELEASE_DIR}"
-chmod +x "${RELEASE_DIR}/Saltify"
+chmod +x "${RELEASE_DIR}/Saltify/Saltify"
 
 # Clean up temporary files
 rm -rf build *.spec dist/
