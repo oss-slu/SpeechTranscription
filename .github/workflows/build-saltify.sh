@@ -1,12 +1,13 @@
 #!/bin/bash
 
 set -x  # Exit script on any error
+# Determine script and base directories FIRST
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+BASE_DIR=$(git rev-parse --show-toplevel)
+
 LOG_FILE="$BASE_DIR/build.log"
 exec > >(tee -i ${LOG_FILE}) 2>&1  # Log output to file and console
 
-# Determine script and base directories
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-BASE_DIR=$(git rev-parse --show-toplevel)
 echo "Base directory: $BASE_DIR"
 echo "Script directory: $SCRIPT_DIR"
 
@@ -42,8 +43,15 @@ for pkg in mysql pkg-config portaudio ffmpeg; do
 done
 brew services start mysql
 
+echo "Current working directory: $(pwd)"
+echo "Pre-build directory contents:"
+ls -la "$SCRIPT_DIR"
 # Install additional Python dependencies
 pip install pyinstaller importlib-metadata sacremoses tokenizers
+
+echo "Post-build dist contents:"
+ls -la dist || echo "dist not created"
+
 pip uninstall -y typing
 pip install nltk certifi
 
@@ -56,9 +64,6 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 
 # Ensure required directories exist
 mkdir -p dist release
-
-echo "Pre-build directory contents:"
-ls -la "$SCRIPT_DIR"
 
 # Build the macOS executable
 echo "Building the macOS executable..."
@@ -80,9 +85,6 @@ pyinstaller --name=Saltify --onefile --windowed \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
   "$SCRIPT_DIR/GUI.py"
-
-echo "Post-build dist contents:"
-ls -la dist || echo "dist not created"
 
 # Check build output
 if [ ! -f "dist/Saltify" ]; then
