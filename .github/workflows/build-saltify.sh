@@ -112,7 +112,7 @@ mv dist/Saltify "${RELEASE_DIR}"
 chmod +x "${RELEASE_DIR}/Saltify/Saltify"
 
 # Clean up temporary files
-rm -rf build *.spec dist/
+#rm -rf build *.spec dist/
 
 echo "Build complete. The executable is located in ${RELEASE_DIR}."
 
