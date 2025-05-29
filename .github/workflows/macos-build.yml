@@ -133,7 +133,10 @@ jobs:
           git update-index --chmod=+x .github/workflows/build-saltify.sh
           chmod +x .github/workflows/build-saltify.sh
           ./.github/workflows/build-saltify.sh     
-
+    
+      - name: Show build script contents
+        run: cat .github/workflows/build-saltify.sh
+        
       # - name: Verify Executable Exists
       #   run: ls -l dist/
       #checking
