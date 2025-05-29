@@ -126,16 +126,17 @@ jobs:
           name: Saltify-Build-Log
           path: ${{ github.workspace }}/build.log          
           if-no-files-found: ignore
-          
+         
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         run: |
           git update-index --chmod=+x .github/workflows/build-saltify.sh
           chmod +x .github/workflows/build-saltify.sh
-          ./.github/workflows/build-saltify.sh    
-          
-      - name: Verify Executable Exists
-        run: ls -l dist/    
+          ./.github/workflows/build-saltify.sh     
+
+      # - name: Verify Executable Exists
+      #   run: ls -l dist/
+        
       #checking
       # Step 10: Check the dist folder and move the executable to release
       - name: Verify PyInstaller build output
@@ -164,7 +165,6 @@ jobs:
 
       - name: Cleanup build folders
         run: rm -rf build *.spec dist/
-
       - name: Verify Release Output
         run: |
           echo "Contents of release folder:"
