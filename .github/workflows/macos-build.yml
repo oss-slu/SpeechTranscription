@@ -136,7 +136,6 @@ jobs:
 
       # - name: Verify Executable Exists
       #   run: ls -l dist/
-        
       #checking
       # Step 10: Check the dist folder and move the executable to release
       - name: Verify PyInstaller build output
