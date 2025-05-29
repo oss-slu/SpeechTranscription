@@ -79,9 +79,9 @@ pyinstaller --name=Saltify --onedir --windowed \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
-  --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
-  --add-binary "/opt/homebrew/bin/ffmpeg:." \
-  --add-binary "/opt/homebrew/bin/ffprobe:." \
+  --add-binary "${PORTAUDIO_PATH:-/usr/lib/libportaudio.so}:." \
+  --add-binary "${FFMPEG_PATH:-/usr/bin/ffmpeg}:." \
+  --add-binary "${FFPROBE_PATH:-/usr/bin/ffprobe}:." \
   --add-data "$PYTHON_SITE/lightning_fabric:lightning_fabric" \
   --add-data "$PYTHON_SITE/whisper:whisper" \
   --add-data "$PYTHON_SITE/filelock:filelock" \
@@ -93,6 +93,10 @@ pyinstaller --name=Saltify --onedir --windowed \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
   "$BASE_DIR/GUI.py"
+
+echo "✅ PyInstaller build directory contents:"
+ls -la dist || echo "dist does not exist"
+ls -la build || echo "build does not exist"
 
 # Check build output
 if [ ! -d "dist/Saltify" ]; then

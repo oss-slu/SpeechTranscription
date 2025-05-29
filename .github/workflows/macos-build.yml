@@ -61,26 +61,21 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           echo "VIRTUAL_ENV=$(pwd)/venv" >> $GITHUB_ENV
+          
       - name: Install Dependencies in Virtual Environment
         run: |
           source $VIRTUAL_ENV/bin/activate
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+
       - name: Verify Python Site-Packages
         run: |
           python -c "import site; print(site.getsitepackages())"
-      # - name: Install Dependencies
-      #   run: |
-      #     $VIRTUAL_ENV/bin/python -m pip install --upgrade pip
-      #     $VIRTUAL_ENV/bin/python -m pip install -r requirements.txt
+
       - name: Check Python Site-Packages in Virtual Environment
         run: |
           $VIRTUAL_ENV/bin/python -c "import site; print(site.getsitepackages())"                               
       ###############################          
-#      - name: Install Specific Python Version
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: 3.11.7
       # Step 7: Install and configure NLTK
       - name: Install NLTK and fix SSL issues
         run: |
@@ -131,98 +126,9 @@ jobs:
           name: Saltify-Build-Log
           path: ${{ github.workspace }}/build.log          
           if-no-files-found: ignore
-        
-          
-      ###############################
-      # - name: Verify Installed Packages
-      #   run: |
-      #     python -c "import lightning_fabric; print('lightning_fabric is installed')"
 
-      # - name: Debug Python Path
-      #   run: |
-      #     python -c "import sys; print(sys.path)"
-
-      # - name: Debug Virtual Environment Path
-      #   run: |
-      #     echo "VIRTUAL_ENV: $VIRTUAL_ENV"
-      #     ls -lah $VIRTUAL_ENV/lib/python3.11/site-packages || echo "No site-packages found"
-      # - name: List files in the working directory
-      #   run: |
-      #     echo "Current directory: $(pwd)"
-      #     ls -la $(pwd)
-      ###############################
-      # # Step 8: Build the executable
-      # - name: Build executable
-      #   run: |
-      #     SITE_PACKAGES=$($VIRTUAL_ENV/bin/python -c 'import site; print(site.getsitepackages()[0])')
-      #     pyinstaller --onefile --windowed \
-      #       --add-data "$(pwd)/images:images" \
-      #       --add-data "$(pwd)/build_assets/en-model.slp:pattern/text/en" \
-      #       --add-data "$(pwd)/CTkXYFrame:CTkXYFrame" \
-      #       --add-binary "$PORTAUDIO_PATH:." \
-      #       --add-binary "$FFMPEG_PATH:." \
-      #       --add-binary "$FFPROBE_PATH:." \
-      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/lightning-fabric:lightning_fabric" \
-      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/whisper:whisper" \
-      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/filelock:filelock" \
-      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
-      #       --add-data "$VIRTUAL_ENV/lib/python3.11/site-packages/pyannote:pyannote" \
-      #       --hidden-import "lightning_fabric" \
-      #       --hidden-import "torch" \
-      #       --hidden-import "torchvision" \
-      #       --hidden-import "pytorch_lightning" \
-      #       --hidden-import "pyannote.audio" \
-      #       "$(pwd)/GUI.py"
-      # #######################################     
-      # - name: Debug File Paths
-      #   run: |
-      #    ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription
-      #    ls -la /Users/runner/work/SpeechTranscription/SpeechTranscription/.github/workflows       
-      # - name: Debug Directory Structure
-      #   run: |
-      #     echo "Current Directory: $(pwd)"
-      #     echo "Listing Files and Directories:"
-      #     ls -R
-      # - name: Verify Required Files and Directories
-      #   run: |
-      #     if [ ! -d "$BASE_DIR/images" ]; then
-      #       echo "Error: Directory $BASE_DIR/images not found!"
-      #       exit 1
-      #     fi
-      #     if [ ! -d "$BASE_DIR/build_assets" ]; then
-      #       echo "Error: Directory $BASE_DIR/build_assets not found!"
-      #       exit 1
-      #     fi      
-      #######################################  
-      # - name: Build Executable with PyInstaller
-      #   run: |
-      #     pyinstaller --onefile --windowed --name=Saltify GUI.py | tee build.log
-      #     cat build.log
       - name: Verify Executable Exists
-        run: ls -l dist/   
-      # - name: Ensure dist folder exists
-      #   run: |
-      #     mkdir -p dist
-      # - name: Debug PyInstaller
-      #   run: |
-      #     source $VIRTUAL_ENV/bin/activate
-      #     pyinstaller --clean --log-level=DEBUG --onefile --windowed "$(pwd)/GUI.py" > pyinstaller_debug.log 2>&1
-      #     cat pyinstaller_debug.log        
-      # - name: Print PyInstaller Build Log
-      #   run: |
-      #     echo "PyInstaller build log:"
-      #     cat pyinstaller_build.log    
-      # - name: Check PyInstaller Output
-      #   run: |
-      #     echo "Contents of dist folder after PyInstaller:"
-      #     ls -la dist/ || echo "dist/ folder does not exist"            
-      # - name: Debug the location
-      #   run: | 
-      #     ls /Users/runner/work/SpeechTranscription/SpeechTranscription/venv/lib/python3.11/site-packages
-      # - name: Debug Installed Packages
-      #   run: |
-      #     ls -la $VIRTUAL_ENV/lib/python3.11/site-packages
-      #     python -c "import site; print(site.getsitepackages())"            
+        run: ls -l dist/              
       # Step 9: Run the Saltify build script
       - name: Run Saltify Build Script
         run: |
@@ -230,7 +136,6 @@ jobs:
           chmod +x .github/workflows/build-saltify.sh
           ./.github/workflows/build-saltify.sh     
       #checking
-      
       # Step 10: Check the dist folder and move the executable to release
       - name: Verify PyInstaller build output
         run: |
@@ -255,12 +160,6 @@ jobs:
           name: Saltify-macOS
           path: |
             release/**/Saltify
-    
-      # Finding why exe isnt created
-      # - name: Verify PyInstaller build output
-      #   run: |
-      #     echo "Contents of dist folder:"
-      #     ls -la release/ 
       - name: Verify Release Output
         run: |
           echo "Contents of release folder:"
