@@ -12,12 +12,18 @@ echo "✅ build.log initialized at: $LOG_FILE"
 echo "Base directory: $BASE_DIR"
 echo "Script directory: $SCRIPT_DIR"
 
-# Activate virtual environment
+
+# Ensure virtualenv is active, else activate it
 if [[ -z "$VIRTUAL_ENV" ]]; then
-    echo "Virtual environment not activated. Please activate it before running the script."
-    exit 1
+    echo "Virtual environment not activated. Attempting to activate..."
+    if [ -f "$BASE_DIR/venv/bin/activate" ]; then
+        source "$BASE_DIR/venv/bin/activate"
+    else
+        echo "❌ No virtual environment found at $BASE_DIR/venv"
+        exit 1
+    fi
 fi
-source "$VIRTUAL_ENV/bin/activate"
+
 echo "Using virtual environment: $(basename "$VIRTUAL_ENV")"
 PYTHON_SITE=$(python -c "import site; print(site.getsitepackages()[0])")
 
