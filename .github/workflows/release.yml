@@ -22,6 +22,7 @@ jobs:
   release:
     needs: [call-macos-build, call-windows-build]
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,13 +46,12 @@ jobs:
         run: |
           echo "Full directory structure:"
           find . -type f -not -path "./.git/*"
-
           echo "Contents of artifacts directory:"
           ls -la artifacts/
           ls -la artifacts/macos || echo "No macOS artifacts"
           ls -la artifacts/windows || echo "No Windows artifacts"
 
-      - name: Create project ZIP
+      - name: Create project ZIPs
         run: |
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
           echo "Commit: ${{ github.sha }}" >> release_notes.md
@@ -59,23 +59,29 @@ jobs:
           echo "Event type: ${{ github.event_name }}" >> release_notes.md
           echo "## Downloads" >> release_notes.md
 
+          # macOS
           if [ -d "artifacts/macos/Saltify.app" ]; then
             echo "- macOS executable included" >> release_notes.md
             cd artifacts/macos
             zip -r ../Saltify_macos.zip Saltify.app
             cd ../..
-            echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
           else
             echo "Note: macOS executable not available for this release" >> release_notes.md
           fi
 
+          # Windows
           if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
             echo "- Windows executable included" >> release_notes.md
             zip -j artifacts/Saltify_windows.zip artifacts/windows/*
-            echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
           else
             echo "Note: Windows executable not available for this release" >> release_notes.md
           fi
+
+          echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
+          echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
+
+      - name: Install GitHub CLI
+        run: sudo apt-get update && sudo apt-get install -y gh
 
       - name: Create GitHub Release
         id: create_release
@@ -89,25 +95,27 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Assets (macOS)
-        uses: actions/upload-release-asset@v1
+      - name: Upload macOS Release Asset
+        if: always()
+        run: |
+          if [ -f "artifacts/Saltify_macos.zip" ]; then
+            gh release upload "v${{ github.run_number }}" artifacts/Saltify_macos.zip --clobber
+          else
+            echo "❌ Saltify_macos.zip not found. Skipping."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/Saltify_macos.zip
-          asset_name: Saltify_macos.zip
-          asset_content_type: application/zip
 
-      - name: Upload Release Assets (Windows)
-        uses: actions/upload-release-asset@v1
+      - name: Upload Windows Release Asset
+        if: always()
+        run: |
+          if [ -f "artifacts/Saltify_windows.zip" ]; then
+            gh release upload "v${{ github.run_number }}" artifacts/Saltify_windows.zip --clobber
+          else
+            echo "❌ Saltify_windows.zip not found. Skipping."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/Saltify_windows.zip
-          asset_name: Saltify_windows.zip
-          asset_content_type: application/zip
 
       - name: List artifact file types
         run: |
