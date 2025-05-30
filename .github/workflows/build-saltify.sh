@@ -12,7 +12,6 @@ echo "✅ build.log initialized at: $LOG_FILE"
 echo "Base directory: $BASE_DIR"
 echo "Script directory: $SCRIPT_DIR"
 
-
 # Ensure virtualenv is active, else activate it
 if [[ -z "$VIRTUAL_ENV" ]]; then
     echo "Virtual environment not activated. Attempting to activate..."
@@ -54,11 +53,9 @@ brew services start mysql
 echo "Current working directory: $(pwd)"
 echo "Pre-build directory contents:"
 ls -la "$BASE_DIR"
+
 # Install additional Python dependencies
 pip install pyinstaller importlib-metadata sacremoses tokenizers
-
-echo "Post-build dist contents:"
-ls -la dist || echo "dist not created"
 
 pip uninstall -y typing
 pip install nltk certifi
@@ -98,6 +95,9 @@ echo "✅ PyInstaller build directory contents:"
 ls -la dist || echo "dist does not exist"
 ls -la build || echo "build does not exist"
 
+# Ensure .app binary is executable
+chmod +x dist/Saltify.app/Contents/MacOS/Saltify || echo "❌ Could not chmod binary inside .app"
+
 # Check build output
 if [ ! -d "dist/Saltify" ]; then
     echo "Error: dist/Saltify executable not found!"
@@ -110,9 +110,6 @@ RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
 mkdir -p "${RELEASE_DIR}"
 mv dist/Saltify "${RELEASE_DIR}"
 chmod +x "${RELEASE_DIR}/Saltify/Saltify"
-
-# Clean up temporary files
-#rm -rf build *.spec dist/
 
 echo "Build complete. The executable is located in ${RELEASE_DIR}."
 
