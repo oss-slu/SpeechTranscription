@@ -140,7 +140,7 @@ jobs:
       # - name: Verify Executable Exists
       #   run: ls -l dist/
       #checking
-      
+
       # Step 10: Check the dist folder and move the executable to release
       # - name: Verify PyInstaller build output
       #   run: |
@@ -159,19 +159,44 @@ jobs:
       #       exit 1
       #     fi  
 
-      # Step 11: Upload the built artifact
-      - name: Upload latest Saltify build
+      # Step 11: Zip the .app correctly
+      - name: Zip Saltify.app for macOS
+        run: |
+          mkdir -p release
+          ditto -c -k --sequesterRsrc --keepParent dist/Saltify.app release/Saltify-macOS.zip
+
+      # Step 12: Upload the zipped GUI app
+      - name: Upload Saltify macOS App Bundle
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Saltify-macOS
-          path: |
-            release/**/Saltify
+          path: release/Saltify-macOS.zip
 
+      # Step 11: Upload the built artifact
+      # - name: Upload latest Saltify build
+      #   uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: Saltify-macOS
+      #     path: |
+      #       release/**/Saltify
+
+      # - name: Cleanup build folders
+      #   run: rm -rf build *.spec dist/
+
+      # Step 13: Cleanup build artifacts
       - name: Cleanup build folders
         run: rm -rf build *.spec dist/
+
+      # - name: Verify Release Output
+      #   run: |
+      #     echo "Contents of release folder:"
+      #     ls -la release/
+
+      # Step 14: Final release contents check
       - name: Verify Release Output
         run: |
           echo "Contents of release folder:"
-          ls -la release/
+          ls -la release/      
     
