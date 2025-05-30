@@ -1,4 +1,4 @@
-on: 
+on:
   push:
     branches:
       - main
@@ -15,47 +15,44 @@ jobs:
     steps:
       - name: Set BASE_DIR
         run: echo "BASE_DIR=$(pwd)" >> $GITHUB_ENV
-      # Step 1: Check out the repository
+
       - uses: actions/checkout@v4
-      # Step 2: Set up Python
+
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-      # Step 3: Install Homebrew
+
       - name: Install Homebrew
         run: |
           if ! command -v brew &> /dev/null; then
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           fi
           brew update
-#########################################
+
       - name: Installing Homebrew services
-        run :
-          brew services list
-#########################################
-      # Step 4: Install MySQL and other Homebrew packages
+        run: brew services list
+
       - name: Install MySQL and required packages
         run: |
-          brew install mysql pkg-config 
-          brew install portaudio
-          brew install ffmpeg
-          brew services start mysql          
+          brew install mysql pkg-config portaudio ffmpeg
+          brew services start mysql
           pip install pyaudio
-      # Set MySQL environment variables
+
       - name: Set MySQL environment variables
         run: |
           export MYSQLCLIENT_CFLAGS='pkg-config mysqlclient --cflags'
           export MYSQLCLIENT_LDFLAGS='pkg-config mysqlclient --libs'
+
       - name: Check MySQL Status
         run: |
           mysqladmin ping || (echo "MySQL failed to start!" && exit 1)
-      # Step 5: Install Java (if required)
+
       - name: Install Java
         run: |
           if ! java -version; then
             brew install openjdk@11
           fi
-      ###############################
+
       - name: Set Up Python Virtual Environment
         run: |
           python -m venv venv
@@ -68,104 +65,51 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Verify Python Site-Packages
-        run: |
-          python -c "import site; print(site.getsitepackages())"
-
-      - name: Check Python Site-Packages in Virtual Environment
-        run: |
-          $VIRTUAL_ENV/bin/python -c "import site; print(site.getsitepackages())"                               
-      ###############################          
-      # Step 7: Install and configure NLTK
       - name: Install NLTK and fix SSL issues
         run: |
           python -m pip install nltk certifi
           CERT_PATH=$(python -m certifi)
           export SSL_CERT_FILE=${CERT_PATH}
           export REQUESTS_CA_BUNDLE=${CERT_PATH}
-          echo "Downloading NLTK resources..."
           python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
-      #checking
-      - name: Display all environment variables
-        run: env
-      # Resolve paths for binaries
+
       - name: Resolve binary paths
         run: |
           PORTAUDIO_PATH=$(brew --prefix portaudio)/lib/libportaudio.dylib
           FFMPEG_PATH=$(which ffmpeg || echo "/usr/local/bin/ffmpeg")
           FFPROBE_PATH=$(which ffprobe || echo "/usr/local/bin/ffprobe")
-
           echo "PORTAUDIO_PATH=$PORTAUDIO_PATH" >> $GITHUB_ENV
           echo "FFMPEG_PATH=$FFMPEG_PATH" >> $GITHUB_ENV
           echo "FFPROBE_PATH=$FFPROBE_PATH" >> $GITHUB_ENV
 
-          # Debugging: Display resolved paths
-          echo "Resolved Paths:"
-          echo "PORTAUDIO_PATH=$PORTAUDIO_PATH"
-          echo "FFMPEG_PATH=$FFMPEG_PATH"
-          echo "FFPROBE_PATH=$FFPROBE_PATH"   
-      #paths
-      - name: Resolve binary paths
-        id: resolve-paths
-        run: |
-          echo "PORTAUDIO_PATH=$(brew --prefix portaudio)/lib/libportaudio.dylib" >> $GITHUB_ENV
-          echo "FFMPEG_PATH=$(which ffmpeg)" >> $GITHUB_ENV
-          echo "FFPROBE_PATH=$(which ffprobe)" >> $GITHUB_ENV   
-      #build.log check
       - name: Show PyInstaller Build Log
         if: always()
-        run: |
-          echo "PyInstaller build log:"
-          cat build.log || echo "No build.log found"
-      #Check if executable was created elsewhere   
+        run: cat build.log || echo "No build.log found"
+
       - name: Find Built Executables
         run: find . -type f -perm +111
+
       - name: Upload Build Log
         uses: actions/upload-artifact@v4
         with:
           name: Saltify-Build-Log
-          path: ${{ github.workspace }}/build.log          
+          path: ${{ github.workspace }}/build.log
           if-no-files-found: ignore
-         
-      # Step 9: Run the Saltify build script
+
       - name: Run Saltify Build Script
         run: |
           git update-index --chmod=+x .github/workflows/build-saltify.sh
           chmod +x .github/workflows/build-saltify.sh
-          ./.github/workflows/build-saltify.sh     
-    
+          ./.github/workflows/build-saltify.sh
+
       - name: Show build script contents
         run: cat .github/workflows/build-saltify.sh
-        
-      # - name: Verify Executable Exists
-      #   run: ls -l dist/
-      #checking
 
-      # Step 10: Check the dist folder and move the executable to release
-      # - name: Verify PyInstaller build output
-      #   run: |
-      #     echo "Contents of dist folder:"
-      #     ls -la dist/
-
-      # - name: Move the executable to release directory
-      #   run: |
-      #     if [ -f "dist/Saltify" ]; then
-      #       echo "Moving executable to release directory..."
-      #       RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"              mkdir -p "$RELEASE_DIR"
-      #       mv dist/Saltify "$RELEASE_DIR"
-      #       chmod +x "$RELEASE_DIR/Saltify"
-      #     else
-      #       echo "Error: dist/Saltify executable not found!"
-      #       exit 1
-      #     fi  
-
-      # Step 11: Zip the .app correctly
       - name: Zip Saltify.app for macOS
         run: |
           mkdir -p release
           ditto -c -k --sequesterRsrc --keepParent dist/Saltify.app release/Saltify-macOS.zip
 
-      # Step 12: Upload the zipped GUI app
       - name: Upload Saltify macOS App Bundle
         uses: actions/upload-artifact@v4
         if: always()
@@ -173,30 +117,10 @@ jobs:
           name: Saltify-macOS
           path: release/Saltify-macOS.zip
 
-      # Step 11: Upload the built artifact
-      # - name: Upload latest Saltify build
-      #   uses: actions/upload-artifact@v4
-      #   if: always()
-      #   with:
-      #     name: Saltify-macOS
-      #     path: |
-      #       release/**/Saltify
-
-      # - name: Cleanup build folders
-      #   run: rm -rf build *.spec dist/
-
-      # Step 13: Cleanup build artifacts
       - name: Cleanup build folders
         run: rm -rf build *.spec dist/
 
-      # - name: Verify Release Output
-      #   run: |
-      #     echo "Contents of release folder:"
-      #     ls -la release/
-
-      # Step 14: Final release contents check
       - name: Verify Release Output
         run: |
           echo "Contents of release folder:"
-          ls -la release/      
-    
+          ls -la release/
