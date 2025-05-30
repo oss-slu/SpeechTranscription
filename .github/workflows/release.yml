@@ -51,31 +51,23 @@ jobs:
           ls -la artifacts/macos || echo "No macOS artifacts"
           ls -la artifacts/windows || echo "No Windows artifacts"
 
-      - name: Create project ZIP
-        run: |
-          echo "Build number: ${{ github.run_number }}" >> release_notes.md
-          echo "Commit: ${{ github.sha }}" >> release_notes.md
-          echo "Branch: ${{ github.ref_name }}" >> release_notes.md
-          echo "Event type: ${{ github.event_name }}" >> release_notes.md
-          echo "## Downloads" >> release_notes.md
-
-          if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
-            echo "- macOS executable included" >> release_notes.md
-            # Use ditto for preserving metadata during zipping
-            ditto -c -k --sequesterRsrc --keepParent "artifacts/macos/Saltify.app" "artifacts/Saltify_macos.zip"
-          else
-            echo "Note: macOS executable not available for this release" >> release_notes.md
-          fi
-
-          if [ -d "artifacts/windows" ] && [ "$(ls -A artifacts/windows)" ]; then
-            echo "- Windows executable included" >> release_notes.md
-            zip -j artifacts/Saltify_windows.zip artifacts/windows/*
-          else
-            echo "Note: Windows executable not available for this release" >> release_notes.md
-          fi
-
-          echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
-          echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
+          - name: Create project ZIP
+          run: |
+            echo "Build number: ${{ github.run_number }}" >> release_notes.md
+            echo "Commit: ${{ github.sha }}" >> release_notes.md
+            echo "Branch: ${{ github.ref_name }}" >> release_notes.md
+            echo "Event type: ${{ github.event_name }}" >> release_notes.md
+            echo "## Downloads" >> release_notes.md
+  
+            if [ -d "artifacts/macos/Saltify.app" ]; then
+              echo "- macOS executable included" >> release_notes.md
+              cd artifacts/macos
+              zip -r ../Saltify_macos.zip Saltify.app
+              cd ../..
+            else
+              echo "Note: macOS executable not available for this release" >> release_notes.md
+            fi
+  
 
       - name: Create GitHub Release
         id: create_release
