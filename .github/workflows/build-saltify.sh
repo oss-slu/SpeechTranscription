@@ -68,7 +68,7 @@ export REQUESTS_CA_BUNDLE=${CERT_PATH}
 python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('averaged_perceptron_tagger', quiet=True)"
 
 # Ensure required directories exist
-mkdir -p dist release artifacts
+mkdir -p dist release
 
 # Build the macOS executable
 echo "Building the macOS executable..."
@@ -98,25 +98,20 @@ ls -la build || echo "build does not exist"
 # Ensure .app binary is executable
 chmod +x dist/Saltify.app/Contents/MacOS/Saltify || echo "❌ Could not chmod binary inside .app"
 
-# Copy Saltify.app to artifacts for release
-if [ -d "dist/Saltify.app" ]; then
-    echo "✅ Found Saltify.app, preparing for release..."
-    cp -R dist/Saltify.app "$BASE_DIR/artifacts/"
-else
-    echo "❌ Saltify.app not found in dist/ !"
+# Check build output
+if [ ! -d "dist/Saltify" ]; then
+    echo "Error: dist/Saltify executable not found!"
+    ls -la dist/
     exit 1
 fi
 
-# Optionally move CLI build to release dir (if CLI is needed)
-if [ -d "dist/Saltify" ]; then
-    RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
-    mkdir -p "${RELEASE_DIR}"
-    mv dist/Saltify "${RELEASE_DIR}"
-    chmod +x "${RELEASE_DIR}/Saltify/Saltify"
-    echo "CLI Build moved to ${RELEASE_DIR}"
-fi
+# Organize build output into release directory
+RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
+mkdir -p "${RELEASE_DIR}"
+mv dist/Saltify "${RELEASE_DIR}"
+chmod +x "${RELEASE_DIR}/Saltify/Saltify"
 
-echo "Build complete. The .app is located in artifacts/, CLI in release/ (if built)."
+echo "Build complete. The executable is located in ${RELEASE_DIR}."
 
 # Notify user (only if not running in CI/CD)
 if [[ -z "$CI" || -z "$GITHUB_ACTIONS" ]]; then
