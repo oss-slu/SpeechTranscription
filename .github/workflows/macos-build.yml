@@ -105,6 +105,12 @@ jobs:
       - name: Show build script contents
         run: cat .github/workflows/build-saltify.sh
 
+      - name: Upload macOS App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpeechTranscription_macos
+          path: artifacts/Saltify.app
+
       - name: Zip Saltify.app for macOS
         run: |
           mkdir -p release

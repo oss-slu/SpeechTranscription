@@ -98,6 +98,15 @@ ls -la build || echo "build does not exist"
 # Ensure .app binary is executable
 chmod +x dist/Saltify.app/Contents/MacOS/Saltify || echo "❌ Could not chmod binary inside .app"
 
+# Copy Saltify.app to artifacts for release
+if [ -d "dist/Saltify.app" ]; then
+    echo "✅ Found Saltify.app, preparing for release..."
+    mkdir -p "$BASE_DIR/artifacts"
+    cp -R dist/Saltify.app "$BASE_DIR/artifacts/"
+else
+    echo "❌ Saltify.app not found in dist/ !"
+fi
+
 # Check build output
 if [ ! -d "dist/Saltify" ]; then
     echo "Error: dist/Saltify executable not found!"
