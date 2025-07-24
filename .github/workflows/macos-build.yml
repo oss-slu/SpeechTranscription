@@ -114,8 +114,14 @@ jobs:
       - name: Zip Saltify.app for macOS
         run: |
           mkdir -p release
-          ditto -c -k --sequesterRsrc --keepParent "dist/Saltify.app" "release/Saltify_macos.zip"  
-                  
+          ditto -c -k --sequesterRsrc --keepParent "dist/Saltify.app" "release/Saltify_macos.zip" 
+          
+      - name: Upload zipped Saltify.app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saltify-macOS-zip
+          path: release/Saltify_macos.zip
+
       - name: Cleanup build folders
         run: rm -rf build *.spec dist/
 
