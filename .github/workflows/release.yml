@@ -31,8 +31,18 @@ jobs:
       - name: Download macOS build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: SpeechTranscription_macos
+          name: Saltify-macOS-zip  
           path: artifacts/macos
+
+      - name: Copy zipped .app into artifacts root for release upload
+        run: |
+          if [ -f artifacts/macos/Saltify_macos.zip ]; then
+            cp artifacts/macos/Saltify_macos.zip artifacts/Saltify_macos.zip
+          else
+            echo "❌ artifacts/macos/Saltify_macos.zip not found!"
+            ls -la artifacts/macos/
+            exit 1
+          fi          
 
       - name: Download Windows build artifacts
         uses: actions/download-artifact@v4
