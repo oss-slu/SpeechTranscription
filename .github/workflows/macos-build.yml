@@ -105,12 +105,6 @@ jobs:
       - name: Show build script contents
         run: cat .github/workflows/build-saltify.sh      
 
-      - name: Upload macOS App Bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: SpeechTranscription_macos
-          path: dist/Saltify.app 
-      
       - name: Zip Saltify.app for macOS
         run: |
           mkdir -p release
@@ -119,7 +113,7 @@ jobs:
       - name: Upload zipped Saltify.app
         uses: actions/upload-artifact@v4
         with:
-          name: Saltify-macOS-zip
+          name: SpeechTranscription_macos   # ✅ This now matches what release.yml expects
           path: release/Saltify_macos.zip
 
       - name: Cleanup build folders
