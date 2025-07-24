@@ -114,8 +114,8 @@ jobs:
       - name: Zip Saltify.app for macOS
         run: |
           mkdir -p release
-          ditto -c -k --sequesterRsrc --keepParent dist/Saltify.app release/Saltify-macOS.zip
-          
+          ditto -c -k --sequesterRsrc --keepParent "dist/Saltify.app" "release/Saltify_macos.zip"  
+                  
       - name: Cleanup build folders
         run: rm -rf build *.spec dist/
 
