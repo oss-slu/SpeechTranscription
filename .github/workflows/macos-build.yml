@@ -114,7 +114,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SpeechTranscription_macos   # ✅ This now matches what release.yml expects
-          path: release/Saltify_macos.zip
+          path: ./release/Saltify_macos.zip
 
       - name: Cleanup build folders
         run: rm -rf build *.spec dist/
