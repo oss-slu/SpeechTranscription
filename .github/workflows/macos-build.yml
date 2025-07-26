@@ -122,7 +122,7 @@ jobs:
           mkdir -p release
           ditto -c -k --sequesterRsrc --keepParent "dist/Saltify.app" "release/Saltify_macos.zip"
 
-      # ✅ NEW: Confirm ZIP exists before uploading
+      # ✅ Confirm ZIP exists before uploading
       - name: Confirm ZIP creation
         run: |
           if [ ! -f "release/Saltify_macos.zip" ]; then
@@ -140,10 +140,16 @@ jobs:
           name: SpeechTranscription_macos
           path: ./release/Saltify_macos.zip
 
+      # ✅ NEW: Confirm that artifact directory contains the uploaded file
+      - name: Echo uploaded artifact path (optional log)
+        run: |
+          echo "If upload was successful, this file should now be available in artifact viewer:"
+          ls -lh release/
+
       - name: Cleanup build folders
         run: rm -rf build *.spec dist/
 
       - name: Verify Release Output
         run: |
-          echo "Contents of release folder:"
+          echo "✅ Final release directory content:"
           ls -la release/

@@ -31,18 +31,20 @@ jobs:
       - name: Download macOS build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: SpeechTranscription_macos   
+          name: SpeechTranscription_macos
           path: artifacts/macos
 
-      - name: Copy zipped .app into artifacts root for release upload
+      - name: Find and copy Saltify_macos.zip from macOS artifact
         run: |
-          if [ -f artifacts/macos/Saltify_macos.zip ]; then
-            cp artifacts/macos/Saltify_macos.zip artifacts/Saltify_macos.zip
-          else
-            echo "❌ artifacts/macos/Saltify_macos.zip not found!"
-            ls -la artifacts/macos/
+          FOUND_PATH=$(find artifacts/macos -name "Saltify_macos.zip" | head -n 1)
+          if [ -z "$FOUND_PATH" ]; then
+            echo "❌ Saltify_macos.zip not found anywhere under artifacts/macos/"
+            find artifacts/macos
             exit 1
-          fi          
+          else
+            echo "✅ Found zip at: $FOUND_PATH"
+            cp "$FOUND_PATH" artifacts/Saltify_macos.zip
+          fi
 
       - name: Download Windows build artifacts
         uses: actions/download-artifact@v4
@@ -54,7 +56,7 @@ jobs:
         run: |
           echo "Full directory structure:"
           find . -type f -not -path "./.git/*"
-          
+
           echo "Contents of artifacts directory:"
           ls -la artifacts/
           ls -la artifacts/macos || echo "No macOS artifacts"
@@ -68,9 +70,8 @@ jobs:
           echo "Event type: ${{ github.event_name }}" >> release_notes.md
           echo "## Downloads" >> release_notes.md
 
-          if [ -f "artifacts/macos/Saltify_macos.zip" ]; then
+          if [ -f "artifacts/Saltify_macos.zip" ]; then
             echo "- macOS executable included" >> release_notes.md
-            cp artifacts/macos/Saltify_macos.zip artifacts/Saltify_macos.zip
             echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
           else
             echo "Note: macOS executable not available for this release" >> release_notes.md
@@ -120,6 +121,5 @@ jobs:
         run: |
           echo "macOS files:"
           file artifacts/macos/* || echo "No macOS files"
-          
           echo "Windows files:"
           file artifacts/windows/* || echo "No Windows files"
