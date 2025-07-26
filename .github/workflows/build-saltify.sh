@@ -56,7 +56,6 @@ ls -la "$BASE_DIR"
 
 # Install additional Python dependencies
 pip install pyinstaller importlib-metadata sacremoses tokenizers
-
 pip uninstall -y typing
 pip install nltk certifi
 
@@ -98,20 +97,7 @@ ls -la build || echo "build does not exist"
 # Ensure .app binary is executable
 chmod +x dist/Saltify.app/Contents/MacOS/Saltify || echo "❌ Could not chmod binary inside .app"
 
-# Check build output
-if [ ! -d "dist/Saltify" ]; then
-    echo "Error: dist/Saltify executable not found!"
-    ls -la dist/
-    exit 1
-fi
-
-# Organize build output into release directory
-RELEASE_DIR="release/Saltify_$(date +'%Y%m%d_%H%M%S')"
-mkdir -p "${RELEASE_DIR}"
-mv dist/Saltify "${RELEASE_DIR}"
-chmod +x "${RELEASE_DIR}/Saltify/Saltify"
-
-echo "Build complete. The executable is located in ${RELEASE_DIR}."
+# ✅ NO MORE mv dist/Saltify — this keeps Saltify.app available for zipping
 
 # Notify user (only if not running in CI/CD)
 if [[ -z "$CI" || -z "$GITHUB_ACTIONS" ]]; then
