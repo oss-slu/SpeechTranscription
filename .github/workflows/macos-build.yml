@@ -103,17 +103,41 @@ jobs:
           ./.github/workflows/build-saltify.sh
 
       - name: Show build script contents
-        run: cat .github/workflows/build-saltify.sh      
+        run: cat .github/workflows/build-saltify.sh
+
+      # ✅ NEW: Ensure Saltify.app exists before zipping
+      - name: Ensure Saltify.app exists
+        run: |
+          if [ ! -d "dist/Saltify.app" ]; then
+            echo "❌ dist/Saltify.app NOT FOUND!"
+            ls -la dist/
+            exit 1
+          else
+            echo "✅ Found dist/Saltify.app"
+            ls -la dist/Saltify.app
+          fi
 
       - name: Zip Saltify.app for macOS
         run: |
           mkdir -p release
-          ditto -c -k --sequesterRsrc --keepParent "dist/Saltify.app" "release/Saltify_macos.zip" 
-          
+          ditto -c -k --sequesterRsrc --keepParent "dist/Saltify.app" "release/Saltify_macos.zip"
+
+      # ✅ NEW: Confirm ZIP exists before uploading
+      - name: Confirm ZIP creation
+        run: |
+          if [ ! -f "release/Saltify_macos.zip" ]; then
+            echo "❌ release/Saltify_macos.zip NOT FOUND!"
+            ls -la release/
+            exit 1
+          else
+            echo "✅ ZIP created:"
+            ls -lh release/Saltify_macos.zip
+          fi
+
       - name: Upload zipped Saltify.app
         uses: actions/upload-artifact@v4
         with:
-          name: SpeechTranscription_macos   # ✅ This now matches what release.yml expects
+          name: SpeechTranscription_macos
           path: ./release/Saltify_macos.zip
 
       - name: Cleanup build folders
