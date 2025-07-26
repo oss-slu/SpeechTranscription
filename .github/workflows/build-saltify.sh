@@ -71,7 +71,9 @@ mkdir -p dist release
 
 # Build the macOS executable
 echo "Building the macOS executable..."
-pyinstaller --name=Saltify --onedir --windowed \
+pyinstaller --name=Saltify --windowed --noconfirm \
+  --osx-bundle-identifier=com.saltify.transcriber \
+  --target-architecture universal2 \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
