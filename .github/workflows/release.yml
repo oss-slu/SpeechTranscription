@@ -34,15 +34,15 @@ jobs:
           name: SpeechTranscription_macos
           path: artifacts/macos
 
-      - name: Find and copy Saltify_macos.zip from macOS artifact
+      - name: Rename downloaded ZIP to expected name
         run: |
-          FOUND_PATH=$(find artifacts/macos -name "Saltify_macos.zip" | head -n 1)
+          FOUND_PATH=$(find artifacts/macos -name "*.zip" | head -n 1)
           if [ -z "$FOUND_PATH" ]; then
-            echo "❌ Saltify_macos.zip not found anywhere under artifacts/macos/"
+            echo "❌ No ZIP file found in artifacts/macos!"
             find artifacts/macos
             exit 1
           else
-            echo "✅ Found zip at: $FOUND_PATH"
+            echo "✅ Found macOS zip: $FOUND_PATH"
             cp "$FOUND_PATH" artifacts/Saltify_macos.zip
           fi
 
@@ -121,5 +121,6 @@ jobs:
         run: |
           echo "macOS files:"
           file artifacts/macos/* || echo "No macOS files"
+          
           echo "Windows files:"
           file artifacts/windows/* || echo "No Windows files"
