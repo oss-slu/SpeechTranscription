@@ -71,30 +71,9 @@ mkdir -p dist release
 
 # Build the macOS executable
 echo "Building the macOS executable..."
-# pyinstaller --name=Saltify --windowed --noconfirm \
-#   --osx-bundle-identifier=com.saltify.transcriber \
-#   --target-architecture universal2 \
-#   --add-data "$BASE_DIR/images:images" \
-#   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
-#   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
-#   --add-binary "${PORTAUDIO_PATH:-/usr/lib/libportaudio.so}:." \
-#   --add-binary "${FFMPEG_PATH:-/usr/bin/ffmpeg}:." \
-#   --add-binary "${FFPROBE_PATH:-/usr/bin/ffprobe}:." \
-#   --add-data "$PYTHON_SITE/lightning_fabric:lightning_fabric" \
-#   --add-data "$PYTHON_SITE/whisper:whisper" \
-#   --add-data "$PYTHON_SITE/filelock:filelock" \
-#   --add-data "$PYTHON_SITE/pytorch_lightning:torchlightning" \
-#   --add-data "$PYTHON_SITE/pyannote:pyannote" \
-#   --hidden-import "lightning_fabric" \
-#   --hidden-import "torch" \
-#   --hidden-import "torchvision" \
-#   --hidden-import "pytorch_lightning" \
-#   --hidden-import "pyannote.audio" \
-#   "$BASE_DIR/GUI.py"
-
-pyinstaller --name=Saltify \
-  --windowed \
-  --osx-bundle-identifier com.saltify.app \
+pyinstaller --name=Saltify --windowed --noconfirm \
+  --osx-bundle-identifier=com.saltify.transcriber \
+  --target-architecture universal2 \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
@@ -119,8 +98,6 @@ ls -la build || echo "build does not exist"
 
 # Ensure .app binary is executable
 chmod +x dist/Saltify.app/Contents/MacOS/Saltify || echo "❌ Could not chmod binary inside .app"
-
-# ✅ NO MORE mv dist/Saltify — this keeps Saltify.app available for zipping
 
 # Notify user (only if not running in CI/CD)
 if [[ -z "$CI" || -z "$GITHUB_ACTIONS" ]]; then
