@@ -69,11 +69,12 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 # Ensure required directories exist
 mkdir -p dist release
 
-# Build the macOS executable
+# Build the macOS executable as a .app bundle
 echo "Building the macOS executable..."
 pyinstaller --name=Saltify --windowed --noconfirm \
   --osx-bundle-identifier=com.saltify.transcriber \
   --target-architecture universal2 \
+  --clean \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
@@ -98,6 +99,13 @@ ls -la build || echo "build does not exist"
 
 # Ensure .app binary is executable
 chmod +x dist/Saltify.app/Contents/MacOS/Saltify || echo "❌ Could not chmod binary inside .app"
+
+# Confirm the .app exists
+if [ ! -d "dist/Saltify.app" ]; then
+    echo "❌ ERROR: Saltify.app was not created. Check PyInstaller config."
+    ls -la dist/
+    exit 1
+fi
 
 # Notify user (only if not running in CI/CD)
 if [[ -z "$CI" || -z "$GITHUB_ACTIONS" ]]; then
