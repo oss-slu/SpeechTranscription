@@ -70,11 +70,10 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 mkdir -p dist release
 
 # Build the macOS executable as a .app bundle
-echo "Building the macOS executable..."
+echo "Building the macOS .app bundle..."
 pyinstaller --name=Saltify --windowed --noconfirm \
   --osx-bundle-identifier=com.saltify.transcriber \
-  --target-architecture universal2 \
-  --clean \
+  --target-architecture=universal2 \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
@@ -92,6 +91,7 @@ pyinstaller --name=Saltify --windowed --noconfirm \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
   "$BASE_DIR/GUI.py"
+
 
 echo "✅ PyInstaller build directory contents:"
 ls -la dist || echo "dist does not exist"
