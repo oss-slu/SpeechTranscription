@@ -74,7 +74,6 @@ mkdir -p dist release
 echo "Building the macOS executable..."
 pyinstaller --log-level=DEBUG --name=Saltify --windowed --noconfirm \
   --osx-bundle-identifier=com.saltify.transcriber \
-  --target-architecture universal2 \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
