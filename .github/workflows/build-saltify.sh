@@ -47,20 +47,19 @@ for pkg in mysql pkg-config portaudio ffmpeg; do
     else
         echo "$pkg is already installed."
     fi
+
 done
 brew services start mysql
 
-echo "Current working directory: $(pwd)"
-echo "Pre-build directory contents:"
-ls -la "$BASE_DIR"
+# Clean up incompatible packages
+pip uninstall -y typing || true
+pip uninstall -y PyYAML || true
 
 # Install additional Python dependencies
 pip install pyinstaller importlib-metadata sacremoses tokenizers
-pip uninstall -y typing || true
-pip install nltk certifi
+pip install pyyaml nltk certifi
 
 # Fix SSL issues for NLTK
-echo "Fixing SSL issues..."
 CERT_PATH=$(python -m certifi)
 export SSL_CERT_FILE=${CERT_PATH}
 export REQUESTS_CA_BUNDLE=${CERT_PATH}
@@ -69,13 +68,11 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 # Ensure required directories exist
 mkdir -p dist release
 
-# ✅ REMOVE legacy typing if present
-"$VIRTUAL_ENV/bin/python" -m pip uninstall -y typing || true
-
-# Build the macOS executable (✅ use pyinstaller from venv!)
+# Build the macOS executable
 echo "Building the macOS executable..."
-"$VIRTUAL_ENV/bin/pyinstaller" --log-level=DEBUG --name=Saltify --windowed --noconfirm \
+pyinstaller --log-level=DEBUG --name=Saltify --windowed --noconfirm \
   --osx-bundle-identifier=com.saltify.transcriber \
+  --target-architecture universal2 \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
@@ -101,11 +98,12 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# List build outputs
 echo "✅ PyInstaller build directory contents:"
 ls -la dist || echo "dist does not exist"
 ls -la build || echo "build does not exist"
 
-# Ensure .app binary is executable
+# Mark .app binary executable if it exists
 chmod +x dist/Saltify.app/Contents/MacOS/Saltify || echo "❌ Could not chmod binary inside .app"
 
 # Notify user (only if not running in CI/CD)
