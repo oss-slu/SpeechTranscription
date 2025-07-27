@@ -47,7 +47,6 @@ for pkg in mysql pkg-config portaudio ffmpeg; do
     else
         echo "$pkg is already installed."
     fi
-
 done
 brew services start mysql
 
@@ -70,9 +69,9 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 # Ensure required directories exist
 mkdir -p dist release
 
-# Build the macOS executable
+# Build the macOS executable (✅ use pyinstaller from venv!)
 echo "Building the macOS executable..."
-pyinstaller --log-level=DEBUG --name=Saltify --windowed --noconfirm \
+"$VIRTUAL_ENV/bin/pyinstaller" --log-level=DEBUG --name=Saltify --windowed --noconfirm \
   --osx-bundle-identifier=com.saltify.transcriber \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
