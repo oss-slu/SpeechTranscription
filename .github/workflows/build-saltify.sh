@@ -69,6 +69,9 @@ python -c "import nltk; nltk.download('punkt', quiet=True); nltk.download('avera
 # Ensure required directories exist
 mkdir -p dist release
 
+# ✅ REMOVE legacy typing if present
+"$VIRTUAL_ENV/bin/python" -m pip uninstall -y typing || true
+
 # Build the macOS executable (✅ use pyinstaller from venv!)
 echo "Building the macOS executable..."
 "$VIRTUAL_ENV/bin/pyinstaller" --log-level=DEBUG --name=Saltify --windowed --noconfirm \
