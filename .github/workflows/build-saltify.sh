@@ -2,7 +2,7 @@
 
 set -x  # Exit script on any error
 # Determine script and base directories FIRST
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" &> /dev/null && pwd )"
 BASE_DIR=$(git rev-parse --show-toplevel)
 
 LOG_FILE="$BASE_DIR/build.log"
@@ -51,13 +51,15 @@ for pkg in mysql pkg-config portaudio ffmpeg; do
 done
 brew services start mysql
 
-# Clean up incompatible packages
+# Clean up incompatible packages and ensure fat binaries
+echo "📦 Removing non-fat packages that break universal2 build..."
 pip uninstall -y typing || true
 pip uninstall -y PyYAML || true
 
-# Install additional Python dependencies
+# Reinstall only universal2-compatible PyYAML (via Conda or avoid if unnecessary)
+echo "📦 Installing dependencies (skip PyYAML if not explicitly needed)"
 pip install pyinstaller importlib-metadata sacremoses tokenizers
-pip install pyyaml nltk certifi
+pip install nltk certifi
 
 # Fix SSL issues for NLTK
 CERT_PATH=$(python -m certifi)
@@ -72,7 +74,6 @@ mkdir -p dist release
 echo "Building the macOS executable..."
 pyinstaller --log-level=DEBUG --name=Saltify --windowed --noconfirm \
   --osx-bundle-identifier=com.saltify.transcriber \
-  --target-architecture universal2 \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \

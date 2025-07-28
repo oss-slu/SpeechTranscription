@@ -59,15 +59,17 @@ jobs:
           source venv/bin/activate
           echo "VIRTUAL_ENV=$(pwd)/venv" >> $GITHUB_ENV
 
+      - name: Use virtualenv for all Python commands
+        run: echo "${{ github.workspace }}/venv/bin" >> $GITHUB_PATH
+
       - name: Install Dependencies in Virtual Environment
         run: |
-          source $VIRTUAL_ENV/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install --upgrade pip --no-cache-dir
+          python -m pip install -r requirements.txt --no-cache-dir
 
       - name: Install NLTK and fix SSL issues
         run: |
-          python -m pip install nltk certifi
+          python -m pip install nltk certifi --no-cache-dir
           CERT_PATH=$(python -m certifi)
           export SSL_CERT_FILE=${CERT_PATH}
           export REQUESTS_CA_BUNDLE=${CERT_PATH}
@@ -95,6 +97,7 @@ jobs:
           name: Saltify-Build-Log
           path: ${{ github.workspace }}/build.log
           if-no-files-found: ignore
+          retention-days: 30
 
       - name: Run Saltify Build Script
         run: |
@@ -105,7 +108,6 @@ jobs:
       - name: Show build script contents
         run: cat .github/workflows/build-saltify.sh
 
-      # ✅ NEW: Ensure Saltify.app exists before zipping
       - name: Ensure Saltify.app exists
         run: |
           if [ ! -d "dist/Saltify.app" ]; then
@@ -122,7 +124,6 @@ jobs:
           mkdir -p release
           ditto -c -k --sequesterRsrc --keepParent "dist/Saltify.app" "release/Saltify_macos.zip"
 
-      # ✅ Confirm ZIP exists before uploading
       - name: Confirm ZIP creation
         run: |
           if [ ! -f "release/Saltify_macos.zip" ]; then
@@ -139,8 +140,8 @@ jobs:
         with:
           name: SpeechTranscription_macos
           path: ./release/Saltify_macos.zip
+          retention-days: 30
 
-      # ✅ NEW: Confirm that artifact directory contains the uploaded file
       - name: Echo uploaded artifact path (optional log)
         run: |
           echo "If upload was successful, this file should now be available in artifact viewer:"
