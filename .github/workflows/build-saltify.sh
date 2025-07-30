@@ -72,8 +72,16 @@ mkdir -p dist release
 
 # Build the macOS executable
 echo "Building the macOS executable..."
-pyinstaller --log-level=DEBUG --name=Saltify --windowed --noconfirm \
+pyinstaller --log-level=DEBUG --name=Saltify \
+  --windowed \
+  --noconfirm \
   --osx-bundle-identifier=com.saltify.transcriber \
+  --target-architecture universal2 \
+  --clean \
+  --onedir \
+  --distpath dist \
+  --workpath build \
+  --specpath build \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
@@ -91,6 +99,7 @@ pyinstaller --log-level=DEBUG --name=Saltify --windowed --noconfirm \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
   "$BASE_DIR/GUI.py"
+
 
 # If PyInstaller fails, exit immediately with log info
 if [ $? -ne 0 ]; then
