@@ -76,7 +76,6 @@ pyinstaller --log-level=DEBUG --name=Saltify \
   --windowed \
   --noconfirm \
   --osx-bundle-identifier=com.saltify.transcriber \
-  --target-architecture universal2 \
   --clean \
   --onedir \
   --distpath dist \
@@ -99,7 +98,6 @@ pyinstaller --log-level=DEBUG --name=Saltify \
   --hidden-import "pytorch_lightning" \
   --hidden-import "pyannote.audio" \
   "$BASE_DIR/GUI.py"
-
 
 # If PyInstaller fails, exit immediately with log info
 if [ $? -ne 0 ]; then
