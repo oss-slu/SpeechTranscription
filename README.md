@@ -39,6 +39,19 @@ For details on setting up the development environment, please refer to the [DEVE
 <br />
 <br />
 
+## Known Issues and Packaging Notes
+
+When packaging this project into a standalone `.exe` (e.g., with PyInstaller), crashes may occur due to missing dependencies or data files.
+
+- **Pattern models**: `pattern` requires its `en-model.slp` file at runtime. Ensure it is included in the PyInstaller build using `--venv/Lib/site-packages/pattern/text;pattern/text"`.
+- **Python DLL errors**: If a `python311.dll` (or similar) error occurs, ensure your Python installation matches the environment used to build the project.
+- **lightning_fabric**: Must be explicitly listed in `requirements.txt` as it is required by `pyannote.audio`.
+
+### Development Notes
+- The app runs correctly when launched via `python GUI.py` in a configured environment.
+- Crashes appear only after packaging into an `.exe`.
+- To investigate `.exe` crashes, check Windows Event Logs and compare working vs non-working builds (“Sesame Street technique”).
+
 # Relaying Bugs to the Development Team
 
 You may find that some features do not work as intended. Please either email the development team explaining your issue or go to [this link](https://github.com/oss-slu/SpeechTranscription/issues) where you can create a new "issue" and describe your problem. We are happy to help diagnose and resolve problems!
