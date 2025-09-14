@@ -6,6 +6,7 @@ on:
       - testingv4artifact
       - issue169_dependency
       - issue178_build-test-failures
+      - issue-2-cicd-logging
 
 jobs:
   build-windows:
@@ -55,6 +56,19 @@ jobs:
           mkdir dist\Saltify\_internal\pattern\text\en\
           move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
       
+
+       # Added app.log to see crash logs in github action - CICD Internal Dev
+      - name: Run app for logging
+        run: |
+          set HEADLESS=true
+          python GUI.py > app.log 2>&1 || true
+          
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SpeechTranscription_logs
+          path: app.log
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
