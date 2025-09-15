@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 
 def transcribeAudio(audioFile):
     print("Starting transcription")
-    model = whisper.load_model("base.en")
-    transcribedAudio = model.transcribe(audioFile, fp16=False, language='English')
+    model = whisper.load_model("small.en")  # using small.en for better accuracy
+    transcribedAudio = model.transcribe(audioFile, fp16=False, language='English', condition_on_previous_text=False)
     print("Finished transcription")
     return transcribedAudio
 
