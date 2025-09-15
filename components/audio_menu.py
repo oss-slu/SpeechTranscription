@@ -483,12 +483,6 @@ class audioMenu(CTkFrame):
         self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
 
     def get_color_for_label(self, label):
-        """
-        Return the color hex for a label. label can be:
-         - "Speaker 1" / "Speaker 2"
-         - an alias like "C", "E", or a user-provided alias "Mom"
-        This centralizes color lookup and provides a safe fallback.
-        """
         # direct match first
         if label in SPEAKER_COLORS:
             return SPEAKER_COLORS[label]
