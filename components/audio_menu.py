@@ -481,7 +481,25 @@ class audioMenu(CTkFrame):
         self.progressCanvas.grid_remove()
         self.transcribeButton.configure(height=200)  # Reset button size
         self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
-    
+
+    def get_color_for_label(self, label):
+        """
+        Return the color hex for a label. label can be:
+         - "Speaker 1" / "Speaker 2"
+         - an alias like "C", "E", or a user-provided alias "Mom"
+        This centralizes color lookup and provides a safe fallback.
+        """
+        # direct match first
+        if label in SPEAKER_COLORS:
+            return SPEAKER_COLORS[label]
+
+        # if label is an alias, find which speaker it maps to and return that speaker color
+        for base_speaker, alias in self.speaker_aliases.items():
+            if alias == label:
+                return SPEAKER_COLORS.get(base_speaker, "#000000")
+
+        # fallback
+        return "#000000"
 
     @global_error_handler
     def labelSpeakers(self):
@@ -519,7 +537,7 @@ class audioMenu(CTkFrame):
         def apply_labels(speaker):
             current_text = self.getTranscriptionText()
             current_segments = current_text.split('\n')
-            color = SPEAKER_COLORS.get(speaker, "#FFFFFF")  # Get color for the speaker
+            color = self.get_color_for_label(speaker)
 
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
