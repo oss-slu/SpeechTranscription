@@ -520,6 +520,15 @@ class audioMenu(CTkFrame):
             current_text = self.getTranscriptionText()
             current_segments = current_text.split('\n')
             color = SPEAKER_COLORS.get(speaker, "#FFFFFF")  # Get color for the speaker
+            speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
+            speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
+            other = ""
+            if speaker == speaker1_alias:
+                other = speaker2_alias
+            else:
+                other = speaker1_alias
+
+            print(other, speaker, speaker1_alias, speaker2_alias)
 
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
@@ -528,7 +537,14 @@ class audioMenu(CTkFrame):
                     if match:
                         timestamp = match.group(1)
                         rest = match.group(2)
-                        current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
+                        bracket = rest.find(']')
+
+                        #prevent previous speaker label from being maintained
+                        print(rest[bracket + 1: bracket + 1 + len(other) + 1])
+                        if rest[bracket + 1: bracket + 1 + len(other) + 1] == other + ":":
+                            current_segments[idx] = f"[{timestamp}] {speaker}: {rest[bracket + 3 + len(other):]}"
+                        elif rest[bracket + 1: bracket + 1 + len(speaker) + 1] != speaker + ":":
+                            current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
                     else:
                         current_segments[idx] = f"{speaker}: {line}"
                     var.set(0)
