@@ -1,36 +1,46 @@
 name: Release
+
 on:
   push:
     branches:
       - issue178_build-test-failures
       - main
+
 permissions:
+  id-token: write    # Required for provenance
   contents: write
   packages: read
   actions: read
+
 jobs:
   call-macos-build:
     uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml@build_fixes_copy
+
   call-windows-build:
     uses: oss-slu/SpeechTranscription/.github/workflows/windows-build.yml@build_fixes_copy
+
   release:
     needs: [call-macos-build, call-windows-build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Create artifacts directory
         run: mkdir -p artifacts/macos artifacts/windows
+
       - name: Download macOS build artifacts
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_macos
           path: artifacts/macos
+
       - name: Download Windows build artifacts
         uses: actions/download-artifact@v4
         with:
           name: SpeechTranscription_windows
           path: artifacts/windows
+
       - name: List directory structure
         run: |
           echo "Full directory structure:"
@@ -40,6 +50,7 @@ jobs:
           ls -la artifacts/
           ls -la artifacts/macos || echo "No macOS artifacts"
           ls -la artifacts/windows || echo "No Windows artifacts"
+
       - name: Create project ZIP
         run: |
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
@@ -60,10 +71,24 @@ jobs:
             zip -j artifacts/Saltify_windows.zip artifacts/windows/*
           else
             echo "Note: Windows executable not available for this release" >> release_notes.md
-          fi
           
           echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
           echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
+
+      # 🔑 Generate SLSA Provenance for macOS artifact
+      - name: Generate SLSA Provenance for macOS
+        if: exists('artifacts/Saltify_macos.zip')
+        uses: slsa-framework/slsa-github-generator/actions/attest-build-provenance@v1
+        with:
+          subject-path: "artifacts/Saltify_macos.zip"
+
+      # 🔑 Generate SLSA Provenance for Windows artifact
+      - name: Generate SLSA Provenance for Windows
+        if: exists('artifacts/Saltify_windows.zip')
+        uses: slsa-framework/slsa-github-generator/actions/attest-build-provenance@v1
+        with:
+          subject-path: "artifacts/Saltify_windows.zip"
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -75,7 +100,8 @@ jobs:
           body_path: ./release_notes.md
           draft: false
           prerelease: false
-      - name: Upload Release Assets
+
+      - name: Upload macOS Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,7 +110,8 @@ jobs:
           asset_path: artifacts/Saltify_macos.zip
           asset_name: Saltify_macos.zip
           asset_content_type: application/zip
-      - name: Upload Release Assets
+
+      - name: Upload Windows Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
