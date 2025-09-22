@@ -40,7 +40,6 @@ def formatTranscriptionWithTimestamps(transcription: str, timestamps: list):
 def transcribe(audioFile):
     transcription = transcribeAudio(audioFile)
     transcriptionText = formatTranscription(transcription["text"])
-
     # Use absolute times with millisecond precision
     timestamps = []
     for seg in transcription["segments"]:
@@ -48,7 +47,6 @@ def transcribe(audioFile):
         minutes = start_ms // 60000
         seconds = (start_ms % 60000) // 1000
         timestamps.append(f"{minutes}:{seconds:02}")
-
     # Check if timestamps cover the entire file duration
     audio = AudioSegment.from_file(audioFile)
     audio_duration_ms = len(audio)
@@ -56,12 +54,10 @@ def transcribe(audioFile):
         last_segment_end = transcription["segments"][-1]["end"] * 1000
         if abs(last_segment_end - audio_duration_ms) > 1000:
             print(f"[WARNING] Last transcription segment ends at {last_segment_end/1000:.2f}s "
-                  f"but audio file is {audio_duration_ms/1000:.2f}s. Possible early cutoff.")
-
+                  f"but audio file is {audio_duration_ms/1000:.2f}s.")
     transcriptionTextWithTimestamps = formatTranscriptionWithTimestamps(
         transcriptionText, timestamps
     )
-
     return transcriptionTextWithTimestamps
 
 def diarizeAndTranscribe(audioFile):
@@ -75,41 +71,31 @@ def diarizeAndTranscribe(audioFile):
         pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization', use_auth_token=token)
         DEMO_FILE = {'uri': 'blabal', 'audio': audioFile}
         dz = pipeline(DEMO_FILE)
-
-
         audio = AudioSegment.from_wav(audioFile)
         spacer = AudioSegment.silent(duration=2000)
         sounds = spacer
         segments = []
         dzList = []
-
         diarization = str(dz).splitlines()
-
         for l in diarization:
             start, end = tuple(re.findall(r'[0-9]+:[0-9]+:[0-9]+\.[0-9]+', string=l))
             start = int(millisec(start))
             end = int(millisec(end))
-            
             # Removed unconditional -2000 shift; keep only if absolutely needed
             dzList.append([start, end, l.split(" ")[-1]])
             segments.append(len(sounds))
             sounds = sounds.append(audio[start:end], crossfade=0)
             sounds = sounds.append(spacer, crossfade=0)
-
         print("Finished diarization")
-
         # Transcription
         result = transcribeAudio(audioFile)
         captions = [[int(caption["start"] * 1000), int(caption["end"] * 1000), caption["text"]] for caption in result["segments"]]
-
         transcriptionText = ""
         timestamps = []
-
         for caption in captions:
             startTime, endTime, text = caption
             timeRange = -1
             speaker = "UNKNOWN"
-
             for x in range(len(dzList)):
                 duration = dzList[x][1] - dzList[x][0]
                 start = dzList[x][0]
@@ -119,11 +105,9 @@ def diarizeAndTranscribe(audioFile):
                     ((start <= startTime) and (startTime <= end))) and (timeRange < duration):
                     timeRange = duration
                     speaker = dzList[x][2]
-
             timestamp = f"{int(startTime // 60000)}:{int((startTime % 60000) // 1000):02}"
             timestamps.append(timestamp)
             transcriptionText += f"{speaker} - {text}\n"
-        
         transcript = formatTranscriptionWithTimestamps(transcriptionText, timestamps)
         return transcript
     else:
