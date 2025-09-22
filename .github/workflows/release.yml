@@ -1,18 +1,23 @@
 name: Release
+
 on:
   push:
     branches:
       - issue178_build-test-failures
       - main
+
 permissions:
+  attestations: write
   contents: write
+  id-token: write
   packages: read
   actions: read
+
 jobs:
   call-macos-build:
-    uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml@build_fixes_copy
+    uses: ./.github/workflows/macos-build.yml
   call-windows-build:
-    uses: oss-slu/SpeechTranscription/.github/workflows/windows-build.yml@build_fixes_copy
+    uses: ./.github/workflows/windows-build.yml
   release:
     needs: [call-macos-build, call-windows-build]
     runs-on: ubuntu-latest
@@ -64,17 +69,20 @@ jobs:
           
           echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
           echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
+      - uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: artifacts/Saltify_*.zip
       - name: Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          release_name: Release ${{ github.run_number }}
+          name: Release ${{ github.run_number }}
           body_path: ./release_notes.md
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:

@@ -1,16 +1,16 @@
-on: 
-  push:
-    branches:
-      - main
-      - fix-mac-exe
-      - testingv4artifact
-      - issue169_dependency
-      - issue178_build-test-failures
+name: macOS Build Reusable
+
+on:
+  workflow_call:
+
+permissions:
+  attestations: write
+  contents: read
+  id-token: write
 
 jobs:
   build-macos:
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
@@ -34,6 +34,9 @@ jobs:
       - run: pip uninstall -y typing
       - name: Build executable
         run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+      - uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: dist/Saltify
       - uses: actions/upload-artifact@v4
         if: always()
         with:
