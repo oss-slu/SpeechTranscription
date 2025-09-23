@@ -548,7 +548,6 @@ class audioMenu(CTkFrame):
             else:
                 other = speaker1_alias
 
-
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
                     line = current_segments[idx]
