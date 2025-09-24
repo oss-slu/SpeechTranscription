@@ -481,7 +481,19 @@ class audioMenu(CTkFrame):
         self.progressCanvas.grid_remove()
         self.transcribeButton.configure(height=200)  # Reset button size
         self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
-    
+
+    def get_color_for_label(self, label):
+        # direct match first
+        if label in SPEAKER_COLORS:
+            return SPEAKER_COLORS[label]
+
+        # if label is an alias, find which speaker it maps to and return that speaker color
+        for base_speaker, alias in self.speaker_aliases.items():
+            if alias == label:
+                return SPEAKER_COLORS.get(base_speaker, "#000000")
+
+        # fallback
+        return "#000000"
 
     @global_error_handler
     def labelSpeakers(self):
@@ -519,7 +531,22 @@ class audioMenu(CTkFrame):
         def apply_labels(speaker):
             current_text = self.getTranscriptionText()
             current_segments = current_text.split('\n')
-            color = SPEAKER_COLORS.get(speaker, "#FFFFFF")  # Get color for the speaker
+            color = self.get_color_for_label(speaker)
+            speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
+            speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
+            other = ""
+            if speaker == speaker1_alias:
+                other = speaker2_alias
+            else:
+                other = speaker1_alias
+
+            speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
+            speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
+            other = ""
+            if speaker == speaker1_alias:
+                other = speaker2_alias
+            else:
+                other = speaker1_alias
 
             for var, idx in self.segment_selections:
                 if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
@@ -528,7 +555,13 @@ class audioMenu(CTkFrame):
                     if match:
                         timestamp = match.group(1)
                         rest = match.group(2)
-                        current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
+                        bracket = rest.find(']')
+
+                        #prevent previous speaker label from being maintained
+                        if rest[bracket + 1: bracket + 1 + len(other) + 1] == other + ":":
+                            current_segments[idx] = f"[{timestamp}] {speaker}: {rest[bracket + 3 + len(other):]}"
+                        elif rest[bracket + 1: bracket + 1 + len(speaker) + 1] != speaker + ":":
+                            current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
                     else:
                         current_segments[idx] = f"{speaker}: {line}"
                     var.set(0)

@@ -1,10 +1,7 @@
 # Use 'pip install -r requirements.txt' to install all requirements at once.
 
 pyaudio
-
-# wave trying to download MySQL-python causing the requirements installation to fail on Windows - CICD Internal Dev
 # wave
-
 nltk # (see Issue 55 https://github.com/oss-slu/SpeechTranscription/issues/55 for instructions on installing nltk - it is more than just 'pip install nltk')
 ffmpeg
 ffprobe
