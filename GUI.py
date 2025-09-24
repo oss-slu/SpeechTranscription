@@ -1,3 +1,5 @@
+# Adding Logging - CICD Internal Dev 
+import logging
 
 # main.py
 from customtkinter import *
@@ -9,6 +11,19 @@ from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 import os
 import sys
+
+# Logging setup - CICD Internal Dev 
+logging.basicConfig(
+    level=logging.INFO,  
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),  # logs to console
+        logging.FileHandler("app.log", mode="w")  # logs to a file
+    ]
+)
+
+logger = logging.getLogger("SpeechTranscription")
+logger.info("Starting SpeechTranscription app")
 
 class mainGUI(CTk):
     @global_error_handler
@@ -150,6 +165,17 @@ class mainGUI(CTk):
         
         self.mainloop()
 
-
 if __name__ == "__main__":
-    gui = mainGUI()
+    try:
+        # If HEADLESS=true is set, skip launching the GUI window.
+        # This prevents Tkinter from crashing in environments without a display in GitHub Actions. - CICD Internal Dev
+        headless = os.environ.get("HEADLESS", "false").lower() == "true"
+        if headless:
+            logger.info("Running in headless mode. GUI mainloop will be skipped.")
+            gui = mainGUI()  # You can still initialize for tests if needed, but GUI won't block
+        else:
+            # Launch the GUI normally
+            gui = mainGUI()  # __init__ already calls mainloop()
+    except Exception as e:
+        logger.exception("An error occurred while running the GUI.")
+        raise
