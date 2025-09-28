@@ -13,14 +13,14 @@ python-docx
 git+https://github.com/openai/whisper.git
 sv_ttk
 #pattern
-git+https://github.com/clips/pattern.git
+git+https://github.com/clips/pattern.git #pattern is required for text processing; install from GitHub because PyPI version is outdated
 customtkinter
 pyannote.audio
 matplotlib
 numpy
 simple_diarizer
 python-dotenv
-lightning_fabric
+lightning_fabric # required for pyannote.audio / torch ecosystem
 pillow
 
 # For testing purposes
