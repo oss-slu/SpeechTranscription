@@ -47,7 +47,7 @@ jobs:
 
       - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
       - run: pip uninstall -y typing
-      - run: pyinstaller --name Saltify --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py --add-data "images;images" --add-data "components;components" 
+      - run: pyinstaller --name Saltify --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py --add-data "images;images" --add-data "components;components" --add-data "site-packages\pattern\text;pattern/text" --add-data "site-packages\lightning_fabric;lightning_fabric" --add-data "site-packages\pyannote;pyannote" --add-data "site-packages\torch;torch" --add-data "site-packages\torchaudio;torchaudio"
 
       - shell: cmd
         run: |
