@@ -68,7 +68,7 @@ def diarizeAndTranscribe(audioFile):
     if token:
         # Diarization
         print("Starting diarization")
-        pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization', use_auth_token=token)
+        pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization', token=token)
         DEMO_FILE = {'uri': 'blabal', 'audio': audioFile}
         dz = pipeline(DEMO_FILE)
         audio = AudioSegment.from_wav(audioFile)
