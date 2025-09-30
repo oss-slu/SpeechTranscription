@@ -14,7 +14,6 @@ git+https://github.com/openai/whisper.git
 sv_ttk
 #pattern
 git+https://github.com/clips/pattern.git #pattern is required for text processing; install from GitHub because PyPI version is outdated
-git+https://github.com/Akascape/CTkXYFrame.git
 customtkinter
 pyannote.audio
 matplotlib
