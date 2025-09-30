@@ -45,8 +45,10 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-      - run: pip uninstall -y typing
+      #- run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+      #- run: pip uninstall -y typing
+      - run: pip install git+https://github.com/clips/pattern.git
+      - run: cd ..
       - run: ls
       - run: pyinstaller --name Saltify --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py 
       - shell: cmd 
