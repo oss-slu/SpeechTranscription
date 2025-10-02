@@ -4,6 +4,7 @@ on:
     branches:
       - issue178_build-test-failures
       - main
+      - feature/githubRelease
 permissions:
   contents: write
   packages: read
