@@ -89,11 +89,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Saltify_windows_logs
+          name: SpeechTranscription_windows_logs
           path: app.log
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Saltify_windows
+          name: SpeechTranscription_windows
           path: dist/Saltify.exe
