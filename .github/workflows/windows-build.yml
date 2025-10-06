@@ -50,6 +50,20 @@ jobs:
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
 
+      # ------------------------
+      # Download LanguageTool
+      # ------------------------
+      - name: Download LanguageTool
+        run: |
+          python -m language_tool_python download
+
+      - name: Copy LanguageTool to project folder
+        run: |
+          xcopy "%USERPROFILE%\.cache\language_tool_python\LanguageTool-5.*" "LanguageTool" /E /I /Y
+
+      # ------------------------
+      # Build Windows EXE
+      # ------------------------
       - name: Build Windows EXE
         shell: cmd
         run: |
@@ -60,6 +74,7 @@ jobs:
           --add-data "images;images" ^
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
+          --add-data "LanguageTool;LanguageTool" ^  # Bundled LanguageTool
           --collect-data whisper ^
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^
