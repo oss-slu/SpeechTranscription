@@ -7,6 +7,7 @@ Before installing, ensure your system meets these requirements:
 # Installation Instructions
 * Download the latest release zip for your operating system from the GitHub Releases page (https://github.com/oss-slu/SpeechTranscription/releases):
     * saltify_macos.zip for macOS
+    * saltify_windows.zip for Windows
 * Extract the zip file to a preferred location on your computer.
     * Right-click the downloaded file
     * Extract All
