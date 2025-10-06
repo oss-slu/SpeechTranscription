@@ -12,7 +12,7 @@ jobs:
   call-macos-build:
     uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml@build_fixes_copy
   call-windows-build:
-    uses: oss-slu/SpeechTranscription/.github/workflows/windows-build.yml@build_fixes_copy
+    uses: ./.github/workflows/windows-build.yml
   release:
     needs: [call-macos-build, call-windows-build]
     runs-on: ubuntu-latest
