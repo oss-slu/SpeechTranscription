@@ -4,7 +4,6 @@ on:
     branches:
       - issue178_build-test-failures
       - main
-      - testRelease#262
 permissions:
   contents: write
   packages: read

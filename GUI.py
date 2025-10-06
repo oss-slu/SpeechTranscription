@@ -11,15 +11,6 @@ from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 import os
 import sys
-import language_tool_python
-
-if getattr(sys, 'frozen', False):
-    base_path = sys._MEIPASS
-else:
-    base_path = os.path.abspath(".")
-
-lt_path = os.path.join(base_path, "LanguageTool")
-tool = language_tool_python.LanguageTool('en-US', path=lt_path, verbose=False)
 
 # Logging setup - CICD Internal Dev 
 logging.basicConfig(
