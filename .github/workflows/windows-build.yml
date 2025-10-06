@@ -1,7 +1,4 @@
-name: Build SpeechTranscription (Windows)
-
 on:
-  workflow_call:
   push:
     branches:
       - main
@@ -10,6 +7,7 @@ on:
       - issue169_dependency
       - issue178_build-test-failures
       - issue-2-cicd-logging
+      - testRelease#262
 
 jobs:
   build-windows:
@@ -17,94 +15,59 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
       - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install Java
+        shell: powershell
+        run: |
+          if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+            Write-Host "Java not found, installing JDK 11..."
+            choco install jdk11 -y
+          } else {
+            Write-Host "Java is already installed."
+          }
+
+      - name: Install Specific Python Version
+        uses: actions/setup-python@v4
         with:
           python-version: 3.11.7
 
-      - uses: actions/cache@v3
+      - name: Install NLTK
+        run: |
+          pip install nltk
+          python -m nltk.downloader punkt
+      
+      - name: Cache Python packages
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-      - name: Install system tools
-        shell: powershell
+      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+      - run: pip uninstall -y typing
+      - run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+
+      - shell: cmd 
         run: |
-          choco install ffmpeg -y
+          robocopy build_assets dist/Saltify /e /v 
+          mkdir dist\Saltify\_internal\lightning_fabric
+          robocopy dist/Saltify/_internal/lightning dist/Saltify/_internal/lightning_fabric /e /v
+          mkdir dist\Saltify\_internal\pattern\text\en\
+          move dist\Saltify\en-model.slp dist\Saltify\_internal\pattern\text\en\
+      
 
-      - name: Install Python requirements
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip install pyinstaller pipwin mysql-connector-python
-          pipwin install pyaudio
-          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
-
-      - name: Initialize Git submodules
-        run: git submodule update --init --recursive
-
-      - name: Remove obsolete typing package
-        run: pip uninstall -y typing || echo "typing not installed"
-
-      # ------------------------
-      # Download LanguageTool
-      # ------------------------
-      - name: Download LanguageTool
-        run: |
-          python -m language_tool_python download
-
-      - name: Copy LanguageTool to project folder
-        run: |
-          xcopy "%USERPROFILE%\.cache\language_tool_python\LanguageTool-5.*" "LanguageTool" /E /I /Y
-
-      # ------------------------
-      # Build Windows EXE
-      # ------------------------
-      - name: Build Windows EXE
-        shell: cmd
-        run: |
-          pyinstaller --name Saltify ^
-          --windowed ^
-          --noconfirm ^
-          --onefile ^
-          --add-data "images;images" ^
-          --add-data "build_assets\\en-model.slp;pattern/text/en" ^
-          --add-data "CTkXYFrame;CTkXYFrame" ^
-          --add-data "LanguageTool;LanguageTool" ^  # Bundled LanguageTool
-          --collect-data whisper ^
-          --collect-data lightning_fabric ^
-          --collect-data pytorch_lightning ^
-          --collect-data pyannote.audio ^
-          --copy-metadata torch ^
-          --copy-metadata tqdm ^
-          --copy-metadata regex ^
-          --copy-metadata sacremoses ^
-          --copy-metadata requests ^
-          --copy-metadata packaging ^
-          --copy-metadata filelock ^
-          --copy-metadata numpy ^
-          --copy-metadata tokenizers ^
-          --copy-metadata importlib_metadata ^
-          --collect-data sv_ttk ^
-          --hidden-import "lightning_fabric" ^
-          --hidden-import "torch" ^
-          --hidden-import "torchvision" ^
-          --hidden-import "pytorch_lightning" ^
-          --hidden-import "pyannote.audio" ^
-          GUI.py
-
-      - name: Run GUI headless for log
+       # Added app.log to see crash logs in github action - CICD Internal Dev
+      - name: Run app for logging
         run: |
           set HEADLESS=true
           python GUI.py > app.log 2>&1 || true
-
+          
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: SpeechTranscription_windows_logs
+          name: SpeechTranscription_logs
           path: app.log
 
       - uses: actions/upload-artifact@v4
