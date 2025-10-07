@@ -10,7 +10,6 @@ on:
       - issue169_dependency
       - issue178_build-test-failures
       - issue-2-cicd-logging
-      - testRelease#262
 
 jobs:
   build-windows:
