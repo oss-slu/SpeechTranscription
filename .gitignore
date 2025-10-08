@@ -8,6 +8,8 @@ ffmpeg
 diarization.txt
 user_settings.txt
 venv/
+dist/
+venv39/
 myenv/
 GUI.spec
 build/

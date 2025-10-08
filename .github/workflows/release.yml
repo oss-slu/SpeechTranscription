@@ -40,6 +40,15 @@ jobs:
           ls -la artifacts/
           ls -la artifacts/macos || echo "No macOS artifacts"
           ls -la artifacts/windows || echo "No Windows artifacts"
+      - name: Include Client Installation Guide
+        run: |
+          if [ -f "Client_Installation_Guide.md" ]; then
+            echo "Adding Client_Installation_Guide.md to artifacts..."
+            cp Client_Installation_Guide.md artifacts/macos/ || true
+            cp Client_Installation_Guide.md artifacts/windows/ || true
+          else
+            echo "Warning: Client_Installation_Guide.md not found!"
+          fi
       - name: Create project ZIP
         run: |
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
