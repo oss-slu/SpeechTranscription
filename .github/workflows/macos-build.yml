@@ -31,17 +31,15 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-      - name: Install system tools
-        shell: powershell
+      - name: Install system dependencies
         run: |
-          choco install ffmpeg -y
+          brew install ffmpeg portaudio
 
-      - name: Install Python requirements
+      - name: Install Python dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip install pyinstaller pipwin mysql-connector-python
-          pipwin install pyaudio
+          pip install mysql-connector-python pyaudio
           python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
@@ -50,41 +48,41 @@ jobs:
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
 
-      - name: Build macOS EXE
-        shell: cmd
+      - name: Build macOS App
         run: |
-          pyinstaller --name Saltify ^
-          --windowed ^
-          --noconfirm ^
-          --onefile ^
-          --add-data "images;images" ^
-          --add-data "build_assets\\en-model.slp;pattern/text/en" ^
-          --add-data "CTkXYFrame;CTkXYFrame" ^
-          --collect-data whisper ^
-          --collect-data lightning_fabric ^
-          --collect-data pytorch_lightning ^
-          --collect-data pyannote.audio ^
-          --copy-metadata torch ^
-          --copy-metadata tqdm ^
-          --copy-metadata regex ^
-          --copy-metadata sacremoses ^
-          --copy-metadata requests ^
-          --copy-metadata packaging ^
-          --copy-metadata filelock ^
-          --copy-metadata numpy ^
-          --copy-metadata tokenizers ^
-          --copy-metadata importlib_metadata ^
-          --collect-data sv_ttk ^
-          --hidden-import "lightning_fabric" ^
-          --hidden-import "torch" ^
-          --hidden-import "torchvision" ^
-          --hidden-import "pytorch_lightning" ^
-          --hidden-import "pyannote.audio" ^
-          GUI.py
+          pyinstaller \
+            --name "Saltify" \
+            --windowed \
+            --noconfirm \
+            --onefile \
+            --add-data "images:images" \
+            --add-data "build_assets/en-model.slp:pattern/text/en" \
+            --add-data "CTkXYFrame:CTkXYFrame" \
+            --collect-data whisper \
+            --collect-data lightning_fabric \
+            --collect-data pytorch_lightning \
+            --collect-data pyannote.audio \
+            --copy-metadata torch \
+            --copy-metadata tqdm \
+            --copy-metadata regex \
+            --copy-metadata sacremoses \
+            --copy-metadata requests \
+            --copy-metadata packaging \
+            --copy-metadata filelock \
+            --copy-metadata numpy \
+            --copy-metadata tokenizers \
+            --copy-metadata importlib_metadata \
+            --collect-data sv_ttk \
+            --hidden-import lightning_fabric \
+            --hidden-import torch \
+            --hidden-import torchvision \
+            --hidden-import pytorch_lightning \
+            --hidden-import pyannote.audio \
+            GUI.py
 
-      - name: Run GUI headless for log
+      - name: Test GUI headless for log
         run: |
-          set HEADLESS=true
+          export HEADLESS=true
           python GUI.py > app.log 2>&1 || true
 
       - uses: actions/upload-artifact@v4
@@ -97,4 +95,4 @@ jobs:
         if: always()
         with:
           name: SpeechTranscription_macOS
-          path: dist/Saltify.exe
+          path: dist/Saltify
