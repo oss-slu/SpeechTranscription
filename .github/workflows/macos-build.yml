@@ -36,7 +36,7 @@ jobs:
           brew install mysql pkg-config
           brew install ffmpeg portaudio
           brew install ffmpeg
-          pip install pyaudio
+          pip install pyaudio 
 
 
       - name: Install Python dependencies
@@ -83,17 +83,6 @@ jobs:
             --hidden-import pytorch_lightning \
             --hidden-import pyannote.audio \
             GUI.py
-
-      - name: Test GUI headless for log
-        run: |
-          export HEADLESS=true
-          python GUI.py > app.log 2>&1 || true
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: SpeechTranscription_macOS_logs
-          path: app.log
 
       - uses: actions/upload-artifact@v4
         if: always()
