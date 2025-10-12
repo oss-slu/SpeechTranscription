@@ -4,6 +4,7 @@ on:
     branches:
       - issue178_build-test-failures
       - main
+      - macOS-testRelease
 permissions:
   contents: write
   packages: read
