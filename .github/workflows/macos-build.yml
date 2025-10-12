@@ -33,13 +33,17 @@ jobs:
 
       - name: Install system dependencies
         run: |
+          brew install mysql pkg-config
           brew install ffmpeg portaudio
+          brew install ffmpeg
+          pip install pyaudio
+
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip install mysql-connector-python pyaudio
+          pip3 install mysql-connector-python
           python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
