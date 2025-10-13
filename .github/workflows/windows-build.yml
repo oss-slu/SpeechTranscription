@@ -10,7 +10,6 @@ on:
       - issue169_dependency
       - issue178_build-test-failures
       - issue-2-cicd-logging
-      - macOS-testRelease
 
 jobs:
   build-windows:
