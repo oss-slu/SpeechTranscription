@@ -34,7 +34,6 @@ jobs:
         run: |
           brew install mysql pkg-config
           brew install ffmpeg portaudio
-          brew install ffmpeg
           pip install pyaudio 
 
 
@@ -82,9 +81,20 @@ jobs:
             --hidden-import pytorch_lightning \
             --hidden-import pyannote.audio \
             GUI.py
+      
+      - name: Run GUI headless for log
+        run: |
+          set HEADLESS=true
+          python GUI.py > app.log 2>&1 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SpeechTranscription_windows_logs
+          path: app.log
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: SpeechTranscription_macOS
-          path: dist/Saltify
+          path: dist/Saltify.app
