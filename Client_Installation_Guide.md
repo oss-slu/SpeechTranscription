@@ -4,7 +4,7 @@
 Before installing, ensure your system meets these requirements:
 * Java: Installed on your system [Download Here](https://www.oracle.com/java/technologies/downloads/)
 
-# Installation Instructions
+# Installation Instructions (For Both MacOs and Windows)
 * Download the latest release zip for your operating system from the GitHub Releases page (https://github.com/oss-slu/SpeechTranscription/releases):
     * saltify_macos.zip for macOS
     * saltify_windows.zip for Windows
