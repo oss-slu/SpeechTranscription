@@ -19,5 +19,5 @@ Before installing, ensure your system meets these requirements:
 
 # Notes for Clients
 * You do not need to modify environment variables—everything required for running the app is pre-packaged.
-* The application does not require Python installation if packaged with the executable (for releases).
+* The application does not require Python installation if packaged with the executable which means for releases.
 * The app takes some time to open.
