@@ -60,7 +60,9 @@ jobs:
           
           if [ -d "artifacts/macos" ] && [ "$(ls -A artifacts/macos)" ]; then
             echo "- macOS executable included" >> release_notes.md
-            zip -j artifacts/Saltify_macos.zip artifacts/macos/*
+            cd artifacts/macos
+            zip -r ../Saltify_macos.zip ./*
+            cd ../..
           else
             echo "Note: macOS executable not available for this release" >> release_notes.md
           fi
