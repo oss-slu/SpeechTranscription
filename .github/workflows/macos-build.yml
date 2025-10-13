@@ -87,4 +87,4 @@ jobs:
         if: always()
         with:
           name: SpeechTranscription_macOS
-          path: dist/Saltify.app
+          path: dist/Saltify
