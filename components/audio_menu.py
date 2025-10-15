@@ -9,6 +9,7 @@ from audio import AudioManager
 from grammar import GrammarChecker
 from export import Exporter
 import diarizationAndTranscription
+import addConventions
 import threading
 import time
 import re
@@ -729,7 +730,12 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def applyCorrection(self):
         unlockItem(self.conventionBox)
-        self.conventionBox.insert("end", self.correctionEntryBox.get("1.0", "end"))
+        correctedSentence = self.correctionEntryBox.get("1.0", "end")
+        timestart = correctedSentence.index("[")
+        timeend = correctedSentence.index("]")
+        timestamp = correctedSentence[timestart:timeend+1]
+        correctedSentence = timestamp + " " + addConventions.removeErrorCoding(correctedSentence[timeend+1:]) + "\n"
+        self.conventionBox.insert("end", correctedSentence)
         self.correctionEntryBox.delete("1.0", "end")
         self.manageGrammarCorrection()
 
