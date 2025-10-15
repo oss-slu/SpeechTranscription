@@ -86,7 +86,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: SpeechTranscription_windows_logs
+          name: SpeechTranscription_macos_logs
           path: app.log
 
       - uses: actions/upload-artifact@v4
