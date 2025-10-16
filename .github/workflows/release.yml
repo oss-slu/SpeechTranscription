@@ -10,7 +10,7 @@ permissions:
   actions: read
 jobs:
   call-macos-build:
-    uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml
+    uses: oss-slu/SpeechTranscription/.github/workflows/macos-build.yml@build_fixes_copy
   call-windows-build:
     uses: ./.github/workflows/windows-build.yml
   release:
