@@ -53,12 +53,15 @@ jobs:
 
       - name: Build macOS App
         run: |
+        NLTK_DATA=$(python -c "import nltk; print(nltk.data.find('tokenizers/punkt').root)")
+        echo "NLTK data path: $NLTK_DATA"
           pyinstaller \
             --name "Saltify" \
             --windowed \
             --noconfirm \
             --onefile \
             --add-data "images:images" \
+            --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "CTkXYFrame:CTkXYFrame" \
             --collect-data whisper \
