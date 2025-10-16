@@ -53,7 +53,7 @@ jobs:
 
       - name: Build macOS App
         run: |
-          NLTK_DATA=$(python -c "import nltk; print(nltk.data.find('tokenizers/punkt').root)")
+          NLTK_DATA=$(python -c "import nltk; print(nltk.data.find('tokenizers/punkt').path)")
           echo "NLTK data path: $NLTK_DATA"
           pyinstaller \
             --name "Saltify" \
