@@ -82,27 +82,9 @@ jobs:
             --hidden-import pytorch_lightning \
             --hidden-import pyannote.audio \
             GUI.py
-      
-      - name: Upload macOS Artifact
-        if: always()
-        run: |
-          echo "Checking for built app..."
-          if [ -d "dist/Saltify.app" ]; then
-            echo "✅ Found Saltify.app, uploading..."
-            mv dist/Saltify.app dist/Saltify  # normalize path if needed
-          elif [ -f "dist/Saltify" ]; then
-            echo "✅ Found Saltify executable, uploading..."
-          else
-            echo "❌ No Saltify output found in dist/"
-            ls -R dist || echo "dist/ not found"
-            exit 1
-          fi
-        shell: bash
 
       - uses: actions/upload-artifact@v4
-        if: success()
+        if: always()
         with:
           name: SpeechTranscription_macOS
-          path: dist/Saltify*
-          if-no-files-found: error
-
+          path: dist/Saltify
