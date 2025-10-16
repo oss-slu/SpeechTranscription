@@ -50,6 +50,15 @@ jobs:
           else
             echo "Warning: Client_Installation_Guide.md not found!"
           fi
+      - name: Restore executable permissions for macOS build
+        run: |
+          if [ -f "artifacts/macos/Saltify" ]; then
+            chmod +x artifacts/macos/Saltify
+            echo "Restored executable permission for macOS binary."
+          else
+            echo "Warning: macOS executable not found!"
+          fi
+
       - name: Create project ZIP
         run: |
           echo "Build number: ${{ github.run_number }}" >> release_notes.md
