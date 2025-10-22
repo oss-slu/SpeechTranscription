@@ -49,9 +49,11 @@ jobs:
 
       - name: Copy NLTK data into project
         run: |
-          mkdir -p nltk_data
-          cp -r /Users/runner/nltk_data/* nltk_data/ || true
 
+          mkdir -p nltk_data/corpora
+          cp -r /Users/runner/nltk_data/* nltk_data/ || true
+          ls -R nltk_data
+          
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
 
@@ -67,7 +69,7 @@ jobs:
             --windowed \
             --noconfirm \
             --onefile \
-            --add-data "nltk_data:nltk_data" \
+            --add-data "nltk_data:./nltk_data"
             --add-data "images:images" \
             --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "build_assets/en-model.slp:pattern/text/en" \
