@@ -10,7 +10,7 @@ on:
       - issue169_dependency
       - issue178_build-test-failures
       - issue-2-cicd-logging
-      - feature/fixingGrammarCheck
+      - feature/windowsBuildBug
 
 jobs:
   build-windows:
@@ -54,7 +54,7 @@ jobs:
         shell: cmd
         run: |
           pyinstaller --name Saltify ^
-          --windowed ^
+          --nowindowed ^
           --noconfirm ^
           --onefile ^
           --add-data "images;images" ^
