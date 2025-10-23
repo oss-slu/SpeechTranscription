@@ -1,5 +1,15 @@
 # Adding Logging - CICD Internal Dev 
 import logging
+import os
+import sys
+import nltk  # type: ignore
+
+
+# Ensure NLTK knows where to find the bundled data when running as a frozen app
+app_dir = os.path.dirname(os.path.abspath(__file__))
+nltk_data_dir = os.path.join(app_dir, "nltk_data")
+if os.path.exists(nltk_data_dir):
+    nltk.data.path.append(nltk_data_dir)
 
 # main.py
 from customtkinter import *
@@ -9,8 +19,7 @@ from components.audio_menu import plotAudio
 from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
-import os
-import sys
+
 
 # Logging setup - CICD Internal Dev 
 logging.basicConfig(
