@@ -53,7 +53,7 @@ jobs:
 
       - name: Unzip NLTK corpora
         run: |
-          ls /Users/runner/nltk_data
+          ls /Users/runner/nltk_data/corpora
 
 
       - name: Initialize Git submodules
