@@ -50,26 +50,20 @@ jobs:
           
           # ✅ Download NLTK resources for offline use
           python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon wordnet omw-1.4
+
+          for f in nltk_data/corpora/*.zip; do
+          echo "📦 Unzipping $f..."
+          unzip -o "$f" -d "${f%.zip}"
+          rm "$f"
+          done
+          echo "✅ Final NLTK corpora:"
+          find nltk_data/corpora -type f | grep lexnames || true
           
           # ✅ Copy NLTK data locally for PyInstaller
           mkdir -p nltk_data
           cp -r /Users/runner/nltk_data/* nltk_data/ || true
           echo "✅ NLTK corpora copied:"
           ls -R nltk_data/corpora
-      
-      - name: Unzip NLTK corpora
-        run: |
-          mkdir -p nltk_data/corpora
-          cd nltk_data/corpora
-          for f in *.zip; do
-            echo "📦 Unzipping $f..."
-            unzip -o "$f" -d "${f%.zip}"
-            rm "$f"
-          done
-          cd ../..
-          echo "✅ Extracted NLTK corpora:"
-          find nltk_data/corpora -maxdepth 1 -type d
-
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
