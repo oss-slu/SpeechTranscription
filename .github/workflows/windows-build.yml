@@ -41,19 +41,13 @@ jobs:
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
           pip install pyinstaller pipwin mysql-connector-python
           pipwin install pyaudio
-          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon wordnet
+          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
 
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
-
-      - name: Copy NLTK data into build folder
-        shell: bash
-        run: |
-          mkdir -p nltk_data/corpora
-          cp -r ~/AppData/Roaming/nltk_data/corpora/wordnet nltk_data/corpora/wordnet || true
 
       - name: Build Windows EXE
         shell: cmd
@@ -65,7 +59,6 @@ jobs:
           --add-data "images;images" ^
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
-          --add-data "nltk_data;./nltk_data" ^
           --collect-data whisper ^
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^

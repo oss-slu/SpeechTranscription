@@ -37,19 +37,15 @@ jobs:
           brew install ffmpeg portaudio
           pip install pyaudio 
 
-
       - name: Install Python dependencies
         run: |
-
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip3 install mysql-connector-python
-          # Download all NLTK resources required for offline usage
+          pip install mysql-connector-python
           python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon wordnet omw-1.4
 
       - name: Copy NLTK data into project
         run: |
-
           mkdir -p nltk_data/corpora
           cp -r /Users/runner/nltk_data/* nltk_data/ || true
           ls -R nltk_data
@@ -69,9 +65,8 @@ jobs:
             --windowed \
             --noconfirm \
             --onefile \
-            --add-data "nltk_data:./nltk_data"
+            --add-data "nltk_data:./nltk_data" \  # ← fixed: add missing backslash
             --add-data "images:images" \
-            --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "CTkXYFrame:CTkXYFrame" \
             --collect-data whisper \
