@@ -12,17 +12,18 @@ from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 import os
 import sys
 
+logger = logging.getLogger(__name__)
+
 # Logging setup - CICD Internal Dev 
 logging.basicConfig(
-    level=logging.INFO,  
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),  # logs to console
-        logging.FileHandler("app.log", mode="w")  # logs to a file
-    ]
-)
+    level=logging.DEBUG,  
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.FileHandler("app.log", mode="w"))
 
-logger = logging.getLogger("SpeechTranscription")
+for h in logger.handlers:
+    h.setLevel(logging.INFO)
 logger.info("Starting SpeechTranscription app")
 
 class mainGUI(CTk):
