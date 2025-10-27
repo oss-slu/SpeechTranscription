@@ -55,7 +55,7 @@ jobs:
           mkdir -p nltk_data
           cp -r /Users/runner/nltk_data/* nltk_data/ || true
           echo "✅ NLTK corpora copied:"
-          ls -R nltk_data
+          ls -R nltk_data/corpora
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
