@@ -17,39 +17,46 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      # Checkout code
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
+      # Setup Python
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11.7
 
+      # Cache pip dependencies
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
+      # Install system dependencies
       - name: Install system dependencies
         run: |
           brew install mysql pkg-config
           brew install ffmpeg portaudio
-          pip install pyaudio 
+          pip install pyaudio
 
+      # Install Python dependencies and NLTK corpora
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
           pip install mysql-connector-python
-          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon wordnet omw-1.4
-
-      - name: Copy NLTK data into project
-        run: |
-          mkdir -p nltk_data/corpora
-          cp -r /Users/runner/nltk_data/* nltk_data/ || true
-          ls -R nltk_data
           
+          # ✅ Download NLTK resources for offline use
+          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon wordnet omw-1.4
+          
+          # ✅ Copy NLTK data locally for PyInstaller
+          mkdir -p nltk_data
+          cp -r /Users/runner/nltk_data/* nltk_data/ || true
+          echo "✅ NLTK corpora copied:"
+          ls -R nltk_data
+
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
 
@@ -58,8 +65,7 @@ jobs:
 
       - name: Build macOS App
         run: |
-          NLTK_DATA=$(python -c "import nltk; print(nltk.data.find('tokenizers/punkt').path)")
-          echo "NLTK data path: $NLTK_DATA"
+          echo "Starting PyInstaller build..."
           pyinstaller \
             --name "Saltify" \
             --windowed \
@@ -73,6 +79,7 @@ jobs:
             --collect-data lightning_fabric \
             --collect-data pytorch_lightning \
             --collect-data pyannote.audio \
+            --collect-data sv_ttk \
             --copy-metadata torch \
             --copy-metadata tqdm \
             --copy-metadata regex \
@@ -83,7 +90,6 @@ jobs:
             --copy-metadata numpy \
             --copy-metadata tokenizers \
             --copy-metadata importlib_metadata \
-            --collect-data sv_ttk \
             --hidden-import lightning_fabric \
             --hidden-import torch \
             --hidden-import torchvision \
@@ -91,6 +97,7 @@ jobs:
             --hidden-import pyannote.audio \
             GUI.py
 
+      # Upload built artifact
       - uses: actions/upload-artifact@v4
         if: always()
         with:
