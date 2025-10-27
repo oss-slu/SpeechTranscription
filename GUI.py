@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 import nltk  # type: ignore
-import nltk_bootstrap
 
 
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
