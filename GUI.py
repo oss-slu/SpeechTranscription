@@ -13,6 +13,7 @@ import os
 import sys
 
 logger = logging.getLogger(__name__)
+os.environ["TQDM_DISABLE"] = "1"
 
 # Logging setup - CICD Internal Dev 
 logging.basicConfig(
