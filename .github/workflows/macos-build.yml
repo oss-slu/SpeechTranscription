@@ -54,7 +54,7 @@ jobs:
       - name: Unzip NLTK corpora
         run: |
           # go to the NLTK data folder
-          cd nltk_data
+          cd Users/runner/nltk_data
 
           # unzip all .zip files (wordnet.zip, omw-1.4.zip, stopwords.zip, etc.)
           for f in *.zip; do
