@@ -65,7 +65,7 @@ jobs:
             --windowed \
             --noconfirm \
             --onefile \
-            --add-data "nltk_data:./nltk_data" \  # ← fixed: add missing backslash
+            --add-data "nltk_data:./nltk_data" \
             --add-data "images:images" \
             --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "CTkXYFrame:CTkXYFrame" \
