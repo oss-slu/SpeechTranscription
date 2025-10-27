@@ -53,19 +53,7 @@ jobs:
 
       - name: Unzip NLTK corpora
         run: |
-          # go to the NLTK data folder
-          cd /Users/runner/nltk_data
-
-          # unzip all .zip files (wordnet.zip, omw-1.4.zip, stopwords.zip, etc.)
-          for f in *.zip; do
-            echo "📦 Unzipping $f..."
-            unzip -o "$f" -d "${f%.zip}"
-            rm "$f"
-          done
-
-          # verify contents
-          echo "✅ NLTK corpora after extraction:"
-          find . -maxdepth 2 -type d
+          ls /Users/runner/nltk_data
 
 
       - name: Initialize Git submodules
