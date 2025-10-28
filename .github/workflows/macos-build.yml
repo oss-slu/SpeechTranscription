@@ -66,6 +66,8 @@ jobs:
 
           # verify contents
           echo "✅ Contents of corpora folder:"
+          
+          cd wordnet
           ls -l
 
 
