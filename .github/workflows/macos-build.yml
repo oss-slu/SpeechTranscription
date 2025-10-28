@@ -68,7 +68,8 @@ jobs:
           echo "✅ Contents of corpora folder:"
           
           cd wordnet
-          ls -l
+          mv wordnet/* .
+          rmdir wordnet
 
 
       - name: Initialize Git submodules

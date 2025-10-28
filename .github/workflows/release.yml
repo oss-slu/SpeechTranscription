@@ -85,7 +85,7 @@ jobs:
           echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
       - name: Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -104,7 +104,7 @@ jobs:
           asset_name: Saltify_macos.zip
           asset_content_type: application/zip
       - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
