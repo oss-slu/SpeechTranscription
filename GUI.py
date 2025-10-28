@@ -176,12 +176,13 @@ class mainGUI(CTk):
 
 if __name__ == "__main__":
     try:
-        # If HEADLESS=true is set, skip launching the GUI window.
-        # This prevents Tkinter from crashing in environments without a display in GitHub Actions. - CICD Internal Dev
         headless = os.environ.get("HEADLESS", "false").lower() == "true"
         if headless:
-            logger.info("Running in headless mode. GUI mainloop will be skipped.")
-            gui = mainGUI()  # You can still initialize for tests if needed, but GUI won't block
+            logger.info("Running in headless mode. GUI launch skipped.")
+            # Optionally test imports or basic initialization
+            import torch, whisper
+            logger.info("Core modules loaded successfully in headless mode.")
+            sys.exit(0)
         else:
             # Launch the GUI normally
             gui = mainGUI()  # __init__ already calls mainloop()
