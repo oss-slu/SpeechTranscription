@@ -17,62 +17,30 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # Checkout code
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      # Setup Python
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11.7
 
-      # Cache pip dependencies
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-      # Install system dependencies
-      - name: Install system dependencies
+      - name: Install system tools
         run: |
-          brew install mysql pkg-config
           brew install ffmpeg portaudio
-          pip install pyaudio
 
-      # Install Python dependencies and NLTK corpora
-      - name: Install Python dependencies
+      - name: Install Python requirements
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip install mysql-connector-python
-          
-          # ✅ Download NLTK resources for offline use
-          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon wordnet omw-1.4
-
-      - name: Unzip NLTK corpora
-        run: |
-          cd /Users/runner/nltk_data/corpora
-
-          # unzip wordnet.zip
-          if [ -f "wordnet.zip" ]; then
-            echo "📦 Unzipping wordnet.zip..."
-            unzip -o wordnet.zip -d wordnet
-            rm wordnet.zip
-          else
-            echo "❌ wordnet.zip not found!"
-          fi
-
-          # verify contents
-          echo "✅ Contents of corpora folder:"
-          
-          cd wordnet
-          mv wordnet/* .
-          rmdir wordnet
-          cd wordnet/lexnames
-          ls
-
+          pip install mysql-connector-python pyaudio
+          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
@@ -82,41 +50,48 @@ jobs:
 
       - name: Build macOS App
         run: |
-          echo "Starting PyInstaller build..."
-          pyinstaller \
-            --name "Saltify" \
-            --windowed \
-            --noconfirm \
-            --onefile \
-            --add-data "/Users/runner/nltk_data:./nltk_data" \
-            --add-data "images:images" \
-            --add-data "build_assets/en-model.slp:pattern/text/en" \
-            --add-data "CTkXYFrame:CTkXYFrame" \
-            --collect-data whisper \
-            --collect-data lightning_fabric \
-            --collect-data pytorch_lightning \
-            --collect-data pyannote.audio \
-            --collect-data sv_ttk \
-            --copy-metadata torch \
-            --copy-metadata tqdm \
-            --copy-metadata regex \
-            --copy-metadata sacremoses \
-            --copy-metadata requests \
-            --copy-metadata packaging \
-            --copy-metadata filelock \
-            --copy-metadata numpy \
-            --copy-metadata tokenizers \
-            --copy-metadata importlib_metadata \
-            --hidden-import lightning_fabric \
-            --hidden-import torch \
-            --hidden-import torchvision \
-            --hidden-import pytorch_lightning \
-            --hidden-import pyannote.audio \
-            GUI.py
+          pyinstaller --name Saltify \
+          --windowed \
+          --noconfirm \
+          --onefile \
+          --add-data "images:images" \
+          --add-data "build_assets/en-model.slp:pattern/text/en" \
+          --add-data "CTkXYFrame:CTkXYFrame" \
+          --collect-data whisper \
+          --collect-data lightning_fabric \
+          --collect-data pytorch_lightning \
+          --collect-data pyannote.audio \
+          --copy-metadata torch \
+          --copy-metadata tqdm \
+          --copy-metadata regex \
+          --copy-metadata sacremoses \
+          --copy-metadata requests \
+          --copy-metadata packaging \
+          --copy-metadata filelock \
+          --copy-metadata numpy \
+          --copy-metadata tokenizers \
+          --copy-metadata importlib_metadata \
+          --collect-data sv_ttk \
+          --hidden-import "lightning_fabric" \
+          --hidden-import "torch" \
+          --hidden-import "torchvision" \
+          --hidden-import "pytorch_lightning" \
+          --hidden-import "pyannote.audio" \
+          GUI.py
 
-      # Upload built artifact
+      - name: Run GUI headless for log
+        run: |
+          export HEADLESS=true
+          python GUI.py > app.log 2>&1 || true
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: SpeechTranscription_macOS
+          name: SpeechTranscription_macos_logs
+          path: app.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SpeechTranscription_macos
           path: dist/Saltify
