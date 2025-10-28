@@ -70,6 +70,8 @@ jobs:
           cd wordnet
           mv wordnet/* .
           rmdir wordnet
+          cd wordnet/lexnames
+          ls
 
 
       - name: Initialize Git submodules
