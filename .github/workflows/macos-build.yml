@@ -71,7 +71,8 @@ jobs:
             --windowed \
             --noconfirm \
             --onefile \
-            --add-data "nltk_data:./nltk_data" \
+            --add-data "nltk_data:nltk_data" \
+            --add-data "nltk_data/corpora/wordnet:pattern/text/en/wordnet"
             --add-data "images:images" \
             --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "CTkXYFrame:CTkXYFrame" \
@@ -96,6 +97,20 @@ jobs:
             --hidden-import pytorch_lightning \
             --hidden-import pyannote.audio \
             GUI.py
+
+      - name: Verify NLTK data location
+        run: |
+          echo "Checking for NLTK data folders..."
+          echo "Listing /Users/runner directory:"
+          ls -lh /Users/runner || true
+          echo ""
+          echo "Listing /Users/runner/nltk_data directory:"
+          ls -R /Users/runner/nltk_data || echo "⚠️ No nltk_data folder found here."
+          echo ""
+          echo "Python paths where NLTK looks for data:"
+          python3 -c "import nltk; print(nltk.data.path)"
+
+      
 
       # Upload built artifact
       - uses: actions/upload-artifact@v4
