@@ -33,7 +33,7 @@ jobs:
 
       - name: Install system tools
         run: |
-          brew install ffmpeg portaudio
+          brew install ffmpeg portaudio mysql
 
       - name: Install Python requirements
         run: |
