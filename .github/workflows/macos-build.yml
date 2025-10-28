@@ -53,7 +53,20 @@ jobs:
 
       - name: Unzip NLTK corpora
         run: |
-          ls /Users/runner/nltk_data/corpora
+          cd /Users/runner/nltk_data/corpora
+
+          # unzip wordnet.zip
+          if [ -f "wordnet.zip" ]; then
+            echo "📦 Unzipping wordnet.zip..."
+            unzip -o wordnet.zip -d wordnet
+            rm wordnet.zip
+          else
+            echo "❌ wordnet.zip not found!"
+          fi
+
+          # verify contents
+          echo "✅ Contents of corpora folder:"
+          ls -l
 
 
       - name: Initialize Git submodules
@@ -70,7 +83,7 @@ jobs:
             --windowed \
             --noconfirm \
             --onefile \
-            --add-data "nltk_data:./nltk_data" \
+            --add-data "/Users/runner/nltk_data:./nltk_data" \
             --add-data "images:images" \
             --add-data "build_assets/en-model.slp:pattern/text/en" \
             --add-data "CTkXYFrame:CTkXYFrame" \
