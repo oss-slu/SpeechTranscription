@@ -53,7 +53,6 @@ jobs:
       - name: Build Windows EXE
         shell: cmd
         run: |
-          set TQDM_DISABLE=1
           pyinstaller --name Saltify ^
           --windowed ^
           --noconfirm ^
