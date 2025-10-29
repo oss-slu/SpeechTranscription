@@ -55,6 +55,7 @@ jobs:
         run: |
           set TQDM_DISABLE=1
           pyinstaller --name Saltify ^
+          --windowed
           --noconfirm ^
           --onefile ^
           --add-data "images;images" ^
