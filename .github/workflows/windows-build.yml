@@ -56,6 +56,7 @@ jobs:
           pyinstaller --name Saltify ^
           --windowed ^
           --noconfirm ^
+          --onefile ^
           --add-data "images;images" ^
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
