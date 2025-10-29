@@ -3,6 +3,16 @@ import traceback
 import webbrowser
 from customtkinter import *
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
+import logging
+import sys
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.DEBUG,  
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.FileHandler("app.log", mode="a"))
 
 def global_error_handler(func):
     def wrapper(*args, **kwargs):

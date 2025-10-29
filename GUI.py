@@ -12,20 +12,25 @@ from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 import os
 import sys
 
-# logger = logging.getLogger(__name__)
-# os.environ["TQDM_DISABLE"] = "1"
+import ctypes
+kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+process_array = (ctypes.c_uint8 * 1)()
+num_processes = kernel32.GetConsoleProcessList(process_array, 1)
+if num_processes < 3: ctypes.WinDLL('user32').ShowWindow(kernel32.GetConsoleWindow(), 0)
 
-# # Logging setup - CICD Internal Dev 
-# logging.basicConfig(
-#     level=logging.DEBUG,  
-#     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-# logger.setLevel(logging.INFO)
-# logger.addHandler(logging.StreamHandler(sys.stdout))
-# logger.addHandler(logging.FileHandler("app.log", mode="w"))
+logger = logging.getLogger(__name__)
 
-# for h in logger.handlers:
-#     h.setLevel(logging.INFO)
-# logger.info("Starting SpeechTranscription app")
+# Logging setup - CICD Internal Dev 
+logging.basicConfig(
+    level=logging.DEBUG,  
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.FileHandler("app.log", mode="w"))
+
+for h in logger.handlers:
+    h.setLevel(logging.INFO)
+logger.info("Starting SpeechTranscription app")
 
 class mainGUI(CTk):
     @global_error_handler

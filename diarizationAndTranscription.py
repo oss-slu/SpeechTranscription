@@ -7,6 +7,16 @@ from pydub import AudioSegment
 import os
 import re
 from dotenv import load_dotenv
+import logging
+import sys
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.DEBUG,  
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.FileHandler("app.log", mode="a"))
 
 def transcribeAudio(audioFile):
     print("Starting transcription")

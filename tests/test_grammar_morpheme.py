@@ -3,7 +3,16 @@ import os
 import re
 import grammar
 #or run export PYTHONPATH=$(pwd) before running python tests/saltify_test.py
+import logging
+import sys
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.DEBUG,  
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.FileHandler("app.log", mode="a"))
 
 @pytest.fixture
 def grammar_checker():
