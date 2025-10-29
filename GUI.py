@@ -12,6 +12,11 @@ from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 import os
 import sys
 
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+    
 logger = logging.getLogger(__name__)
 os.environ["TQDM_DISABLE"] = "1"
 
