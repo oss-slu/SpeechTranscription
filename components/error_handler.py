@@ -3,6 +3,13 @@ import traceback
 import webbrowser
 from customtkinter import *
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
+import os
+import sys
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
 def global_error_handler(func):
     def wrapper(*args, **kwargs):

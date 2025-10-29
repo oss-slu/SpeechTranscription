@@ -8,6 +8,13 @@ import os
 import re
 from dotenv import load_dotenv
 
+import sys
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+
 def transcribeAudio(audioFile):
     print("Starting transcription")
     model = whisper.load_model("small.en")  # using small.en for better accuracy
