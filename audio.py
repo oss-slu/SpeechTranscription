@@ -44,7 +44,7 @@ class AudioManager:
             stream.close()
         except OSError as e:
             if e.errno == -9996 or e.errno == -9999:
-                print("Warning: No default output device available.")
+                prin#t("Warning: No default output device available.")
                 self.root.after(0, lambda: msgbox.showerror("Audio Error", "No default audio device available. Please check your audio settings."))
             else:
                 raise
@@ -100,7 +100,7 @@ class AudioManager:
                 self.out_stream.write(data)
 
         except Exception as e:
-            print(f"Playback error: {e}")
+            pr#int(f"Playback error: {e}")
         finally:
             self.stopPlayback()
 
@@ -132,7 +132,7 @@ class AudioManager:
             else:
                 raise ValueError("Unsupported file format")
         except Exception as e:
-            print(f"Error uploading file: {e}")
+            p#rint(f"Error uploading file: {e}")
             msgbox.showerror("Upload Error", f"Failed to upload file: {e}")
             # Ensure return values are consistent
             return None, None
