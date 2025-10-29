@@ -12,20 +12,20 @@ from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 import os
 import sys
 
-logger = logging.getLogger(__name__)
-os.environ["TQDM_DISABLE"] = "1"
+# logger = logging.getLogger(__name__)
+# os.environ["TQDM_DISABLE"] = "1"
 
-# Logging setup - CICD Internal Dev 
-logging.basicConfig(
-    level=logging.DEBUG,  
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler(sys.stdout))
-logger.addHandler(logging.FileHandler("app.log", mode="w"))
+# # Logging setup - CICD Internal Dev 
+# logging.basicConfig(
+#     level=logging.DEBUG,  
+#     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+# logger.setLevel(logging.INFO)
+# logger.addHandler(logging.StreamHandler(sys.stdout))
+# logger.addHandler(logging.FileHandler("app.log", mode="w"))
 
-for h in logger.handlers:
-    h.setLevel(logging.INFO)
-logger.info("Starting SpeechTranscription app")
+# for h in logger.handlers:
+#     h.setLevel(logging.INFO)
+# logger.info("Starting SpeechTranscription app")
 
 class mainGUI(CTk):
     @global_error_handler
@@ -173,11 +173,11 @@ if __name__ == "__main__":
         # This prevents Tkinter from crashing in environments without a display in GitHub Actions. - CICD Internal Dev
         headless = os.environ.get("HEADLESS", "false").lower() == "true"
         if headless:
-            logger.info("Running in headless mode. GUI mainloop will be skipped.")
+            # logger.info("Running in headless mode. GUI mainloop will be skipped.")
             gui = mainGUI()  # You can still initialize for tests if needed, but GUI won't block
         else:
             # Launch the GUI normally
             gui = mainGUI()  # __init__ already calls mainloop()
     except Exception as e:
-        logger.exception("An error occurred while running the GUI.")
+        # logger.exception("An error occurred while running the GUI.")
         raise
