@@ -61,11 +61,11 @@ jobs:
           --add-data "images;images" ^
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
+          --add-date "C:\ProgramData\chocolatey\lib\ffmpegs;C:\ProgramData\chocolatey\lib\ffmpeg" ^
           --collect-data whisper ^
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^
           --collect-data pyannote.audio ^
-          --copy-metadata ffmpeg ^
           --copy-metadata torch ^
           --copy-metadata tqdm ^
           --copy-metadata regex ^
