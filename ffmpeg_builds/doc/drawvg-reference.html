@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Created by , GNU Texinfo 7.1.1 -->
+<!-- Created by GNU Texinfo 7.2, https://www.gnu.org/software/texinfo/ -->
   <head>
     <meta charset="utf-8">
     <title>
@@ -19,7 +19,7 @@
 
 <a name="SEC_Top"></a>
 
-<div class="element-contents" id="SEC_Contents">
+<div class="region-contents" id="SEC_Contents">
 <h2 class="contents-heading">Table of Contents</h2>
 
 <div class="contents">
@@ -40,7 +40,7 @@
       <li><a id="toc-Number-Literals" href="#Number-Literals">2.4.1 Number Literals</a></li>
       <li><a id="toc-Expressions" href="#Expressions">2.4.2 Expressions</a></li>
       <li><a id="toc-Variable-Names" href="#Variable-Names">2.4.3 Variable Names</a></li>
-      <li><a id="toc-Colors-1" href="#Colors-1">2.4.4 Colors</a></li>
+      <li><a id="toc-Colors" href="#Colors-1">2.4.4 Colors</a></li>
       <li><a id="toc-Constants" href="#Constants">2.4.5 Constants</a></li>
     </ul></li>
   </ul></li>
@@ -57,7 +57,7 @@
     </ul></li>
     <li><a id="toc-Variables" href="#Variables">3.2 Variables</a>
     <ul class="toc-numbered-mark">
-      <li><a id="toc-User-Variables-1" href="#User-Variables-1">3.2.1 User Variables</a></li>
+      <li><a id="toc-User-Variables" href="#User-Variables-1">3.2.1 User Variables</a></li>
     </ul></li>
     <li><a id="toc-Patterns" href="#Patterns">3.3 Patterns</a>
     <ul class="toc-numbered-mark">
@@ -65,14 +65,14 @@
       <li><a id="toc-Variables-1" href="#Variables-1">3.3.2 Variables</a></li>
     </ul></li>
     <li><a id="toc-Transformations" href="#Transformations">3.4 Transformations</a></li>
-    <li><a id="toc-State-Stack-1" href="#State-Stack-1">3.5 State Stack</a></li>
-    <li><a id="toc-Frame-Metadata-1" href="#Frame-Metadata-1">3.6 Frame Metadata</a></li>
+    <li><a id="toc-State-Stack" href="#State-Stack-1">3.5 State Stack</a></li>
+    <li><a id="toc-Frame-Metadata" href="#Frame-Metadata-1">3.6 Frame Metadata</a></li>
     <li><a id="toc-if-_002f-repeat-Statements" href="#if-_002f-repeat-Statements">3.7 <code class="code">if</code> / <code class="code">repeat</code> Statements</a>
     <ul class="toc-numbered-mark">
       <li><a id="toc-Comparison-and-Logical-Operators" href="#Comparison-and-Logical-Operators">3.7.1 Comparison and Logical Operators</a></li>
       <li><a id="toc-Early-Exit" href="#Early-Exit">3.7.2 Early Exit</a></li>
     </ul></li>
-    <li><a id="toc-Procedures-1" href="#Procedures-1">3.8 Procedures</a></li>
+    <li><a id="toc-Procedures" href="#Procedures-1">3.8 Procedures</a></li>
     <li><a id="toc-Functions-in-Expressions" href="#Functions-in-Expressions">3.9 Functions in Expressions</a>
     <ul class="toc-numbered-mark">
       <li><a id="toc-Function-p" href="#Function-p">3.9.1 Function <code class="code">p</code></a></li>
@@ -82,7 +82,7 @@
     <li><a id="toc-Tracing-with-print" href="#Tracing-with-print">3.10 Tracing with <code class="code">print</code></a>
     <ul class="toc-numbered-mark">
       <li><a id="toc-Function-print" href="#Function-print">3.10.1 Function print</a></li>
-      <li><a id="toc-Command-print-1" href="#Command-print-1">3.10.2 Command <code class="code">print</code></a></li>
+      <li><a id="toc-Command-print" href="#Command-print-1">3.10.2 Command <code class="code">print</code></a></li>
     </ul></li>
   </ul></li>
   <li><a id="toc-Commands-1" href="#Commands-1">4 Commands</a>
@@ -201,7 +201,7 @@ stroke
 </pre></div>
 
 
-<p>Finally, drawvg can use <a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a> and frame metadata in command arguments. In
+<p>Finally, drawvg can use <a data-manual="ffmpeg-utils" href="./ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a> and frame metadata in command arguments. In
 this example, we are using the variables <var class="var">w</var> (frame width) and <var class="var">h</var>
 (frame height) to create a circle in the middle of the frame.
 </p>
@@ -317,7 +317,7 @@ or semicolons, to separate items. For example:
 
 </li></ul>
 
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In the next script there are 4 different commands:
 </p>
@@ -375,7 +375,7 @@ times in successive calls.
 <p>In the reference below, these commands has a <em class="emph">Can be Implicit</em> note
 in their signature.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>For example, in this script:
 </p>
@@ -404,7 +404,7 @@ stroke
 parser checks if the item after the last argument is a numeric value,
 like a number literal or a FFmpeg expression.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example:
 </p>
@@ -471,10 +471,10 @@ units</a> (like <code class="code">K</code> or <code class="code">GiB</code>).
 <a name="Expressions"></a>
 <h4 class="subsection">2.4.2 Expressions<span class="pull-right"><a class="anchor hidden-xs" href="#Expressions" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Expressions" aria-hidden="true">TOC</a></span></h4>
 
-<p><a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a> can be used as arguments for any command that expects a numeric
+<p><a data-manual="ffmpeg-utils" href="./ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a> can be used as arguments for any command that expects a numeric
 argument. The expression must be enclosed in parenthesis.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>The variables <var class="var">w</var> and <var class="var">h</var> represent the width and height of the
 frame. We can compute the center of the frame by dividing them by <code class="code">2</code>:
@@ -497,7 +497,7 @@ etc):
 <p>The variables <var class="var">n</var> and <var class="var">t</var> can be used to compute a value that changes
 over time.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>To draw a circle oscillating from left to right, we can use an
 expression based on <code class="code">sin(t)</code> for the <code class="code">x</code> coordinate:
@@ -528,7 +528,7 @@ comments within them.
 <p>When an expression is only a reference to a variable, the parenthesis
 can be omitted, and the item is just the variable name.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>The next 3 expressions are equivalent: in all cases, they create a
 rectangle covering the whole frame.
@@ -552,7 +552,7 @@ a command (<a class="ref" href="#cmd_005fh"><code class="code">h</code></a>).
 commands over variable names when it has to determine if the command is
 reused.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, the variable <var class="var">c</var> is used as the first argument in two
 calls to <a class="ref" href="#cmd_005fl"><code class="code">l</code></a>. However, only the first one is valid, because in the
@@ -574,13 +574,13 @@ l c 10 (c) 15
 </td></tr></table>
 
 <a class="anchor" id="Colors"></a><a name="Colors-1"></a>
-<h4 class="subsection">2.4.4 Colors<span class="pull-right"><a class="anchor hidden-xs" href="#Colors-1" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Colors-1" aria-hidden="true">TOC</a></span></h4>
+<h4 class="subsection">2.4.4 Colors<span class="pull-right"><a class="anchor hidden-xs" href="#Colors" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Colors" aria-hidden="true">TOC</a></span></h4>
 
 <p>The color to stroke and to fill paths can be set with <a class="ref" href="#cmd_005fsetcolor"><code class="code">setcolor</code></a>.
 Its argument has the same syntax for colors in FFmpeg:
 </p>
 <ul class="itemize mark-bullet">
-<li>A <a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Color">predefined color name</a>.
+<li>A <a data-manual="ffmpeg-utils" href="./ffmpeg-utils.html#Color">predefined color name</a>.
 
 </li><li>In <code class="code">#RRGGBB</code> format.
 
@@ -654,7 +654,7 @@ shape.
 that clear the path, like <a class="ref" href="#cmd_005fstroke"><code class="code">stroke</code></a> or <a class="ref" href="#cmd_005ffill"><code class="code">fill</code></a>, also clear the
 <em class="emph">current point</em>.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p><a class="ref" href="#cmd_005frlineto"><code class="code">rlineto</code></a> uses coordinates relative to the <em class="emph">current point</em>.
 </p>
@@ -746,7 +746,7 @@ rule</a>, also known as
 rule</a>.
 </li></ul>
 
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>This script shows the difference between the
 <a class="uref" href="https://www.cairographics.org/manual/cairo-cairo-t.html#CAIRO-FILL-RULE-WINDING:CAPS">winding</a>
@@ -783,7 +783,7 @@ stroke can be configured with different commands:
 </li><li><a class="ref" href="#cmd_005fresetdash"><code class="code">resetdash</code></a>
 </li></ul>
 
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>This example use <a class="ref" href="#cmd_005fsetdashoffset"><code class="code">setdashoffset</code></a> to animate the stroke:
 </p>
@@ -816,7 +816,7 @@ reset the clip region to the whole frame.
 <a class="uref" href="https://www.cairographics.org/manual/cairo-cairo-t.html#CAIRO-FILL-RULE-EVEN-ODD:CAPS">even&ndash;odd
 rule</a> to compute the clip region.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">rect 50 50 100 200
@@ -843,7 +843,7 @@ stroke
 <a class="ref" href="#cmd_005fstroke"><code class="code">stroke</code></a>. To reuse the same path in multiple operations,
 <a class="ref" href="#cmd_005fpreserve"><code class="code">preserve</code></a> must be called before them.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, each path is used twice.
 </p>
@@ -866,7 +866,7 @@ stroke
 <h3 class="section">3.2 Variables<span class="pull-right"><a class="anchor hidden-xs" href="#Variables" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Variables" aria-hidden="true">TOC</a></span></h3>
 
 <p>A drawvg can use some variables, provided by the interpreter, to compute
-values in <a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a>:
+values in <a data-manual="ffmpeg-utils" href="./ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a>:
 </p>
 <dl class="table">
 <dt><var class="var">cx</var></dt>
@@ -907,7 +907,7 @@ values in <a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Expression-Evalu
 </dl>
 
 <a class="anchor" id="User-Variables"></a><a name="User-Variables-1"></a>
-<h4 class="subsection">3.2.1 User Variables<span class="pull-right"><a class="anchor hidden-xs" href="#User-Variables-1" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-User-Variables-1" aria-hidden="true">TOC</a></span></h4>
+<h4 class="subsection">3.2.1 User Variables<span class="pull-right"><a class="anchor hidden-xs" href="#User-Variables" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-User-Variables" aria-hidden="true">TOC</a></span></h4>
 
 <p>New variables can be created with the <a class="ref" href="#cmd_005fsetvar"><code class="code">setvar</code></a> command. It
 associates a name with a numeric value.
@@ -925,7 +925,7 @@ associates a name with a numeric value.
 
 <p>The same variable can be assigned multiple times.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, the result of an expression is stored in a variable
 with the name <var class="var">progress</var>. Then, it is used for the <var class="var">x</var> and
@@ -979,7 +979,7 @@ operation, but it is replaced by any command that sets a new pattern.
 <a class="ref" href="#cmd_005fradialgrad"><code class="code">radialgrad</code></a>, and then add color stops by calling <a class="ref" href="#cmd_005fcolorstop"><code class="code">colorstop</code></a>
 for each stop.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, the whole frame is filled with a linear gradient:
 </p>
@@ -1013,7 +1013,7 @@ fill
 argument. When a variable is used, its value is interpreted as a
 <code class="code">0xRRGGBBAA</code> code.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">// Use color #1020FF, alpha = 50%
@@ -1030,10 +1030,10 @@ fill
 
 </td></tr></table>
 
-<p>If a variable has the same name of a <a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Color">known color</a>, the
+<p>If a variable has the same name of a <a data-manual="ffmpeg-utils" href="./ffmpeg-utils.html#Color">known color</a>, the
 variable has preference, and will be used instead of the predefined color.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">setcolor teal
@@ -1062,7 +1062,7 @@ for a color given its color components:
 <p>Each color component must be in range <code class="code">0</code> to <code class="code">1</code>, except
 <em class="emph">hue</em>, which is <code class="code">0</code> to <code class="code">360</code>.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">defrgba colorA 1 0.5 0.25 1     // colorA = RGB(255, 127, 63)
@@ -1103,7 +1103,7 @@ original state, before any transformation, use <a class="ref" href="#cmd_005fres
 <p>The transform origin for scale and rotation is initially at <code class="code">0, 0</code>,
 but it can be adjusted with <a class="ref" href="#cmd_005ftranslate"><code class="code">translate</code></a>.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">// Map (0, 0) as the center of the frame.
@@ -1130,7 +1130,7 @@ stroke
 </td></tr></table>
 
 <a class="anchor" id="State-Stack"></a><a name="State-Stack-1"></a>
-<h3 class="section">3.5 State Stack<span class="pull-right"><a class="anchor hidden-xs" href="#State-Stack-1" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-State-Stack-1" aria-hidden="true">TOC</a></span></h3>
+<h3 class="section">3.5 State Stack<span class="pull-right"><a class="anchor hidden-xs" href="#State-Stack" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-State-Stack" aria-hidden="true">TOC</a></span></h3>
 
 <p>The state of a drawvg script contains all parameters used for drawing
 operations, like the current color, the transformation matrix, the
@@ -1183,13 +1183,13 @@ and uses it as the new state.
 </li></ul>
 
 <a class="anchor" id="Frame-Metadata"></a><a name="Frame-Metadata-1"></a>
-<h3 class="section">3.6 Frame Metadata<span class="pull-right"><a class="anchor hidden-xs" href="#Frame-Metadata-1" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Frame-Metadata-1" aria-hidden="true">TOC</a></span></h3>
+<h3 class="section">3.6 Frame Metadata<span class="pull-right"><a class="anchor hidden-xs" href="#Frame-Metadata" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Frame-Metadata" aria-hidden="true">TOC</a></span></h3>
 
 <p>Some FFmpeg filters add metadata to frames. The command
 <a class="ref" href="#cmd_005fgetmetadata"><code class="code">getmetadata</code></a> can read metadata items containing a numeric value,
 and store it in a variable that can be used for command arguments.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>The <code class="code">cropdetect</code> filter computes the parameters to remove empty
 regions around the video. These parameters are accessible in the
@@ -1251,7 +1251,7 @@ executed.
 <a class="anchor" id="comp_002doperators"></a><a name="Comparison-and-Logical-Operators"></a>
 <h4 class="subsection">3.7.1 Comparison and Logical Operators<span class="pull-right"><a class="anchor hidden-xs" href="#Comparison-and-Logical-Operators" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Comparison-and-Logical-Operators" aria-hidden="true">TOC</a></span></h4>
 
-<p><a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a> only supports arithmetic operators (like <code class="code">+</code> for addition).
+<p><a data-manual="ffmpeg-utils" href="./ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a> only supports arithmetic operators (like <code class="code">+</code> for addition).
 Comparison operators (like <code class="code">!=</code>) are supported via functions, while
 logical operators (like <code class="code">&amp;&amp;</code> for <code class="code">AND</code>) can be emulated with
 arithmetic operations.
@@ -1277,7 +1277,7 @@ or addition (for <code class="code">OR</code>):
 </tbody>
 </table>
 
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In other programming languages, a code like this:
 </p>
@@ -1304,7 +1304,7 @@ Example</th></tr><tr><td>
 <p>If it is executed outside a <a class="ref" href="#cmd_005frepeat"><code class="code">repeat</code></a> block, it terminates the whole
 script, or the current procedure.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, we are using the <a class="ref" href="#func_002drandomg"><code class="code">randomg</code></a> function
 to draw a line with random segments.
@@ -1333,7 +1333,7 @@ stroke
 </td></tr></table>
 
 <a class="anchor" id="Procedures"></a><a name="Procedures-1"></a>
-<h3 class="section">3.8 Procedures<span class="pull-right"><a class="anchor hidden-xs" href="#Procedures-1" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Procedures-1" aria-hidden="true">TOC</a></span></h3>
+<h3 class="section">3.8 Procedures<span class="pull-right"><a class="anchor hidden-xs" href="#Procedures" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Procedures" aria-hidden="true">TOC</a></span></h3>
 
 <p>A procedure is a name associated with a block that can be executed
 multiple times. It can take between 0 and 6 parameters.
@@ -1373,7 +1373,7 @@ call p1 1 2
 call square (w / 2) (h / 2) (w / t)
 </pre></div>
 
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, the procedure <code class="code">zigzag</code> draws multiple lines from
 the <a class="ref" href="#current-point">current point</a>.
@@ -1433,7 +1433,7 @@ is restored to the value it had before calling the procedure. Changes in
 other variables (with <a class="ref" href="#cmd_005fsetvar"><code class="code">setvar</code></a>, <a class="ref" href="#cmd_005fgetmetadata"><code class="code">getmetadata</code></a>, <a class="ref" href="#cmd_005fdefhsla"><code class="code">defhsla</code></a>,
 and <a class="ref" href="#cmd_005fdefrgba"><code class="code">defrgba</code></a>) are preserved.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In the next example, the variable <var class="var">A</var> has the value <code class="code">0</code> before
 calling the procedure <var class="var">P</var>. During the execution of <var class="var">P</var>,
@@ -1468,7 +1468,7 @@ statement</a> in other programming languages, unless it is called within a
 <p>The body of the procedure must be defined with <a class="ref" href="#cmd_005fproc"><code class="code">proc</code></a> <em class="emph">before</em>
 using <a class="ref" href="#cmd_005fcall"><code class="code">call</code></a>.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, when the procedure <code class="code">notyet</code> is called, its body
 has not yet defined, so the execution fails with the error
@@ -1487,7 +1487,7 @@ proc notyet {
 <p>A procedure can be redefined by other calls to <a class="ref" href="#cmd_005fproc"><code class="code">proc</code></a> with the same
 name. In such case, <a class="ref" href="#cmd_005fcall"><code class="code">call</code></a> invokes the last assigned block.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, the procedure <code class="code">example</code> has two different blocks.
 </p>
@@ -1510,7 +1510,7 @@ call example    // executes block2
 <a name="Functions-in-Expressions"></a>
 <h3 class="section">3.9 Functions in Expressions<span class="pull-right"><a class="anchor hidden-xs" href="#Functions-in-Expressions" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Functions-in-Expressions" aria-hidden="true">TOC</a></span></h3>
 
-<p>There are some functions specific to drawvg available in <a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a>.
+<p>There are some functions specific to drawvg available in <a data-manual="ffmpeg-utils" href="./ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a>.
 </p>
 <a name="Function-p"></a>
 <h4 class="subsection">3.9.1 Function <code class="code">p</code><span class="pull-right"><a class="anchor hidden-xs" href="#Function-p" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Function-p" aria-hidden="true">TOC</a></span></h4>
@@ -1560,7 +1560,7 @@ length of each line segment returned by
 <p>The function expects an argument <var class="var">n</var>, as the maximum number of line
 segments to add to the length, or <code class="code">0</code> to add all segments.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, <code class="code">pathlen</code> is used to animate the stroke of a
 spiral, in a 5 seconds loop.
@@ -1593,7 +1593,7 @@ stroke
 <h4 class="subsection">3.9.3 Function <code class="code">randomg</code><span class="pull-right"><a class="anchor hidden-xs" href="#Function-randomg" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Function-randomg" aria-hidden="true">TOC</a></span></h4>
 
 <p><code class="code">randomg(idx)</code> is similar to the <code class="code">random(idx)</code> function,
-available in <a data-manual="ffmpeg-utils" href="ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a>, but its state is global to the frame, instead
+available in <a data-manual="ffmpeg-utils" href="./ffmpeg-utils.html#Expression-Evaluation">FFmpeg expressions</a>, but its state is global to the frame, instead
 of specific to each expression.
 </p>
 <p>To understand the difference, we need to dive into how
@@ -1611,7 +1611,7 @@ compiled expressions are reused for every frame. The changes in the
 internal variables (with <code class="code">st(idx, value)</code>) are visible between
 frames, but they are not shared between expressions.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, the expression for the X coordinate updates its
 internal variable <code class="code">0</code> in every frame:
@@ -1648,7 +1648,7 @@ value between <code class="code">0</code> and <code class="code">1</code>. <var 
 that is used both as the seed and to keep the state of the number
 generator.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>The next example uses <code class="code">random(0)</code> to generate a random value for
 the center of a circle:
@@ -1753,7 +1753,7 @@ next number.
 
 </li></ol>
 
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>This example renders a simple rain animation, moving lines from top to
 bottom.
@@ -1802,7 +1802,7 @@ it is preferable to use it only when necessary.
 <p>The function <code class="code">print(t)</code> writes the value of t, and returns its
 argument.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>Given a line line this:
 </p>
@@ -1838,7 +1838,7 @@ values for the sine function.
 </td></tr></table>
 
 <a class="anchor" id="Command-print"></a><a name="Command-print-1"></a>
-<h4 class="subsection">3.10.2 Command <code class="code">print</code><span class="pull-right"><a class="anchor hidden-xs" href="#Command-print-1" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Command-print-1" aria-hidden="true">TOC</a></span></h4>
+<h4 class="subsection">3.10.2 Command <code class="code">print</code><span class="pull-right"><a class="anchor hidden-xs" href="#Command-print" aria-hidden="true">#</a> <a class="anchor hidden-xs"href="#toc-Command-print" aria-hidden="true">TOC</a></span></h4>
 
 <p>The command <a class="ref" href="#cmd_005fprint"><code class="code">print</code></a> accepts an arbitrary number of arguments, and
 for each one it writes:
@@ -1852,7 +1852,7 @@ for each one it writes:
 <p>When there are multiple expressions, they are separated by the <code class="code">|</code>
 character.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>The next script prints the position of the <a class="ref" href="#current-point">current point</a> after the
 <a class="ref" href="#cmd_005fl"><code class="code">l</code></a> command:
@@ -1909,7 +1909,7 @@ the <a class="ref" href="#current-point">current point</a>.
 <a class="uref" href="https://www.cairographics.org/manual/cairo-Paths.html#cairo-arc"><code class="code">cairo_arc</code></a>
 function for more details.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">arc 120 120 60 0 (3 * PI / 2)
@@ -1930,7 +1930,7 @@ between the two angles.
 <a class="uref" href="https://www.cairographics.org/manual/cairo-Paths.html#cairo-arc-negative"><code class="code">cairo_arc_negative</code></a>
 function for more details.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, both <a class="ref" href="#cmd_005farc"><code class="code">arc</code></a> and <a class="ref" href="#cmd_005farcn"><code class="code">arcn</code></a> have the same angles,
 but they render different arcs:
@@ -2054,7 +2054,7 @@ colorstop 0 red 0.5 green 1 blue
 <a class="uref" href="https://www.cairographics.org/manual/cairo-cairo-pattern-t.html#cairo-pattern-add-color-stop-rgba"><code class="code">cairo_pattern_add_color_stop_rgba</code></a>
 function for more details.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, color stops are added in a <a class="ref" href="#cmd_005frepeat"><code class="code">repeat</code></a> loop.
 </p>
@@ -2102,7 +2102,7 @@ specified by <var class="var">x, y</var>. The <em class="emph">start control poi
 <p>The behaviour is identical to the <a class="ref" href="#cmd_005fC"><code class="code">C</code></a> command in <a class="uref" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/path">SVG&rsquo;s <code class="code">&lt;path&gt;</code></a>. For more
 details, see <a class="uref" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/d#cubic_b%C3%A9zier_curve">Cubic Bézier Curve on MDN</a>, and the <a class="uref" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials/SVG_from_scratch/Paths#curve_commands">Curve Commands section of the Paths tutorial on MDN</a>.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">moveto 20 20
@@ -2158,7 +2158,7 @@ that range are clamped to it.
 <p>Adds an ellipse to the current path. Similar to <a class="ref" href="#cmd_005fcircle"><code class="code">circle</code></a>, but it is
 possible to use different radius for both axes.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <pre class="verbatim">ellipse 120 120 75 50
 stroke
@@ -2273,7 +2273,7 @@ function for more details.
 <p>Begin a new sub-path. Like <a class="ref" href="#cmd_005fmoveto"><code class="code">moveto</code></a>, but there is no
 <a class="ref" href="#current-point">current point</a> after it.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In the next example, <a class="ref" href="#cmd_005fnewpath"><code class="code">newpath</code></a> is used in the path on the right to
 prevent the line connecting both arcs.
@@ -2315,7 +2315,7 @@ preserve the path, so the same path can be used in multiple operations.
 associated operation. This allows modifying other properties, like the
 current color.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, the same path is used for both <a class="ref" href="#cmd_005ffill"><code class="code">fill</code></a> and
 <a class="ref" href="#cmd_005fstroke"><code class="code">stroke</code></a>, but with different colors.
@@ -2334,7 +2334,7 @@ stroke
 <p><a class="ref" href="#cmd_005fpreserve"><code class="code">preserve</code></a> can be called multiple times, if the same path has to be
 used in 3 or more operations.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example, the path created by <a class="ref" href="#cmd_005fcircle"><code class="code">circle</code></a> is used by
 <a class="ref" href="#cmd_005ffill"><code class="code">fill</code></a>, <a class="ref" href="#cmd_005fstroke"><code class="code">stroke</code></a>, and <a class="ref" href="#cmd_005fclip"><code class="code">clip</code></a>. After <a class="ref" href="#cmd_005fclip"><code class="code">clip</code></a>, the
@@ -2380,7 +2380,7 @@ point</em> specified by <var class="var">x, y</var>. The <em class="emph">contro
 <p>The behaviour is identical to the <code class="code">Q</code> command in <a class="uref" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/path">SVG&rsquo;s <code class="code">&lt;path&gt;</code></a>. For more
 details, see <a class="uref" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/d#quadratic_b%C3%A9zier_curve">Quadratic Bézier curve on MDN</a>, and the <a class="uref" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials/SVG_from_scratch/Paths#curve_commands">Curve Commands section of the Paths tutorial on MDN</a>.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <pre class="verbatim">moveto 20 20
 
@@ -2412,7 +2412,7 @@ is the coordinates of the center and the radius.
 </p>
 <p>Use <a class="ref" href="#cmd_005fcolorstop"><code class="code">colorstop</code></a> to set the color for each position in the gradient.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>The animation in the next example shows how the two circles defined in
 the <a class="ref" href="#cmd_005fradialgrad"><code class="code">radialgrad</code></a> arguments interact with each other.
@@ -2537,7 +2537,7 @@ axes by <var class="var">angle</var> radians.
 <a class="uref" href="https://www.cairographics.org/manual/cairo-Transformations.html#cairo-rotate"><code class="code">cairo_rotate</code></a>
 function for more details.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>In this example:
 </p>
@@ -2565,7 +2565,7 @@ stroke
 </p>
 <p>Like <a class="ref" href="#cmd_005frect"><code class="code">rect</code></a>, but a circular arc is used for the corners.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>The next example shows the same rectangle, with different values for the
 corner radius.
@@ -2663,7 +2663,7 @@ function for more details.
 <a class="uref" href="https://www.cairographics.org/manual/cairo-cairo-t.html#cairo-set-dash"><code class="code">cairo_set_dash</code></a>
 function for more details.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>The next animation shows the effect of <a class="ref" href="#cmd_005fsetdashoffset"><code class="code">setdashoffset</code></a> when its
 argument changes over time.
@@ -2720,7 +2720,7 @@ the end points of lines.
 <a class="uref" href="https://www.cairographics.org/manual/cairo-cairo-t.html#cairo-set-line-cap"><code class="code">cairo_set_line_cap</code></a>
 to set the line cap style.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>This example draws 3 lines with the same length, each one with a
 different line cap style:
@@ -2766,7 +2766,7 @@ join two line segments.
 <a class="uref" href="https://www.cairographics.org/manual/cairo-cairo-t.html#cairo-set-line-join"><code class="code">cairo_set_line_join</code></a>
 to set the line join style.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <p>This example draws 3 lines with the same length, each one with a
 different line join style:
@@ -2865,7 +2865,7 @@ details, see <a class="uref" href="https://developer.mozilla.org/en-US/docs/Web/
 </p>
 <p><a class="ref" href="#cmd_005fs"><code class="code">s</code></a> is like <a class="ref" href="#cmd_005fS"><code class="code">S</code></a>, but the coordinates are relative to the <a class="ref" href="#current-point">current point</a>.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">M 20 120
@@ -2910,7 +2910,7 @@ details, see <a class="uref" href="https://developer.mozilla.org/en-US/docs/Web/
 <p><a class="ref" href="#cmd_005ft"><code class="code">t</code></a> is like <a class="ref" href="#cmd_005fT"><code class="code">T</code></a>, but the coordinates are relative to the
 <a class="ref" href="#current-point">current point</a>.
 </p>
-<table class="cartouche" border="1"><tr><th>
+<table class="cartouche"><tr><th>
 Example</th></tr><tr><td>
 <div class="example">
 <pre class="example-preformatted">M 20 120
