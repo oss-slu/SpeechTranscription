@@ -18,7 +18,7 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
-subprocess.run("winget install ffmpeg --accept-source-agreements", shell=True)
+subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
 
 # logger = logging.getLogger(__name__)
 # os.environ["TQDM_DISABLE"] = "1"
