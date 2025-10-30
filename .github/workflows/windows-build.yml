@@ -53,7 +53,6 @@ jobs:
       - name: Build Windows EXE
         shell: cmd
         run: |
-          set TQDM_DISABLE=1
           pyinstaller --name Saltify ^
           --windowed ^
           --noconfirm ^
@@ -61,7 +60,7 @@ jobs:
           --add-data "images;images" ^
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
-          --add-data "C:\ProgramData\chocolatey\lib\ffmpegs;C:\ProgramData\chocolatey\lib\ffmpeg" ^
+          --add-data "ProgramData\chocolatey\lib\ffmpegs;ProgramData\chocolatey\lib\ffmpeg" ^
           --collect-data whisper ^
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^
