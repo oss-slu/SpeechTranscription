@@ -1,3 +1,4 @@
+import subprocess
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -14,6 +15,7 @@ if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
+
 
 def transcribeAudio(audioFile):
     print("Starting transcription")

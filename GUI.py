@@ -1,5 +1,6 @@
 # Adding Logging - CICD Internal Dev 
 import logging
+import subprocess
 
 # main.py
 from customtkinter import *
@@ -16,6 +17,9 @@ if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
+
+#check if ffmpeg installed, if not, install it
+subprocess.run("choco install ffmpeg", shell=True)
     
 # logger = logging.getLogger(__name__)
 # os.environ["TQDM_DISABLE"] = "1"
