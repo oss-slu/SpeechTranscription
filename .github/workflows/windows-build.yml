@@ -53,6 +53,7 @@ jobs:
       - name: Build Windows EXE
         shell: cmd
         run: |
+          choco install ffmpeg -y
           pyinstaller --name Saltify ^
           --windowed ^
           --noconfirm ^
