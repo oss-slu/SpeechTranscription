@@ -65,7 +65,7 @@ jobs:
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^
           --collect-data pyannote.audio ^
-          --copy-metadata ffmpeg
+          --copy-metadata ffmpeg ^
           --copy-metadata torch ^
           --copy-metadata tqdm ^
           --copy-metadata regex ^
