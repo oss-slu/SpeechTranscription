@@ -19,7 +19,7 @@ if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
 #check if ffmpeg installed, if not, install it
-subprocess.run("choco install ffmpeg", shell=True)
+subprocess.run("winget install FFmpeg", shell=True)
     
 # logger = logging.getLogger(__name__)
 # os.environ["TQDM_DISABLE"] = "1"
