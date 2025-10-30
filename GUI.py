@@ -18,10 +18,7 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
-#check if ffmpeg installed, if not, install it
-subprocess.run("Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser", shell=True)
-subprocess.run("Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression", shell=True)
-subprocess.run("scoop install ffmpeg", shell=True)
+subprocess.run("winget install ffmpeg --accept-source-agreements", shell=True)
 
 # logger = logging.getLogger(__name__)
 # os.environ["TQDM_DISABLE"] = "1"
