@@ -20,7 +20,8 @@ if sys.stderr is None:
 
 #check if ffmpeg installed, if not, install it
 subprocess.run("winget install FFmpeg", shell=True)
-    
+subprocess.run("Y", shell=True)
+
 # logger = logging.getLogger(__name__)
 # os.environ["TQDM_DISABLE"] = "1"
 
