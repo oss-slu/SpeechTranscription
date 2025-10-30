@@ -60,7 +60,7 @@ jobs:
           --add-data "images;images" ^
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
-           --add-data "./ffmpeg_builds/*;./ffmpeg_builds/" ^
+          --add-data "./ffmpeg_builds/*;./ffmpeg_builds/" ^
           --collect-data whisper ^
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^
