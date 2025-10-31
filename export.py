@@ -1,5 +1,12 @@
 from docx import Document
 from datetime import date
+import os
+import sys
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
 class Exporter:
     def exportToWord(self, transcriptionText: str, outputPath: str):

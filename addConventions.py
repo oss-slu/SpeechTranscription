@@ -1,6 +1,13 @@
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
 from pattern.text.en import conjugate
+import os
+import sys
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")

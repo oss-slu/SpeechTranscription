@@ -8,6 +8,14 @@ import tkinter.messagebox as msgbox
 import threading
 import time
 
+import os
+import sys
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+
 class AudioManager:
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
