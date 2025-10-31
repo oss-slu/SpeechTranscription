@@ -18,22 +18,11 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
-subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-
-# logger = logging.getLogger(__name__)
-# os.environ["TQDM_DISABLE"] = "1"
-
-# # Logging setup - CICD Internal Dev 
-# logging.basicConfig(
-#     level=logging.DEBUG,  
-#     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-# logger.setLevel(logging.INFO)
-# logger.addHandler(logging.StreamHandler(sys.stdout))
-# logger.addHandler(logging.FileHandler("app.log", mode="w"))
-
-# for h in logger.handlers:
-#     h.setLevel(logging.INFO)
-# logger.info("Starting SpeechTranscription app")
+# proc = subprocess.run("winget list -q \"ffmpeg\"", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+# output = proc.stdout.split('\n')
+# if output[len(output)-2] == "No installed package found matching input criteria.":
+#     print("Installing ffmpeg. This is a one time installation")
+#     subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
 
 class mainGUI(CTk):
     @global_error_handler
