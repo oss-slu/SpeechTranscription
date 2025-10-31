@@ -18,14 +18,39 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
+
+promptRestart = False
 proc = subprocess.run("winget list -q \"ffmpeg\"", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
 output = proc.stdout.split('\n')
 if output[len(output)-2] == "No installed package found matching input criteria.":
-    print("Installing ffmpeg. This is a one time installation")
+    print("Installing ffmpeg. This is a one time installation.")
     subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-    subprocess.run("RefreshEnv", shell=True)
+    promptRestart = True
+    # subprocess.run("RefreshEnv", shell=True)
+
 
 class mainGUI(CTk):
+
+    @global_error_handler
+    def restartPromptPopup(self):
+        popup = CTkToplevel(self)
+        popup.title("Restart Required")
+        popup.geometry("450x200")
+        popup.attributes("-topmost", True)
+        popup.resizable(False, False)
+
+        text = "RESTART REQUIRED\nPlease close and reopen Saltify"
+
+        text = CTkLabel(popup, text=text, justify=CENTER, font=("Arial", 20), wraplength=400)
+        text.pack(padx=10, pady=10)
+
+        closeButton = createButton(popup, "Close", None, None, height=30, width=80, lock=False, command=self.close_program)
+        closeButton.pack(pady=10)
+
+    def close_program(self):
+        sys.exit()
+
+
     @global_error_handler
     def new_session(self):
         '''Automatically generates a new session with a unique name and navigates to the main page.'''
@@ -163,6 +188,8 @@ class mainGUI(CTk):
                                             height=30, width=120, lock=True)
         self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
+        if promptRestart:
+            self.restartPromptPopup()
         self.mainloop()
 
 if __name__ == "__main__":
