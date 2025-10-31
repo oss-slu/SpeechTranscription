@@ -23,6 +23,7 @@ output = proc.stdout.split('\n')
 if output[len(output)-2] == "No installed package found matching input criteria.":
     print("Installing ffmpeg. This is a one time installation")
     subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+    subprocess.run("RefreshEnv", shell=True)
 
 class mainGUI(CTk):
     @global_error_handler
