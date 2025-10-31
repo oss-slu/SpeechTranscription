@@ -1,7 +1,6 @@
 name: Build SpeechTranscription (macOS)
 
 on:
-  workflow_call:
   push:
     branches:
       - main
@@ -17,98 +16,95 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: 3.11.7
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.7
 
-    - uses: actions/cache@v3
-    with:
-      path: ~/.cache/pip
-      key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-      
-    - name: Install system tools
-    run: |
-      brew install ffmpeg portaudio mysql
-      
-    - name: Install Python requirements
-    run: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-      pip install mysql-connector-python pyaudio
-      python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
-      
-    - name: Initialize Git submodules
-    run: git submodule update --init --recursive
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-    - name: Remove obsolete typing package
-    run: pip uninstall -y typing || echo "typing not installed"
+      - name: Install system tools
+        run: |
+          brew install ffmpeg portaudio mysql
 
+      - name: Install Python requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          pip install mysql-connector-python pyaudio
+          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
-    - name: Download NLTK corpora for bundling
-    run: |
-      mkdir -p nltk_data
-      python - << 'PYCODE'
+      - name: Initialize Git submodules
+        run: git submodule update --init --recursive
+
+      - name: Remove obsolete typing package
+        run: pip uninstall -y typing || echo "typing not installed"
+
+      - name: Download NLTK corpora for bundling
+        run: |
+          mkdir -p nltk_data
+          python - << 'PYCODE'
 import nltk, os
 download_dir = "nltk_data"
 os.makedirs(download_dir, exist_ok=True)
-# the ones that kept failing on client mac
 nltk.download("wordnet", download_dir=download_dir)
 nltk.download("omw-1.4", download_dir=download_dir)
-# these two names fix your developer's odd names
 nltk.download("punkt", download_dir=download_dir)
 nltk.download("averaged_perceptron_tagger", download_dir=download_dir)
 PYCODE
 
-    - name: Build macOS App
-    run: |
-      pyinstaller --name Saltify \
-      --windowed \
-      --noconfirm \
-      --onefile \
-      --add-data "images:images" \
-      --add-data "build_assets/en-model.slp:pattern/text/en" \
-      --add-data "CTkXYFrame:CTkXYFrame" \
-      --add-data "nltk_data:nltk_data" \
-      --collect-data whisper \
-      --collect-data lightning_fabric \
-      --collect-data pytorch_lightning \
-      --collect-data pyannote.audio \
-      --copy-metadata torch \
-      --copy-metadata tqdm \
-      --copy-metadata regex \
-      --copy-metadata sacremoses \
-      --copy-metadata requests \
-      --copy-metadata packaging \
-      --copy-metadata filelock \
-      --copy-metadata numpy \
-      --copy-metadata tokenizers \
-      --copy-metadata importlib_metadata \
-      -collect-data sv_ttk \
-      --hidden-import "lightning_fabric" \
-      --hidden-import "torch" \
-      --hidden-import "torchvision" \
-      --hidden-import "pytorch_lightning" \
-      --hidden-import "pyannote.audio" \
-      GUI.py
+      - name: Build macOS App
+        run: |
+          pyinstaller --name Saltify \
+          --windowed \
+          --noconfirm \
+          --onefile \
+          --add-data "images:images" \
+          --add-data "build_assets/en-model.slp:pattern/text/en" \
+          --add-data "CTkXYFrame:CTkXYFrame" \
+          --add-data "nltk_data:nltk_data" \
+          --collect-data whisper \
+          --collect-data lightning_fabric \
+          --collect-data pytorch_lightning \
+          --collect-data pyannote.audio \
+          --copy-metadata torch \
+          --copy-metadata tqdm \
+          --copy-metadata regex \
+          --copy-metadata sacremoses \
+          --copy-metadata requests \
+          --copy-metadata packaging \
+          --copy-metadata filelock \
+          --copy-metadata numpy \
+          --copy-metadata tokenizers \
+          --copy-metadata importlib_metadata \
+          --collect-data sv_ttk \
+          --hidden-import "lightning_fabric" \
+          --hidden-import "torch" \
+          --hidden-import "torchvision" \
+          --hidden-import "pytorch_lightning" \
+          --hidden-import "pyannote.audio" \
+          GUI.py
 
-    - name: Run GUI headless for log
-    run: |
-      export HEADLESS=true
-      python GUI.py > app.log 2>&1 || true
+      - name: Run GUI headless for log
+        run: |
+          export HEADLESS=true
+          python GUI.py > app.log 2>&1 || true
 
-    - uses: actions/upload-artifact@v4
-    if: always()
-    with:
-      name: SpeechTranscription_macos_logs
-      path: app.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SpeechTranscription_macos_logs
+          path: app.log
 
-    - uses: actions/upload-artifact@v4
-    if: always()
-    with:
-      name: SpeechTranscription_macos
-      path: dist/Saltify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SpeechTranscription_macos
+          path: dist/Saltify
