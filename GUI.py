@@ -22,7 +22,7 @@ if sys.stderr is None:
 promptRestart = False
 proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
 output = proc.stdout.split('\n')
-if output[len(output)-2] == "No installed package found matching input criteria.":
+if "No installed package found matching input criteria." in output[len(output)-2]:
     print("Installing ffmpeg. This is a one time installation.")
     subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
     promptRestart = True
