@@ -49,7 +49,6 @@ jobs:
         shell: cmd
         run: |
           pyinstaller --name Saltify ^
-          --windowed ^
           --noconfirm ^
           --onefile ^
           --add-data "images;images" ^
