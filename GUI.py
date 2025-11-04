@@ -1,5 +1,6 @@
 # Adding Logging - CICD Internal Dev 
 import logging
+import subprocess
 
 # main.py
 from customtkinter import *
@@ -12,22 +13,44 @@ from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 import os
 import sys
 
-logger = logging.getLogger(__name__)
-os.environ["TQDM_DISABLE"] = "1"
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
-# Logging setup - CICD Internal Dev 
-logging.basicConfig(
-    level=logging.DEBUG,  
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler(sys.stdout))
-logger.addHandler(logging.FileHandler("app.log", mode="w"))
 
-for h in logger.handlers:
-    h.setLevel(logging.INFO)
-logger.info("Starting SpeechTranscription app")
+promptRestart = False
+proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+output = proc.stdout.split('\n')
+if "No installed package found matching input criteria." in output[len(output)-2]:
+    print("Installing ffmpeg. This is a one time installation.")
+    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+    promptRestart = True
+    # subprocess.run("RefreshEnv", shell=True)
+
 
 class mainGUI(CTk):
+
+    @global_error_handler
+    def restartPromptPopup(self):
+        popup = CTkToplevel(self)
+        popup.title("Restart Required")
+        popup.geometry("450x200")
+        popup.attributes("-topmost", True)
+        popup.resizable(False, False)
+
+        text = "RESTART REQUIRED\nPlease close and reopen Saltify"
+
+        text = CTkLabel(popup, text=text, justify=CENTER, font=("Arial", 20), wraplength=400)
+        text.pack(padx=10, pady=10)
+
+        closeButton = createButton(popup, "Close", None, None, height=30, width=80, lock=False, command=self.close_program)
+        closeButton.pack(pady=10)
+
+    def close_program(self):
+        sys.exit()
+
+
     @global_error_handler
     def new_session(self):
         '''Automatically generates a new session with a unique name and navigates to the main page.'''
@@ -165,6 +188,8 @@ class mainGUI(CTk):
                                             height=30, width=120, lock=True)
         self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
+        if promptRestart:
+            self.restartPromptPopup()
         self.mainloop()
 
 if __name__ == "__main__":
@@ -173,11 +198,11 @@ if __name__ == "__main__":
         # This prevents Tkinter from crashing in environments without a display in GitHub Actions. - CICD Internal Dev
         headless = os.environ.get("HEADLESS", "false").lower() == "true"
         if headless:
-            logger.info("Running in headless mode. GUI mainloop will be skipped.")
+            # logger.info("Running in headless mode. GUI mainloop will be skipped.")
             gui = mainGUI()  # You can still initialize for tests if needed, but GUI won't block
         else:
             # Launch the GUI normally
             gui = mainGUI()  # __init__ already calls mainloop()
     except Exception as e:
-        logger.exception("An error occurred while running the GUI.")
+        # logger.exception("An error occurred while running the GUI.")
         raise
