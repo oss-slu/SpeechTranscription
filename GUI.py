@@ -2,14 +2,16 @@
 import logging
 import os
 import sys
-import nltk  # type: ignore
-
+import nltk # type: ignore
 
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
 app_dir = os.path.dirname(os.path.abspath(__file__))
 nltk_data_dir = os.path.join(app_dir, "nltk_data")
 if os.path.exists(nltk_data_dir):
-    nltk.data.path.append(nltk_data_dir)
+    # put it first, not last
+    nltk.data.path.insert(0, nltk_data_dir)
+else:
+    logging.warning("GUI.py: bundled nltk_data not found")
 
 # main.py
 from customtkinter import *
@@ -21,20 +23,16 @@ from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 
 
-if sys.stdout is None:
-    sys.stdout = open(os.devnull, "w")
-if sys.stderr is None:
-    sys.stderr = open(os.devnull, "w")
 
-
-promptRestart = False
-proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-output = proc.stdout.split('\n')
-if "No installed package found matching input criteria." in output[len(output)-2]:
-    print("Installing ffmpeg. This is a one time installation.")
-    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-    promptRestart = True
-    # subprocess.run("RefreshEnv", shell=True)
+# Logging setup - CICD Internal Dev 
+logging.basicConfig(
+    level=logging.INFO,  
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),  # logs to console
+        logging.FileHandler("app.log", mode="w")  # logs to a file
+    ]
+)
 
 
 class mainGUI(CTk):
@@ -202,8 +200,6 @@ class mainGUI(CTk):
 
 if __name__ == "__main__":
     try:
-        # If HEADLESS=true is set, skip launching the GUI window.
-        # This prevents Tkinter from crashing in environments without a display in GitHub Actions. - CICD Internal Dev
         headless = os.environ.get("HEADLESS", "false").lower() == "true"
         if headless:
             # logger.info("Running in headless mode. GUI mainloop will be skipped.")
