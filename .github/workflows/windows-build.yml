@@ -10,6 +10,7 @@ on:
       - issue169_dependency
       - issue178_build-test-failures
       - issue-2-cicd-logging
+      - feature/windowsBuild
 
 jobs:
   build-windows:
@@ -29,11 +30,6 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-      - name: Install system tools
-        shell: powershell
-        run: |
-          choco install ffmpeg -y
 
       - name: Install Python requirements
         run: |
@@ -80,11 +76,6 @@ jobs:
           --hidden-import "pytorch_lightning" ^
           --hidden-import "pyannote.audio" ^
           GUI.py
-
-      - name: Run GUI headless for log
-        run: |
-          set HEADLESS=true
-          python GUI.py > app.log 2>&1 || true
 
       - uses: actions/upload-artifact@v4
         if: always()
