@@ -194,6 +194,7 @@ class mainGUI(CTk):
                                             height=30, width=120, lock=True)
         self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
+        promptRestart = False
         if promptRestart:
             self.restartPromptPopup()
         self.mainloop()
