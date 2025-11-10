@@ -248,8 +248,9 @@ class audioMenu(CTkFrame):
         current_segments = current_text.split('\n')
         
         for var, idx in self.segment_selections:
-            if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
-                current_segments[idx] = f"{speaker}: {current_segments[idx]}"
+            if var.get() and not current_segments[idx].startswith(f"{speaker} "):
+                text = current_segments[idx].lstrip(': ').lstrip()
+                current_segments[idx] = f"{speaker} {text}"
                 var.set(0)
 
         new_transcription_text = "\n".join(current_segments)
@@ -300,26 +301,31 @@ class audioMenu(CTkFrame):
 
         for speaker, alias in self.speaker_aliases.items():
             start_idx = "1.0"
+
+            # earlier in function (alias search)
             while True:
-                start_idx = self.transcriptionBox.search(f"{alias}:", start_idx, stopindex="end", exact=True, nocase=False)
+                start_idx = self.transcriptionBox.search(f"{alias} ", start_idx, stopindex="end", exact=True, nocase=False)
                 if not start_idx:
                     break
                 end_idx = self.transcriptionBox.index(f"{start_idx} lineend")
                 self.transcriptionBox.tag_add(alias, start_idx, end_idx)
                 start_idx = self.transcriptionBox.index(f"{start_idx} + 1 line")
-
+            
         transcription_text = self.getTranscriptionText()
         self.transcriptionBox.mark_set("range_start", "1.0")
-        
+
+            
         for speaker in SPEAKER_COLORS.keys():
             start_idx = "1.0"
+            # later for base speaker names
             while True:
-                start_idx = self.transcriptionBox.search(f"{speaker}:", start_idx, stopindex="end", exact=True, nocase=False)
+                start_idx = self.transcriptionBox.search(f"{speaker} ", start_idx, stopindex="end", exact=True, nocase=False)
                 if not start_idx:
                     break
                 end_idx = self.transcriptionBox.index(f"{start_idx} lineend")
                 self.transcriptionBox.tag_add(speaker, start_idx, end_idx)
                 start_idx = self.transcriptionBox.index(f"{start_idx} + 1 line")
+
 
     @global_error_handler
     def togglePlayPause(self):
@@ -514,8 +520,8 @@ class audioMenu(CTkFrame):
                 
                 segment_frame = CTkFrame(scrollable_frame)
                 segment_frame.pack(fill='x', padx=5, pady=2)
-                
-                speaker_match = re.match(r'^(\[?\d+:\d+\]?)?\s*(Speaker \d+):', segment)
+                speaker_match = re.match(r'^(\[?\d+:\d+\]?)?\s*(Speaker \d+)\s*[:]?', segment)
+
                 if speaker_match:
                     speaker = speaker_match.group(2)
                     color = SPEAKER_COLORS.get(speaker, "#FFFFFF") 
@@ -550,21 +556,27 @@ class audioMenu(CTkFrame):
                 other = speaker1_alias
 
             for var, idx in self.segment_selections:
-                if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
+                if var.get() and not current_segments[idx].startswith(f"{speaker} "):
                     line = current_segments[idx]
                     match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', line)
                     if match:
                         timestamp = match.group(1)
                         rest = match.group(2)
-                        bracket = rest.find(']')
 
-                        #prevent previous speaker label from being maintained
-                        if rest[bracket + 1: bracket + 1 + len(other) + 1] == other + ":":
-                            current_segments[idx] = f"[{timestamp}] {speaker}: {rest[bracket + 3 + len(other):]}"
-                        elif rest[bracket + 1: bracket + 1 + len(speaker) + 1] != speaker + ":":
-                            current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
+                        rest_stripped = rest.lstrip()
+                        prev_label_pattern = r'^(' + re.escape(other) + r')[:\s]?'
+
+                        if re.match(prev_label_pattern, rest_stripped):
+                            # remove the previous label (and optional colon/space)
+                            rest_clean = re.sub(prev_label_pattern, '', rest_stripped, count=1).lstrip()
+                            current_segments[idx] = f"[{timestamp}] {speaker} {rest_clean}"
+                        else:
+                            # ensure no leading colon/space left
+                            current_segments[idx] = f"[{timestamp}] {speaker} {rest_stripped}"
+
                     else:
-                        current_segments[idx] = f"{speaker}: {line}"
+                        text = line.lstrip(': ').lstrip()
+                        current_segments[idx] = f"{speaker} {text}"
                     var.set(0)
 
                     # Update the displayed text with color
@@ -619,6 +631,7 @@ class audioMenu(CTkFrame):
 
             transcription_text = self.getTranscriptionText()
 
+ 
             # Define all possible previous speaker labels to replace
             label_mapping = {
                 "Speaker 1": self.speaker_aliases["Speaker 1"],
@@ -628,11 +641,16 @@ class audioMenu(CTkFrame):
                 "E": self.speaker_aliases["Speaker 2"],
                 "Examiner": self.speaker_aliases["Speaker 2"]
             }
+            # Replace all known labels (with optional colon or trailing space) with the current alias + single space
+            pattern = r'(\[\d{2}:\d{2}\]\s*)?(' + "|".join(re.escape(label) for label in label_mapping.keys()) + r')[:\s]?'
+            def replace_label(m):
+                prefix = m.group(1) or ''
+                old_label = m.group(2)
+                new_label = label_mapping.get(old_label, old_label)
+                return f"{prefix}{new_label} "
 
-            # Replace all known labels with the current alias
-            pattern = r'(\[\d{2}:\d{2}\]\s*)?(' + "|".join(re.escape(label) for label in label_mapping.keys()) + r'):'
+            transcription_text = re.sub(pattern, replace_label, transcription_text)
 
-            transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{label_mapping[m.group(2)]}:", transcription_text)
 
             self.transcriptionBox.configure(state="normal")
             self.transcriptionBox.delete("0.0", "end")
