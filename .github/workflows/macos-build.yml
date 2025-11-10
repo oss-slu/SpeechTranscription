@@ -11,6 +11,7 @@ on:
       - issue178_build-test-failures
       - issue-2-cicd-logging
       - macOS-testRelease
+      - multipleGUI_fix
 
 jobs:
   build-macos:

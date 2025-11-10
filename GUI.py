@@ -3,6 +3,29 @@ import logging
 import os
 import sys
 import nltk # type: ignore
+import socket
+import subprocess
+
+def already_running(port=65432):
+    """Return True if another Saltify instance is already running."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.bind(("127.0.0.1", port))
+    except socket.error:
+        # Another instance is already running
+        return True
+    return False
+
+def bring_existing_to_front():
+    """Focus the existing Saltify window (macOS only)."""
+    try:
+        subprocess.run([
+            "osascript", "-e",
+            'tell application "System Events" to set frontmost of the first process whose name is "Saltify" to true'
+        ])
+    except Exception as e:
+        print(f"Unable to bring existing Saltify window to front: {e}")
+
 
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +57,7 @@ logging.basicConfig(
     ]
 )
 
-logger = logging.getLogger("SpeechTranscription")
+logger = logging.getLogger("SpeechTranscription") 
 logger.info("Starting SpeechTranscription app")
 
 class mainGUI(CTk):
@@ -179,15 +202,20 @@ class mainGUI(CTk):
 
 if __name__ == "__main__":
     try:
+        # Prevent duplicate GUI instances
+        if already_running():
+            logger.info("Saltify is already running — focusing existing window.")
+            bring_existing_to_front()
+            sys.exit(0)
+
         headless = os.environ.get("HEADLESS", "false").lower() == "true"
         if headless:
             logger.info("Running in headless mode. GUI launch skipped.")
-            # Optionally test imports or basic initialization
             import torch, whisper
             logger.info("Core modules loaded successfully in headless mode.")
             sys.exit(0)
         else:
-            # Launch the GUI normally
+            logger.info("Launching Saltify GUI...")
             gui = mainGUI()  # __init__ already calls mainloop()
     except Exception as e:
         logger.exception("An error occurred while running the GUI.")
