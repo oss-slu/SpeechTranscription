@@ -771,12 +771,34 @@ class audioMenu(CTkFrame):
             lockItem(self.submitGrammarButton)
             self.grammarCheckPerformed = True
 
+    
+    
     @global_error_handler
     def inflectionalMorphemes(self):
         unlockItem(self.conventionBox)
-        converting = self.grammar.getInflectionalMorphemes(self.conventionBox.get("1.0", "end"))
+        text = self.conventionBox.get("1.0", "end").split("\n")
+        headers = []
+        lines = ""
+        #remove timestamps
+        for line in text:
+            timestamp = line.find("]")
+            headers.append(line[:timestamp+1])
+            lines += line[timestamp+1:] + "\n"
+
+        converting = self.grammar.getInflectionalMorphemes(lines)
+
+        #re-add timestamps
+        convertedList = converting.split('\n')
+        convertedList = list(filter(lambda x: x != "", convertedList))
+        newConverting = ""
+        i = 0
+        while i < len(convertedList):
+            newConverting += headers[i] + " " + convertedList[i] + "\n"
+            i += 1
+
+        
         self.conventionBox.delete("1.0", "end")
-        self.conventionBox.insert("end", converting)
+        self.conventionBox.insert("end", newConverting)
         lockItem(self.morphemesButton)
 
     @global_error_handler
