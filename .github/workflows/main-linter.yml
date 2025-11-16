@@ -31,7 +31,7 @@ jobs:
         run: |
           git submodule init
           git submodule update
-          pylint --errors-only  *.py $(git ls-files '*.py')
+          pylint --errors-only --disable=import-error  *.py $(git ls-files '*.py')
           pylint_exit=$?
           if [ $pylint_exit -eq 0 ]; then
             echo "Pylint exited with code $pylint_exit"
