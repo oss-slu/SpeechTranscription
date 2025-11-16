@@ -39,8 +39,6 @@ if platform.system() == 'Windows':
         print("Installing ffmpeg. This is a one time installation.")
         subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
         promptRestart = True
-        # subprocess.run("RefreshEnv", shell=True)
-
 
 class mainGUI(CTk):
 
