@@ -32,13 +32,12 @@ if sys.stderr is None:
 
 
 promptRestart = False
-if platform.system() == 'Windows':
-    proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-    output = proc.stdout.split('\n')
-    if "No installed package found matching input criteria." in output[len(output)-2]:
-        print("Installing ffmpeg. This is a one time installation.")
-        subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-        promptRestart = True
+proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+output = proc.stdout.split('\n')
+if "No installed package found matching input criteria." in output[len(output)-2]:
+    print("Installing ffmpeg. This is a one time installation.")
+    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+    promptRestart = True
 
 class mainGUI(CTk):
 
