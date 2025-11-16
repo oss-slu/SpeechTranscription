@@ -84,6 +84,7 @@ def removeErrorCoding(x):
 # Sentences with error coding are sent to removeErrorCoding() first so NLTK can process them
 def addInflectionalMorphemes(x):
     sentences = []
+    
     sentences = sent_tokenize(x)
     converting = "" # Will contain entire transcript fully corrected at end of function
     for sentence in sentences:
