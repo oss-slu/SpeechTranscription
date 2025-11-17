@@ -9,6 +9,7 @@ on:
       - testingv4artifact
       - issue169_dependency
       - issue178_build-test-failures
+      - issue-2-cicd-logging
       - extra
 
 jobs:
@@ -30,21 +31,23 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
+      - name: Install system tools
+        run: |
+          brew install ffmpeg portaudio mysql
+
       - name: Install Python requirements
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          # macOS audio dependency
-          pip install pyaudio
-      # OPTIONAL: remove this if you do not want online downloading
-    # python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
+          pip install mysql-connector-python pyaudio
+        # python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
 
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
-
+        
       - name: Build macOS App
         run: |
           pyinstaller --name Saltify \
@@ -76,11 +79,19 @@ jobs:
           --hidden-import "pyannote.audio" \
           GUI.py
 
-      - name: Show build output
-        run: ls -R dist
+      - name: Run GUI headless for log
+        run: |
+          export HEADLESS=true
+          python GUI.py > app.log 2>&1 || true
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
+          name: SpeechTranscription_macos_logs
+          path: app.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: 
           name: SpeechTranscription_macos
-          path: dist/Saltify.app
+          path: dist/Saltify
