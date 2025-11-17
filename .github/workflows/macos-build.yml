@@ -1,11 +1,15 @@
-on: 
+name: Build SpeechTranscription (macOS)
+
+on:
+  workflow_call:
   push:
     branches:
       - main
-      - fix-mac-exe
+      - fix-exe
       - testingv4artifact
       - issue169_dependency
       - issue178_build-test-failures
+      - extra
 
 jobs:
   build-macos:
@@ -13,29 +17,70 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.11
-      - name: Install Java
-        run: |
-          if ! java -version; then
-            brew install openjdk@11
-          fi
-      - name: Install Specific Python Version
-        uses: actions/setup-python@v4
-        with:
           python-version: 3.11.7
-      - name: Install NLTK
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install Python requirements
         run: |
-          pip install nltk
-          python -m nltk.downloader all
-      - run: brew install mysql pkg-config portaudio
-      - run: pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-      - run: pip uninstall -y typing
-      - name: Build executable
-        run: pyinstaller --name Saltify --windowed --noconfirm --onefile -c --copy-metadata torch --copy-metadata tqdm --copy-metadata regex --copy-metadata sacremoses --copy-metadata requests --copy-metadata packaging --copy-metadata filelock --copy-metadata numpy --copy-metadata tokenizers --copy-metadata importlib_metadata --collect-data sv_ttk --recursive-copy-metadata "openai-whisper" --collect-data whisper GUI.py
+          pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          # macOS audio dependency
+          pip install pyaudio
+      # OPTIONAL: remove this if you do not want online downloading
+    # python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
+
+      - name: Initialize Git submodules
+        run: git submodule update --init --recursive
+
+      - name: Remove obsolete typing package
+        run: pip uninstall -y typing || echo "typing not installed"
+
+      - name: Build macOS App
+        run: |
+          pyinstaller --name Saltify \
+          --windowed \
+          --noconfirm \
+          --onefile \
+          --add-data "images:images" \
+          --add-data "build_assets/en-model.slp:pattern/text/en" \
+          --add-data "CTkXYFrame:CTkXYFrame" \
+          --collect-data whisper \
+          --collect-data lightning_fabric \
+          --collect-data pytorch_lightning \
+          --collect-data pyannote.audio \
+          --copy-metadata torch \
+          --copy-metadata tqdm \
+          --copy-metadata regex \
+          --copy-metadata sacremoses \
+          --copy-metadata requests \
+          --copy-metadata packaging \
+          --copy-metadata filelock \
+          --copy-metadata numpy \
+          --copy-metadata tokenizers \
+          --copy-metadata importlib_metadata \
+          --collect-data sv_ttk \
+          --hidden-import "lightning_fabric" \
+          --hidden-import "torch" \
+          --hidden-import "torchvision" \
+          --hidden-import "pytorch_lightning" \
+          --hidden-import "pyannote.audio" \
+          GUI.py
+
+      - name: Show build output
+        run: ls -R dist
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: SpeechTranscription_macos
-          path: dist/Saltify
+          path: dist/Saltify.app
