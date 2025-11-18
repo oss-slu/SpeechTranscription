@@ -1,6 +1,21 @@
 # Adding Logging - CICD Internal Dev 
-import logging
+import os
+import sys
+import nltk # type: ignore
+import platform
 import subprocess
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Ensure NLTK knows where to find the bundled data when running as a frozen app
+app_dir = os.path.dirname(os.path.abspath(__file__))
+nltk_data_dir = os.path.join(app_dir, "nltk_data")
+if os.path.exists(nltk_data_dir):
+    # put it first, not last
+    nltk.data.path.insert(0, nltk_data_dir)
+else:
+    logging.warning("GUI.py: bundled nltk_data not found")
 
 # main.py
 from customtkinter import *
@@ -10,9 +25,8 @@ from components.audio_menu import plotAudio
 from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
-import os
-import sys
-import platform
+
+
 
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
@@ -196,12 +210,13 @@ class mainGUI(CTk):
 
 if __name__ == "__main__":
     try:
-        # If HEADLESS=true is set, skip launching the GUI window.
-        # This prevents Tkinter from crashing in environments without a display in GitHub Actions. - CICD Internal Dev
         headless = os.environ.get("HEADLESS", "false").lower() == "true"
         if headless:
-            # logger.info("Running in headless mode. GUI mainloop will be skipped.")
-            gui = mainGUI()  # You can still initialize for tests if needed, but GUI won't block
+            logger.info("Running in headless mode. GUI launch skipped.")
+            # Optionally test imports or basic initialization
+            import torch, whisper
+            logger.info("Core modules loaded successfully in headless mode.")
+            sys.exit(0)
         else:
             # Launch the GUI normally
             gui = mainGUI()  # __init__ already calls mainloop()
