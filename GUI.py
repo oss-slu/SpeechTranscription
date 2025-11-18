@@ -7,7 +7,9 @@ import socket
 import subprocess
 import platform
 import subprocess
-import logger
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def already_running(port=65432):
     """Return True if another Saltify instance is already running."""
