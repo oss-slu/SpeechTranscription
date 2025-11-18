@@ -5,7 +5,6 @@ import sys
 import nltk # type: ignore
 import platform
 import subprocess
-import logger
 
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
 app_dir = os.path.dirname(os.path.abspath(__file__))
