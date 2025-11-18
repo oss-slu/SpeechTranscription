@@ -41,6 +41,7 @@ if os.path.exists(nltk_data_dir):
     logging.info(f"Using bundled nltk_data at: {nltk_data_dir}")
 else:
     logging.warning("GUI.py: bundled nltk_data not found — NLTK may try to download resources.")
+import subprocess
 
 # main.py
 from customtkinter import *
@@ -52,21 +53,49 @@ from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 
 
+import os
+import sys
+import platform
 
-# Logging setup - CICD Internal Dev 
-logging.basicConfig(
-    level=logging.INFO,  
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),  # logs to console
-        logging.FileHandler("app.log", mode="w")  # logs to a file
-    ]
-)
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
-logger = logging.getLogger("SpeechTranscription") 
-logger.info("Starting SpeechTranscription app")
+
+promptRestart = False
+if platform.system() == 'Windows':
+    proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+    output = proc.stdout.split('\n')
+    if "No installed package found matching input criteria." in output[len(output)-2]:
+        print("Installing ffmpeg. This is a one time installation.")
+        subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+        promptRestart = True
+        # subprocess.run("RefreshEnv", shell=True)
+
 
 class mainGUI(CTk):
+
+    @global_error_handler
+    def restartPromptPopup(self):
+        popup = CTkToplevel(self)
+        popup.title("Restart Required")
+        popup.geometry("450x200")
+        popup.attributes("-topmost", True)
+        popup.resizable(False, False)
+
+        text = "RESTART REQUIRED\nPlease close and reopen Saltify"
+
+        text = CTkLabel(popup, text=text, justify=CENTER, font=("Arial", 20), wraplength=400)
+        text.pack(padx=10, pady=10)
+
+        closeButton = createButton(popup, "Close", None, None, height=30, width=80, lock=False, command=self.close_program)
+        closeButton.pack(pady=10)
+
+    def close_program(self):
+        sys.exit()
+
+
     @global_error_handler
     def new_session(self):
         '''Automatically generates a new session with a unique name and navigates to the main page.'''
@@ -204,6 +233,8 @@ class mainGUI(CTk):
                                             height=30, width=120, lock=True)
         self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
+        if promptRestart:
+            self.restartPromptPopup()
         self.mainloop()
 
 if __name__ == "__main__":
@@ -216,13 +247,11 @@ if __name__ == "__main__":
 
         headless = os.environ.get("HEADLESS", "false").lower() == "true"
         if headless:
-            logger.info("Running in headless mode. GUI launch skipped.")
-            import torch, whisper
-            logger.info("Core modules loaded successfully in headless mode.")
-            sys.exit(0)
+            # logger.info("Running in headless mode. GUI mainloop will be skipped.")
+            gui = mainGUI()  # You can still initialize for tests if needed, but GUI won't block
         else:
             logger.info("Launching Saltify GUI...")
             gui = mainGUI()  # __init__ already calls mainloop()
     except Exception as e:
-        logger.exception("An error occurred while running the GUI.")
+        # logger.exception("An error occurred while running the GUI.")
         raise

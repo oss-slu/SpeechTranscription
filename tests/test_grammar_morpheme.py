@@ -3,7 +3,13 @@ import os
 import re
 import grammar
 #or run export PYTHONPATH=$(pwd) before running python tests/saltify_test.py
+import os
+import sys
 
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
 @pytest.fixture
 def grammar_checker():

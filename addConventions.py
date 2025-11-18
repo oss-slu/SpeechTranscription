@@ -1,23 +1,14 @@
 import logging
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
+from pattern.text.en import conjugate
+import os
+import sys
 
-
-try:
-    from pattern.text.en import conjugate as pattern_conjugate
-    PATTERN_AVAILABLE = True
-except Exception as e:
-    logging.warning(f"addConventions: pattern.text.en not available (likely wordnet): {e}")
-    PATTERN_AVAILABLE = False
-
-def safe_conjugate(word: str, **kwargs) -> str:
-    if PATTERN_AVAILABLE:
-        try:
-            return pattern_conjugate(word, **kwargs)
-        except Exception as e:
-            logging.warning(f"addConventions: conjugate failed for '{word}': {e}")
-            return word
-    return word
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")
@@ -84,6 +75,7 @@ def removeErrorCoding(x):
 # Sentences with error coding are sent to removeErrorCoding() first so NLTK can process them
 def addInflectionalMorphemes(x):
     sentences = []
+    
     sentences = sent_tokenize(x)
     converting = "" # Will contain entire transcript fully corrected at end of function
     for sentence in sentences:
