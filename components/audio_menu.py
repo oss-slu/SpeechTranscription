@@ -9,6 +9,7 @@ from audio import AudioManager
 from grammar import GrammarChecker
 from export import Exporter
 import diarizationAndTranscription
+import addConventions
 import threading
 import time
 import re
@@ -729,7 +730,12 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def applyCorrection(self):
         unlockItem(self.conventionBox)
-        self.conventionBox.insert("end", self.correctionEntryBox.get("1.0", "end"))
+        correctedSentence = self.correctionEntryBox.get("1.0", "end")
+        timestart = correctedSentence.index("[")
+        timeend = correctedSentence.index("]")
+        timestamp = correctedSentence[timestart:timeend+1]
+        correctedSentence = timestamp + " " + addConventions.removeErrorCoding(correctedSentence[timeend+1:]) + "\n"
+        self.conventionBox.insert("end", correctedSentence)
         self.correctionEntryBox.delete("1.0", "end")
         self.manageGrammarCorrection()
 
@@ -747,12 +753,34 @@ class audioMenu(CTkFrame):
             lockItem(self.submitGrammarButton)
             self.grammarCheckPerformed = True
 
+    
+    
     @global_error_handler
     def inflectionalMorphemes(self):
         unlockItem(self.conventionBox)
-        converting = self.grammar.getInflectionalMorphemes(self.conventionBox.get("1.0", "end"))
+        text = self.conventionBox.get("1.0", "end").split("\n")
+        headers = []
+        lines = ""
+        #remove timestamps
+        for line in text:
+            timestamp = line.find("]")
+            headers.append(line[:timestamp+1])
+            lines += line[timestamp+1:] + "\n"
+
+        converting = self.grammar.getInflectionalMorphemes(lines)
+
+        #re-add timestamps
+        convertedList = converting.split('\n')
+        convertedList = list(filter(lambda x: x != "", convertedList))
+        newConverting = ""
+        i = 0
+        while i < len(convertedList):
+            newConverting += headers[i] + " " + convertedList[i] + "\n"
+            i += 1
+
+        
         self.conventionBox.delete("1.0", "end")
-        self.conventionBox.insert("end", converting)
+        self.conventionBox.insert("end", newConverting)
         lockItem(self.morphemesButton)
 
     @global_error_handler

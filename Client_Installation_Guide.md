@@ -20,4 +20,5 @@ Before installing, ensure your system meets these requirements:
 # Notes for Clients
 * You do not need to modify environment variables—everything required for running the app is pre-packaged.
 * The application does not require Python installation if packaged with the executable (for releases).
+* For Windows users: The first time the application is opened, you will be prompted to restart it. Close and reopen the application to use. 
 * The app takes some time to open.
