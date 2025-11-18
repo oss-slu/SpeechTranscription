@@ -4,6 +4,7 @@ import language_tool_python
 from pattern.text.en import conjugate
 import os
 import sys
+import safe_conjugate
 
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
