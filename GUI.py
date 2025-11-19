@@ -1,4 +1,8 @@
 # Adding Logging - CICD Internal Dev 
+import logging
+import os
+import sys
+import nltk # type: ignore
 import os
 import sys
 import nltk # type: ignore
@@ -7,6 +11,15 @@ import subprocess
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Ensure NLTK knows where to find the bundled data when running as a frozen app
+app_dir = os.path.dirname(os.path.abspath(__file__))
+nltk_data_dir = os.path.join(app_dir, "nltk_data")
+if os.path.exists(nltk_data_dir):
+    # put it first, not last
+    nltk.data.path.insert(0, nltk_data_dir)
+else:
+    logging.warning("GUI.py: bundled nltk_data not found")
 
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -35,15 +48,12 @@ if sys.stderr is None:
 
 
 promptRestart = False
-if platform.system() == 'Windows':
-    proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-    output = proc.stdout.split('\n')
-    if "No installed package found matching input criteria." in output[len(output)-2]:
-        print("Installing ffmpeg. This is a one time installation.")
-        subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-        promptRestart = True
-        # subprocess.run("RefreshEnv", shell=True)
-
+proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+output = proc.stdout.split('\n')
+if "No installed package found matching input criteria." in output[len(output)-2]:
+    print("Installing ffmpeg. This is a one time installation.")
+    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+    promptRestart = True
 
 class mainGUI(CTk):
 
@@ -204,6 +214,7 @@ class mainGUI(CTk):
                                             height=30, width=120, lock=True)
         self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
+        promptRestart = False
         if promptRestart:
             self.restartPromptPopup()
         self.mainloop()
