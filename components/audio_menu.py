@@ -539,13 +539,7 @@ class audioMenu(CTkFrame):
             current_text = self.getTranscriptionText()
             current_segments = current_text.split('\n')
             color = self.get_color_for_label(speaker)
-            speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
-            speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
-            other = ""
-            if speaker == speaker1_alias:
-                other = speaker2_alias
-            else:
-                other = speaker1_alias
+
 
             speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
             speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
@@ -562,21 +556,15 @@ class audioMenu(CTkFrame):
                     if match:
                         timestamp = match.group(1)
                         rest = match.group(2)
+                        bracket = rest.find(']')
 
-                        rest_stripped = rest.lstrip()
-                        prev_label_pattern = r'^(' + re.escape(other) + r')[:\s]?'
-
-                        if re.match(prev_label_pattern, rest_stripped):
-                            # remove the previous label (and optional colon/space)
-                            rest_clean = re.sub(prev_label_pattern, '', rest_stripped, count=1).lstrip()
-                            current_segments[idx] = f"[{timestamp}] {speaker} {rest_clean}"
-                        else:
-                            # ensure no leading colon/space left
-                            current_segments[idx] = f"[{timestamp}] {speaker} {rest_stripped}"
-
+                        # prevent previous speaker label from being maintained
+                        if rest[bracket + 1: bracket + 1 + len(other) + 1] == other + " ":
+                            current_segments[idx] = f"[{timestamp}] {speaker} {rest[bracket + 2 + len(other):]}"
+                        elif rest[bracket + 1: bracket + 1 + len(speaker) + 1] != speaker + " ":
+                            current_segments[idx] = f"[{timestamp}] {speaker} {rest}"
                     else:
-                        text = line.lstrip(': ').lstrip()
-                        current_segments[idx] = f"{speaker} {text}"
+                        current_segments[idx] = f"{speaker} {line}"
                     var.set(0)
 
                     # Update the displayed text with color
