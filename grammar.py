@@ -29,6 +29,33 @@ _ensure_resource("averaged_perceptron_tagger", "taggers/averaged_perceptron_tagg
 _ensure_resource("wordnet", "corpora/wordnet")
 
 
+import addConventions
+
+
+#looking into the bundled nltk_data first (frozen app)
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+BUNDLED_NLTK = os.path.join(APP_DIR, "nltk_data")
+if os.path.exists(BUNDLED_NLTK):
+    nltk.data.path.insert(0, BUNDLED_NLTK)
+else:
+    logging.warning("grammar.py: bundled nltk_data not found, using system paths.")
+
+#trying to load the resources, but DO NOT download at runtime on client machines
+MISSING_NLTK = []
+
+def _ensure_resource(res_name, path):
+    try:
+        nltk.data.find(path)
+    except LookupError:
+        # we don't download here — we just record that it's missing
+        logging.warning(f"grammar.py: NLTK resource missing: {res_name} ({path})")
+        MISSING_NLTK.append(res_name)
+
+_ensure_resource("punkt", "tokenizers/punkt")
+_ensure_resource("averaged_perceptron_tagger", "taggers/averaged_perceptron_tagger")
+_ensure_resource("wordnet", "corpora/wordnet")
+
+
 class GrammarChecker:
     tokenizedSentences = []
     checkAllSentences = False
