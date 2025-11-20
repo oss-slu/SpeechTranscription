@@ -30,6 +30,7 @@ SPEAKER_COLORS = {
     "E": "#FF5733"
 }
 
+
 def plotAudio(time, signal):
     '''Plots the waveform of audio in a popup window without freezing the GUI.'''
     fig, ax = plt.subplots()
@@ -114,6 +115,8 @@ class audioMenu(CTkFrame):
         self.applyAliasesButton = createButton(self, "Apply Aliases", 4, 1, self.customizeSpeakerAliases)
 
         self.speaker_aliases = {"Speaker 1": "C", "Speaker 2": "E"}
+        self.prev_alias_1 = ""
+        self.prev_alias_2 = ""
 
         # ROW 5: Export, Grammar, and correction boxes.
         self.downloadAudioButton = createButton(self, "Download Audio", 5, 0, self.downloadRecordedAudio)
@@ -248,8 +251,8 @@ class audioMenu(CTkFrame):
         current_segments = current_text.split('\n')
         
         for var, idx in self.segment_selections:
-            if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
-                current_segments[idx] = f"{speaker}: {current_segments[idx]}"
+            if var.get() and not current_segments[idx].startswith(f"{speaker} "):
+                current_segments[idx] = f"{speaker} {current_segments[idx]}"
                 var.set(0)
 
         new_transcription_text = "\n".join(current_segments)
@@ -301,7 +304,7 @@ class audioMenu(CTkFrame):
         for speaker, alias in self.speaker_aliases.items():
             start_idx = "1.0"
             while True:
-                start_idx = self.transcriptionBox.search(f"{alias}:", start_idx, stopindex="end", exact=True, nocase=False)
+                start_idx = self.transcriptionBox.search(f"{alias} ", start_idx, stopindex="end", exact=True, nocase=False)
                 if not start_idx:
                     break
                 end_idx = self.transcriptionBox.index(f"{start_idx} lineend")
@@ -314,7 +317,7 @@ class audioMenu(CTkFrame):
         for speaker in SPEAKER_COLORS.keys():
             start_idx = "1.0"
             while True:
-                start_idx = self.transcriptionBox.search(f"{speaker}:", start_idx, stopindex="end", exact=True, nocase=False)
+                start_idx = self.transcriptionBox.search(f"{speaker} ", start_idx, stopindex="end", exact=True, nocase=False)
                 if not start_idx:
                     break
                 end_idx = self.transcriptionBox.index(f"{start_idx} lineend")
@@ -515,7 +518,7 @@ class audioMenu(CTkFrame):
                 segment_frame = CTkFrame(scrollable_frame)
                 segment_frame.pack(fill='x', padx=5, pady=2)
                 
-                speaker_match = re.match(r'^(\[?\d+:\d+\]?)?\s*(Speaker \d+):', segment)
+                speaker_match = re.match(r'^(\[?\d+:\d+\]?)?\s*(Speaker \d+)', segment)
                 if speaker_match:
                     speaker = speaker_match.group(2)
                     color = SPEAKER_COLORS.get(speaker, "#FFFFFF") 
@@ -541,30 +544,21 @@ class audioMenu(CTkFrame):
             else:
                 other = speaker1_alias
 
-            speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
-            speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
-            other = ""
-            if speaker == speaker1_alias:
-                other = speaker2_alias
-            else:
-                other = speaker1_alias
-
             for var, idx in self.segment_selections:
-                if var.get() and not current_segments[idx].startswith(f"{speaker}:"):
+                if var.get() and not current_segments[idx].startswith(f"{speaker} "):
                     line = current_segments[idx]
                     match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', line)
                     if match:
                         timestamp = match.group(1)
                         rest = match.group(2)
-                        bracket = rest.find(']')
 
                         #prevent previous speaker label from being maintained
-                        if rest[bracket + 1: bracket + 1 + len(other) + 1] == other + ":":
-                            current_segments[idx] = f"[{timestamp}] {speaker}: {rest[bracket + 3 + len(other):]}"
-                        elif rest[bracket + 1: bracket + 1 + len(speaker) + 1] != speaker + ":":
-                            current_segments[idx] = f"[{timestamp}] {speaker}: {rest}"
+                        if rest[:len(other) + 1] == other + " ":
+                            current_segments[idx] = f"[{timestamp}] {speaker} {rest[1 + len(other):]}"
+                        elif rest[:len(speaker) + 1] != speaker + " ":
+                            current_segments[idx] = f"[{timestamp}] {speaker} {rest}"
                     else:
-                        current_segments[idx] = f"{speaker}: {line}"
+                        current_segments[idx] = f"{speaker} {line}"
                     var.set(0)
 
                     # Update the displayed text with color
@@ -575,6 +569,7 @@ class audioMenu(CTkFrame):
                                     child.configure(text=current_segments[idx], text_color=color)
 
             new_transcription_text = "\n".join(current_segments)
+            new_transcription_text = new_transcription_text[:len(new_transcription_text) - 1]
             self.transcriptionBox.configure(state="normal")
             self.transcriptionBox.delete("1.0", "end")
             self.transcriptionBox.insert("1.0", new_transcription_text)
@@ -596,7 +591,6 @@ class audioMenu(CTkFrame):
         popup.geometry("400x200")
         popup.minsize(400, 250)
         popup.maxsize(600, 300)
-
 
         speaker1_alias_label = CTkLabel(popup, text="Speaker 1 Alias:")
         speaker1_alias_label.pack(pady=(10, 0))
@@ -630,9 +624,34 @@ class audioMenu(CTkFrame):
             }
 
             # Replace all known labels with the current alias
-            pattern = r'(\[\d{2}:\d{2}\]\s*)?(' + "|".join(re.escape(label) for label in label_mapping.keys()) + r'):'
+            # pattern = r'(\[\d{2}:\d{2}\]\s*)?(' + "|".join(re.escape(label) for label in label_mapping.keys()) + r'):'
+            # transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{label_mapping[m.group(2)]}:", transcription_text)
 
-            transcription_text = re.sub(pattern, lambda m: f"{m.group(1) or ''}{label_mapping[m.group(2)]}:", transcription_text)
+            transcription_arr = transcription_text.split("\n")
+            transcription_text = ""
+            for i in range(len(transcription_arr)):
+                match = re.match(r'^\[(\d+:\d+)\]\s*(.*)', transcription_arr[i])
+                if match:
+                    timestamp = match.group(1)
+                    rest = match.group(2)
+                    print(timestamp, rest)
+                    words = rest.split(" ")
+                    if words[0] == self.prev_alias_1:
+                        words[0] = self.speaker_aliases["Speaker 1"]
+                    elif words[0] == self.prev_alias_2:
+                        words[0] = self.speaker_aliases["Speaker 2"]
+                    else:
+                        for label in label_mapping.keys():
+                            if label == words[0]:
+                                words[0] = label_mapping[label]
+                    rest = " ".join(words)
+                    transcription_arr[i] = f"[{timestamp}] {rest}"                             
+
+            transcription_text = "\n".join(transcription_arr)
+            transcription_text = transcription_text[:len(transcription_text)-1]
+
+            self.prev_alias_1 = self.speaker_aliases["Speaker 1"]
+            self.prev_alias_2 = self.speaker_aliases["Speaker 2"]
 
             self.transcriptionBox.configure(state="normal")
             self.transcriptionBox.delete("0.0", "end")

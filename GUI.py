@@ -26,13 +26,10 @@ from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
 
-
-
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
-
 
 promptRestart = False
 if platform.system() == 'Windows':
