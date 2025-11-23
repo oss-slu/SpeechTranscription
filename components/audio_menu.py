@@ -634,16 +634,28 @@ class audioMenu(CTkFrame):
                 if match:
                     timestamp = match.group(1)
                     rest = match.group(2)
-                    print(timestamp, rest)
                     words = rest.split(" ")
-                    if words[0] == self.prev_alias_1:
-                        words[0] = self.speaker_aliases["Speaker 1"]
-                    elif words[0] == self.prev_alias_2:
-                        words[0] = self.speaker_aliases["Speaker 2"]
+
+                    if " ".join(words[:len(self.prev_alias_1.split(" "))]) == self.prev_alias_1:
+                        words[0] = self.speaker_aliases["Speaker 1"].strip()
+                        j = 1
+                        while j < len(self.prev_alias_1.split(" ")):
+                            words.pop(1)
+                            j += 1
+                    elif " ".join(words[:len(self.prev_alias_2.split(" "))]) == self.prev_alias_2:
+                        words[0] = self.speaker_aliases["Speaker 2"].strip()
+                        j = 1
+                        while j < len(self.prev_alias_2.split(" ")):
+                            words.pop(1)
+                            j += 1
                     else:
                         for label in label_mapping.keys():
-                            if label == words[0]:
-                                words[0] = label_mapping[label]
+                            if " ".join(words[:len(label.split(" "))]) == label:
+                                words[0] = label_mapping[label].strip()
+                                j = 1
+                                while j < len(label.split(" ")):
+                                    words.pop(1)
+                                    j += 1
                     rest = " ".join(words)
                     transcription_arr[i] = f"[{timestamp}] {rest}"                             
 
