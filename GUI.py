@@ -172,11 +172,11 @@ class mainGUI(CTk):
                     lockItem(self.showGraphButton)
             else:
                 frame.grid_remove()
-        for i, button in enumerate(self.audioButtonList):
+        for i, (session_frame, btn, del_btn) in enumerate(self.audioButtonList):
             if i == num:
-                button.configure(fg_color="#029CFF")
+                btn.configure(fg_color="#029CFF")
             else:
-                button.configure(fg_color="#0062B1")
+                btn.configure(fg_color="#0062B1")
         self.tkraise(self.audioFrame)
 
     @global_error_handler
