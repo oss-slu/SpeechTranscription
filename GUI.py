@@ -1,6 +1,7 @@
 # Adding Logging - CICD Internal Dev 
 import os
 import sys
+from tkinter import Text
 import nltk # type: ignore
 import platform
 import subprocess
@@ -25,7 +26,6 @@ from components.audio_menu import plotAudio
 from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
 from components.constants import WIDTH, HEIGHT, SETTINGS_FILE
-
 
 
 if sys.stdout is None:
@@ -65,7 +65,6 @@ class mainGUI(CTk):
 
     def close_program(self):
         sys.exit()
-
 
     @global_error_handler
     def new_session(self):
@@ -114,11 +113,20 @@ class mainGUI(CTk):
     @global_error_handler
     def showHelpOverlay(self):
         '''Displays a pop-up with all button functionalities.'''
+        if self.helpOpen:
+            return
+        self.helpOpen = True
+
         popup = CTkToplevel(self)
         popup.title("Help Guide")
         popup.geometry("450x450")
         popup.attributes("-topmost", True)
         popup.resizable(False, False)
+
+        def on_closing():
+            popup.destroy()
+            self.helpOpen = False
+        popup.protocol("WM_DELETE_WINDOW", on_closing)
 
         helpText = """
         Help Guide:
@@ -141,10 +149,10 @@ class mainGUI(CTk):
         - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
         """
 
-        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400)
+        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400, state="normal")
         helpLabel.pack(padx=10, pady=10)
 
-        closeButton = createButton(popup, "Close", None, None, popup.destroy, height=30, width=80, lock=False)
+        closeButton = createButton(popup, "Close", None, None, on_closing, height=30, width=80, lock=False)
         closeButton.pack(pady=10)
 
     @global_error_handler
@@ -171,6 +179,10 @@ class mainGUI(CTk):
         self.audioButtonList = []
         self.audioMenuList = []
         self.title('Speech Transcription')
+        self.attributes("-topmost", False)
+
+        self.helpOpen = False
+        self.graphOpen = False
         
         try:
             if os.path.getsize(SETTINGS_FILE) != 0:

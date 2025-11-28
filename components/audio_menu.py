@@ -179,6 +179,9 @@ class audioMenu(CTkFrame):
         self.last_scrub_time = 0
         self.lock = threading.Lock()
 
+        self.labelSpeakersOpen = False
+        self.applyAliasesOpen = False
+
     @global_error_handler
     def uploadAudio(self):
         '''Upload user's audio file'''
@@ -498,9 +501,14 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def labelSpeakers(self):
+        if self.labelSpeakersOpen:
+            return
+        self.labelSpeakersOpen = True
+
         popup = CTkToplevel(self)
         popup.title("Label Speakers")
         popup.geometry("600x400")
+        popup.attributes("-topmost", True)
 
         scrollable_frame = CTkScrollableFrame(popup)
         scrollable_frame.pack(fill='both', expand=True)
@@ -584,6 +592,12 @@ class audioMenu(CTkFrame):
         button_frame = CTkFrame(popup)
         button_frame.pack(pady=10)
 
+        def on_closing():
+            popup.destroy()
+            self.labelSpeakersOpen = False
+
+        popup.protocol("WM_DELETE_WINDOW", on_closing)
+
         speaker1_alias = self.speaker_aliases.get("Speaker 1", "C")
         speaker2_alias = self.speaker_aliases.get("Speaker 2", "E")
         CTkButton(button_frame, text=f"Label as {speaker1_alias}", command=lambda: apply_labels(speaker1_alias), fg_color="#029CFF").pack(side="left", padx=10)
@@ -591,12 +605,21 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def customizeSpeakerAliases(self):
+        if self.applyAliasesOpen:
+            return
+        self.applyAliasesOpen = True
+
         popup = CTkToplevel(self)
         popup.title("Customize Speaker Aliases")
         popup.geometry("400x200")
         popup.minsize(400, 250)
         popup.maxsize(600, 300)
+        popup.attributes("-topmost", True)
 
+        def on_closing():
+            popup.destroy()
+            self.applyAliasesOpen = False
+        popup.protocol("WM_DELETE_WINDOW", on_closing)
 
         speaker1_alias_label = CTkLabel(popup, text="Speaker 1 Alias:")
         speaker1_alias_label.pack(pady=(10, 0))
@@ -639,6 +662,7 @@ class audioMenu(CTkFrame):
             self.transcriptionBox.insert("0.0", transcription_text)
             self.transcriptionBox.configure(state="disabled")
             self.color_code_transcription()
+            self.applyAliasesOpen = False
             popup.destroy()
 
         apply_button = CTkButton(popup, text="Apply Aliases", command=applyAliases)

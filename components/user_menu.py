@@ -11,8 +11,8 @@ class userMenu(CTkFrame):
         self.label = CTkLabel(self, text="Speech Transcription", height=75, font=("Arial", 26))
         self.label.grid(row=0, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
 
-        self.audioTabs = CTkXYFrame(self, height=465)
-        self.audioTabs.grid(row=2, rowspan=8, columnspan=2, pady=5, padx=10, sticky=N+E+S+W)
+        self.audioTabs = CTkXYFrame(self, height=450, scrollbar_width=15)
+        self.audioTabs.grid(row=2, rowspan=8, columnspan=2, pady=5, padx=5, sticky=N+E+S+W)
 
         CTkLabel(self, text="Theme").grid(row=10, column=0, padx=10, pady=5, sticky=N+E+S+W)
         self.themeSetting = CTkOptionMenu(self, values=["Dark", "Light", "System"], command=self.changeTheme)
