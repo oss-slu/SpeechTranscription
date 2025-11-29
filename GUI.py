@@ -8,6 +8,16 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Ensure NLTK knows where to find the bundled data when running as a frozen app
+app_dir = os.path.dirname(os.path.abspath(__file__))
+nltk_data_dir = os.path.join(app_dir, "nltk_data")
+if os.path.exists(nltk_data_dir):
+    # put it first, not last
+    nltk.data.path.insert(0, nltk_data_dir)
+else:
+    logging.warning("GUI.py: bundled nltk_data not found")
+
+
 # main.py
 from customtkinter import *
 from components.user_menu import userMenu
