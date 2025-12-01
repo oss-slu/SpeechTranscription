@@ -2,6 +2,7 @@ import logging
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
 
+
 try:
     from pattern.text.en import conjugate as pattern_conjugate
     PATTERN_AVAILABLE = True
@@ -16,6 +17,7 @@ def safe_conjugate(word: str, **kwargs) -> str:
         except Exception as e:
             logging.warning(f"addConventions: conjugate failed for '{word}': {e}")
             return word
+        
     return word
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")

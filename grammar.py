@@ -19,6 +19,7 @@ def _ensure_resource(res_name, path):
     except LookupError:
         # we don't download here — we just record that it's missing
         MISSING_NLTK.append(res_name)
+        
 _ensure_resource("punkt", "tokenizers/punkt")
 _ensure_resource("averaged_perceptron_tagger", "taggers/averaged_perceptron_tagger")
 _ensure_resource("wordnet", "corpora/wordnet")
