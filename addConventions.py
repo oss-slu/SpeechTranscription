@@ -17,8 +17,8 @@ def safe_conjugate(word: str, **kwargs) -> str:
         except Exception as e:
             logging.warning(f"addConventions: conjugate failed for '{word}': {e}")
             return word
-        
     return word
+
 wnl = WordNetLemmatizer()
 tool = language_tool_python.LanguageTool("en-US")
 
