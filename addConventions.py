@@ -6,6 +6,7 @@ try:
     from pattern.text.en import conjugate as pattern_conjugate
     PATTERN_AVAILABLE = True
 except Exception as e:
+    logging.warning(f"addConventions: pattern.text.en not available (likely wordnet): {e}")
     PATTERN_AVAILABLE = False
 
 def safe_conjugate(word: str, **kwargs) -> str:
@@ -13,6 +14,7 @@ def safe_conjugate(word: str, **kwargs) -> str:
         try:
             return pattern_conjugate(word, **kwargs)
         except Exception as e:
+            logging.warning(f"addConventions: conjugate failed for '{word}': {e}")
             return word
     return word
 wnl = WordNetLemmatizer()
