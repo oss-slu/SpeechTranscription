@@ -14,9 +14,7 @@ nltk_data_dir = os.path.join(app_dir, "nltk_data")
 if os.path.exists(nltk_data_dir):
     # put it first, not last
     nltk.data.path.insert(0, nltk_data_dir)
-else:
-    logging.warning("GUI.py: bundled nltk_data not found")
-    
+
 # main.py
 from customtkinter import *
 from components.user_menu import userMenu
