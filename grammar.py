@@ -38,6 +38,7 @@ class GrammarChecker:
     def checkGrammar(self, transcriptionText: str, checkAllSentences: bool):
         self.checkAllSentences = checkAllSentences
         if "punkt" in MISSING_NLTK:
+            logging.warning("grammar.py: punkt missing, using fallback sentence split.")
             self.tokenizedSentences = [s.strip() for s in transcriptionText.split(".") if s.strip()]
         else:
             self.tokenizedSentences = nltk.sent_tokenize(transcriptionText)
