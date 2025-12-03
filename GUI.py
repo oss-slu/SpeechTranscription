@@ -8,6 +8,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+nltk.download = lambda *args, **kwargs: None
+
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
 app_dir = os.path.dirname(os.path.abspath(__file__))
 nltk_data_dir = os.path.join(app_dir, "nltk_data")
