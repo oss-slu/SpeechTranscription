@@ -1,3 +1,8 @@
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")  # suppress font warnings
+
+import logging
+logging.getLogger("language_tool_python").setLevel(logging.ERROR)  # suppress LanguageTool INFO
 # Adding Logging - CICD Internal Dev 
 import os
 import sys
