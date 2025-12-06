@@ -5,7 +5,7 @@ import sys
 import os
 
 WIDTH = 1500
-HEIGHT = 740
+HEIGHT = 750
 SETTINGS_FILE = "user_settings.txt"
 
 def resource_path(relative_path):

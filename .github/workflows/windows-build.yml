@@ -11,7 +11,8 @@ on:
       - issue178_build-test-failures
       - issue-2-cicd-logging
       - feature/windowsBuild
-      - feature/removeColon
+      - feature/addMorphemesError
+      - excellenceGUI
 
 jobs:
   build-windows:
