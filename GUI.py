@@ -1,4 +1,13 @@
+import warnings
+warnings.filterwarnings("ignore", module="matplotlib")  # suppress font warnings
+
+import logging
+logging.getLogger("language_tool_python").setLevel(logging.ERROR)  # suppress LanguageTool INFO
 # Adding Logging - CICD Internal Dev 
+import logging
+import os
+import sys
+import nltk # type: ignore
 import os
 import sys
 from tkinter import Text
@@ -8,6 +17,15 @@ import subprocess
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+nltk.download = lambda *args, **kwargs: None
+
+# Ensure NLTK knows where to find the bundled data when running as a frozen app
+app_dir = os.path.dirname(os.path.abspath(__file__))
+nltk_data_dir = os.path.join(app_dir, "nltk_data")
+if os.path.exists(nltk_data_dir):
+    # put it first, not last
+    nltk.data.path.insert(0, nltk_data_dir)
 
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
 app_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,17 +51,13 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
-
 promptRestart = False
-if platform.system() == 'Windows':
-    proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-    output = proc.stdout.split('\n')
-    if "No installed package found matching input criteria." in output[len(output)-2]:
-        print("Installing ffmpeg. This is a one time installation.")
-        subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-        promptRestart = True
-        # subprocess.run("RefreshEnv", shell=True)
-
+proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+output = proc.stdout.split('\n')
+if "No installed package found matching input criteria." in output[len(output)-2]:
+    print("Installing ffmpeg. This is a one time installation.")
+    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+    promptRestart = True
 
 class mainGUI(CTk):
 
@@ -68,27 +82,85 @@ class mainGUI(CTk):
 
     @global_error_handler
     def new_session(self):
-        '''Automatically generates a new session with a unique name and navigates to the main page.'''
         from datetime import datetime
 
-        # Generate session name in the format: "Session <Number> - <Date> <Time>"
-        session_number = self.currentAudioNum + 1
+        session_number = len(self.audioMenuList) + 1
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         session_name = f"Session {session_number} - {current_time}"
 
-        # Create a new audio session
+        # Create the session object
         self.audioMenuList.append(audioMenu(self))
-        newButton = createButton(self.userFrame.audioTabs, session_name, len(self.audioButtonList), 0,
-                                 lambda x=self.currentAudioNum: self.changeAudioWindow(x),
-                                 width=self.userFrame.audioTabs.cget("width"), lock=False)
-        self.audioButtonList.append(newButton)
 
-        # Navigate directly to the new session
+        # A frame to hold both the button + delete icon
+        session_frame = CTkFrame(self.userFrame.audioTabs)
+        session_frame.grid(row=len(self.audioButtonList), column=0, sticky="ew", pady=2)
+
+        # Main session button
+        btn = createButton(
+            session_frame, session_name, None, None,
+            lambda x=session_number-1: self.changeAudioWindow(x),
+            width=self.userFrame.audioTabs.cget("width") - 40,  # leave space for delete
+            lock=False
+        )
+        btn.pack(side="left", fill="x", expand=True)
+
+        # Delete button
+        del_btn = CTkButton(
+            session_frame,
+            text="✖",
+            width=30,
+            fg_color="red",
+            command=lambda idx=session_number-1: self.delete_session(idx)
+        )
+        del_btn.pack(side="right", padx=5)
+
+        # Save both references so we can delete them later
+        self.audioButtonList.append((session_frame, btn, del_btn))
+
+        self.currentAudioNum = session_number - 1
         self.changeAudioWindow(self.currentAudioNum)
-        self.currentAudioNum += 1
-
-        # Lock the "Show Audio Graph" button for the new session
         lockItem(self.showGraphButton)
+
+
+    @global_error_handler
+    def delete_session(self, index):
+        from tkinter import messagebox
+
+        # Confirm
+        result = messagebox.askyesno(
+            "Delete Session",
+            "Are you sure you want to delete this session?"
+        )
+        if not result:
+            return
+
+        # --- Remove UI Elements ---
+        frame, btn, del_btn = self.audioButtonList[index]
+        frame.destroy()
+
+        # Remove session object
+        self.audioButtonList.pop(index)
+        self.audioMenuList.pop(index)
+
+        # Reindex remaining sessions
+        for i, (frame, btn, del_btn) in enumerate(self.audioButtonList):
+            btn.configure(command=lambda x=i: self.changeAudioWindow(x))
+            del_btn.configure(command=lambda x=i: self.delete_session(x))
+
+        # Fix currentAudioNum
+        if self.currentAudioNum >= len(self.audioButtonList):
+            self.currentAudioNum = len(self.audioButtonList) - 1
+
+        # If sessions remain, switch to closest one
+        if self.audioButtonList:
+            self.changeAudioWindow(self.currentAudioNum)
+        else:
+            # No sessions left → lock graph button and clear screen
+            lockItem(self.showGraphButton)
+            if hasattr(self, "audioFrame"):
+                self.audioFrame.grid_remove()
+
+
 
     @global_error_handler
     def changeAudioWindow(self, num):
@@ -103,11 +175,11 @@ class mainGUI(CTk):
                     lockItem(self.showGraphButton)
             else:
                 frame.grid_remove()
-        for i, button in enumerate(self.audioButtonList):
+        for i, (session_frame, btn, del_btn) in enumerate(self.audioButtonList):
             if i == num:
-                button.configure(fg_color="#029CFF")
+                btn.configure(fg_color="#029CFF")
             else:
-                button.configure(fg_color="#0062B1")
+                btn.configure(fg_color="#0062B1")
         self.tkraise(self.audioFrame)
 
     @global_error_handler
@@ -216,6 +288,7 @@ class mainGUI(CTk):
                                             height=30, width=120, lock=True)
         self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
+        promptRestart = False
         if promptRestart:
             self.restartPromptPopup()
         self.mainloop()
