@@ -3,7 +3,10 @@ import os
 import nltk
 import addConventions
 
-nltk.download = lambda *args, **kwargs: None  # Prevent runtime downloads
+# nltk.download = lambda *args, **kwargs: None  # Prevent runtime downloads
+nltk.download('punkt_tab')
+nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('wordnet')
 
 #looking into the bundled nltk_data first (frozen app)
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
