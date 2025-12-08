@@ -7,7 +7,11 @@ logging.getLogger("language_tool_python").setLevel(logging.ERROR)  # suppress La
 import logging
 import os
 import sys
-import nltk # type: ignore
+import nltk
+nltk.download('punkt_tab')
+nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('wordnet')
+nltk.download('wordnet_ic')
 import os
 import sys
 from tkinter import Text
