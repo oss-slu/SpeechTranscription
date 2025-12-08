@@ -1,18 +1,17 @@
 import logging
 import os
 import nltk
-import addConventions
-
-# nltk.download = lambda *args, **kwargs: None  # Prevent runtime downloads
 nltk.download('punkt_tab')
 nltk.download('averaged_perceptron_tagger_eng')
 nltk.download('wordnet')
 
+import addConventions
+
 # #looking into the bundled nltk_data first (frozen app)
-# APP_DIR = os.path.dirname(os.path.abspath(__file__))
-# BUNDLED_NLTK = os.path.join(APP_DIR, "nltk_data")
-# if os.path.exists(BUNDLED_NLTK):
-#     nltk.data.path.insert(0, BUNDLED_NLTK)
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+BUNDLED_NLTK = os.path.join(APP_DIR, "nltk_data")
+if os.path.exists(BUNDLED_NLTK):
+    nltk.data.path.insert(0, BUNDLED_NLTK)
 
 # #trying to load the resources, but DO NOT download at runtime on client machines
 MISSING_NLTK = []
