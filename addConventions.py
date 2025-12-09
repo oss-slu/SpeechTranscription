@@ -3,8 +3,6 @@ import nltk
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
 
-nltk.download = lambda *args, **kwargs: None  # Prevent runtime downloads
-
 try:
     from pattern.text.en import conjugate as pattern_conjugate
     PATTERN_AVAILABLE = True
