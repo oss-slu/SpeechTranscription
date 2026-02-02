@@ -20,7 +20,7 @@ def safe_conjugate(word: str, **kwargs) -> str:
     return word
 
 wnl = WordNetLemmatizer()
-tool = language_tool_python.LanguageTool("en-US")
+#tool = language_tool_python.LanguageTool("en-US")
 
 def isToBeVerb(verb):
     toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been",

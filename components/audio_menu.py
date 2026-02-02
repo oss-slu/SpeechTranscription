@@ -22,6 +22,7 @@ import tkinter as tk
 import customtkinter as ctk 
 from tkinter import filedialog, END
 from tkinter import IntVar
+from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE
 
 SPEAKER_COLORS = {
     "Speaker 1": "#029CFF",  # Light Blue
@@ -63,13 +64,13 @@ class audioMenu(CTkFrame):
         self.audioInputFrame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N + E + W)
 
         # Textbox for File Name Display & Editing
-        self.fileNameEntry = CTkEntry(self.audioInputFrame, placeholder_text="Enter file name here", font=("Arial", 18))
+        self.fileNameEntry = CTkEntry(self.audioInputFrame, placeholder_text="Enter file name here", font=("Arial", LABEL_FONT_SIZE))
         self.fileNameEntry.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=N + E + W)
 
         self.uploadButton = createButton(self.audioInputFrame, "Upload", 1, 0, self.uploadAudio, height=80,
-                                      font=("Arial", 18), lock=False)
+                                      font=("Arial", BUTTON_FONT_SIZE), lock=False)
         self.recordButton = createButton(self.audioInputFrame, "Record", 1, 1, self.recordAudio, height=80,
-                                      font=("Arial", 18), lock=False)
+                                      font=("Arial", BUTTON_FONT_SIZE), lock=False)
 
         # Configure audio input frame columns
         self.audioInputFrame.grid_columnconfigure(0, weight=1)
@@ -81,25 +82,24 @@ class audioMenu(CTkFrame):
         self.playbackFrame.grid_propagate(False)  # Prevent frame from shrinking
 
         self.backwardButton = createButton(self.playbackFrame, "<<", 0, 0, self.backwardAudio, height=60,
-                                        font=("Arial", 18), lock=False)
+                                        font=("Arial", BUTTON_FONT_SIZE), lock=False)
         self.playPauseButton = createButton(self.playbackFrame, "⏯", 0, 1, self.togglePlayPause, height=60,
-                                         font=("Arial", 18))
+                                         font=("Arial", BUTTON_FONT_SIZE))
         self.forwardButton = createButton(self.playbackFrame, ">>", 0, 2, self.forwardAudio, height=60,
-                                        font=("Arial", 18), lock=False)
-
+                                        font=("Arial", BUTTON_FONT_SIZE), lock=False)
         # Configure playback frame columns
         self.playbackFrame.grid_columnconfigure(0, weight=1)
         self.playbackFrame.grid_columnconfigure(1, weight=1)
         self.playbackFrame.grid_columnconfigure(2, weight=1)
 
         # Timestamp Labels (Start Time, Current Time, End Time)
-        self.startTimeLabel = CTkLabel(self.playbackFrame, text="00:00", font=("Arial", 12))
+        self.startTimeLabel = CTkLabel(self.playbackFrame, text="00:00", font=("Arial", LABEL_FONT_SIZE))
         self.startTimeLabel.grid(row=2, column=0, padx=5, sticky="w")
 
-        self.currentTimeLabel = CTkLabel(self.playbackFrame, text="00:00", font=("Arial", 12))
+        self.currentTimeLabel = CTkLabel(self.playbackFrame, text="00:00", font=("Arial", LABEL_FONT_SIZE))
         self.currentTimeLabel.grid(row=2, column=1, padx=5)
 
-        self.endTimeLabel = CTkLabel(self.playbackFrame, text="--:--", font=("Arial", 12))
+        self.endTimeLabel = CTkLabel(self.playbackFrame, text="--:--", font=("Arial", LABEL_FONT_SIZE))
         self.endTimeLabel.grid(row=2, column=2, padx=5, sticky="e")
 
         self.timelineSlider = CTkSlider(self.playbackFrame, from_=0, to=100, command=self.scrubAudio)
@@ -108,7 +108,7 @@ class audioMenu(CTkFrame):
 
         # ROW 2: Transcribe (and progress bar)
         self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125,
-                                          font=("Arial", 40))
+                                          font=("Arial", 44))
 
         # ROW 4: Labelling Transcription buttons
         self.labelSpeakersButton = createButton(self, "Label Speakers", 4, 0, self.labelSpeakers, lock=True)
@@ -133,7 +133,7 @@ class audioMenu(CTkFrame):
         # Transcription Box Control and Frame
         self.transcriptionBoxFrame = CTkFrame(self)
         self.transcriptionBoxFrame.grid(row=0, column=2, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
-        self.transcriptionBoxLabel = CTkLabel(self.transcriptionBoxFrame, height=10, text="Transcription Box", font=("Arial", 18))
+        self.transcriptionBoxLabel = CTkLabel(self.transcriptionBoxFrame, height=10, text="Transcription Box", font=("Arial", LARGE_FONT_SIZE))
         self.transcriptionBoxLabel.grid(row=0, column=0, padx=5)
         self.transcriptionBoxLockButton = createButton(master=self.transcriptionBoxFrame, text='', row=0, column=1, 
                                                      command=self.toggleTranscriptionBox, height=10, width=10, lock=False)
@@ -151,7 +151,7 @@ class audioMenu(CTkFrame):
         # Conventions Box Control and Frame
         self.conventionBoxFrame = CTkFrame(self)
         self.conventionBoxFrame.grid(row=0, column=4, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N + E + S + W)
-        self.conventionBoxLabel = CTkLabel(self.conventionBoxFrame, height=10, text="Convention Box", font=("Arial", 18))
+        self.conventionBoxLabel = CTkLabel(self.conventionBoxFrame, height=10, text="Convention Box", font=("Arial", LARGE_FONT_SIZE))
         self.conventionBoxLabel.grid(row=0, column=0, padx=5)
 
         self.conventionBoxLockButton = createButton(master=self.conventionBoxFrame, text='', row=0, column=1, 
