@@ -65,6 +65,44 @@ if "No installed package found matching input criteria." in output[len(output)-2
 
 class mainGUI(CTk):
 
+    def start_rename_session(self, index, button):
+        parent = button.master
+        old_text = button.cget("text")
+
+        # Get Button measurements Before Hiding it
+        button.update_idletasks()
+        btn_width = button.winfo_width()
+        btn_height = button.winfo_height()
+
+    # Hide button
+        button.pack_forget()
+
+    # Create entry
+        entry = CTkEntry(parent, width=btn_width, height=btn_height)
+        entry.insert(0, old_text)
+        entry.pack(side="left", fill="x", expand=True)
+        entry.focus_set()
+        entry.select_range(0, "end")
+
+        def confirm(event=None):
+            new_text = entry.get().strip() or old_text
+            cleanup(new_text)
+
+        def cancel(event=None):
+            cleanup(old_text)
+
+        def cleanup(final_text):
+            entry.destroy()
+            button.configure(text=final_text)
+            button.pack(side="left", fill="x", expand=True)
+
+        # Optional: store on session object
+            self.audioMenuList[index].name = final_text
+
+    # Key bindings
+        entry.bind("<Return>", confirm)
+        entry.bind("<Escape>", cancel)
+
     @global_error_handler
     def restartPromptPopup(self):
         popup = CTkToplevel(self)
@@ -108,7 +146,13 @@ class mainGUI(CTk):
         )
         btn.pack(side="left", fill="x", expand=True)
 
-        # Delete button
+        #Double-Click to rename
+        btn.bind(
+            "<Double-Button-1>",
+            lambda e, i=session_number-1, b=btn: self.start_rename_session(i, b)
+        )
+
+        # Delete button to remove all instances of current selected session
         del_btn = CTkButton(
             session_frame,
             text="✖",
