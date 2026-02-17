@@ -26,7 +26,7 @@ class AudioManager:
     isRecording = False
     paused = True
     
-    def __init__(self, root: customtkinter.CTk, audio_menu=None):
+    def __init__(self, root: customtkinter.CTk, audio_menu=None, session_id=None):
         self.root = root
         self.p = pyaudio.PyAudio()
         self.out_stream = None
@@ -36,9 +36,19 @@ class AudioManager:
         self.lock = threading.Lock()
         self.current_position = 0.0
         self.audio_menu = audio_menu  # ✅ Now it's declared properly
+        self.session_id = session_id or "default"
+        
+        # Create sessions directory and session-specific directory
+        self.sessions_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sessions")
+        self.session_dir = os.path.join(self.sessions_dir, str(self.session_id))
+        if not os.path.exists(self.session_dir):
+            os.makedirs(self.session_dir)
+        
+        # Initialize with session-specific file path
+        self.filePath = os.path.join(self.session_dir, "session_output.wav")
 
     def record(self):
-        self.filePath = "session_output.wav"
+        self.filePath = os.path.join(self.session_dir, "session_output.wav")
         self.isRecording = True
         self.frames = []
         try:
@@ -130,8 +140,9 @@ class AudioManager:
             extension = extension.lower()
             if extension in ["mp3", "wav"]:
                 segment = AudioSegment.from_file(self.filePath, format=extension)
-                segment.export("export.wav", format="wav")
-                self.filePath = "export.wav"
+                export_path = os.path.join(self.session_dir, "export.wav")
+                segment.export(export_path, format="wav")
+                self.filePath = export_path
 
                 # Open the wave file
                 self.wf = wave.open(self.filePath, "rb")

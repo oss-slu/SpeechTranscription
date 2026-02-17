@@ -44,13 +44,13 @@ def plotAudio(time, signal):
 
 class audioMenu(CTkFrame):
     @global_error_handler
-    def __init__(self, master):
+    def __init__(self, master, session_id=None):
         super().__init__(master)
         self.configure(width=master.WIDTH * .8)
         self.configure(height=master.HEIGHT)
 
-        # Create a unique AudioManager instance for this session
-        self.audio = AudioManager(master)
+        # Create a unique AudioManager instance for this session with session_id
+        self.audio = AudioManager(master, session_id=session_id)
         self.grammar = GrammarChecker()
         self.exporter = Exporter()
 

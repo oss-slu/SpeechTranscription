@@ -92,8 +92,9 @@ class mainGUI(CTk):
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         session_name = f"Session {session_number} - {current_time}"
 
-        # Create the session object
-        self.audioMenuList.append(audioMenu(self))
+        # Create the session object with a unique session ID
+        session_id = f"session_{session_number}_{int(datetime.now().timestamp())}"
+        self.audioMenuList.append(audioMenu(self, session_id=session_id))
 
         # A frame to hold both the button + delete icon
         session_frame = CTkFrame(self.userFrame.audioTabs)
