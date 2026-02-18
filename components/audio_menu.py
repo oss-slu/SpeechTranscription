@@ -3,7 +3,6 @@ from customtkinter import *
 from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
 from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
-from components.error_handler import global_error_handler, show_error_popup
 from components.constants import LOCK_ICON, UNLOCK_ICON, CLEAR_ICON
 from audio import AudioManager
 from grammar import GrammarChecker
@@ -22,7 +21,14 @@ import tkinter as tk
 import customtkinter as ctk 
 from tkinter import filedialog, END
 from tkinter import IntVar
-from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE
+from components.constants import (
+    DEFAULT_FONT_SIZE,
+    LARGE_FONT_SIZE,
+    BUTTON_FONT_SIZE,
+    LABEL_FONT_SIZE,
+    TEXTBOX_FONT_SIZE,
+    TEXTBOX_FONT_FAMILY,
+)
 
 SPEAKER_COLORS = {
     "Speaker 1": "#029CFF",  # Light Blue
@@ -126,7 +132,12 @@ class audioMenu(CTkFrame):
         self.morphemesButton = createButton(self, "Add Morphemes", 5, 3, self.inflectionalMorphemes)
         self.submitGrammarButton = createButton(self, "Submit", 5, 5, self.applyCorrection)
 
-        self.correctionEntryBox = CTkTextbox(self, height=60)
+        self.correctionEntryBox = CTkTextbox(
+            self,
+            height=60,
+            font=(TEXTBOX_FONT_FAMILY, TEXTBOX_FONT_SIZE),
+            wrap="word",
+        )
         self.correctionEntryBox.grid(row=5, column=4, padx=10, sticky=E + W)
         lockItem(self.correctionEntryBox)
 
@@ -142,7 +153,13 @@ class audioMenu(CTkFrame):
                                                       command=self.clearTranscriptionBox, height=10, width=10, lock=False)
         self.transcriptionBoxClearButton.configure(image=CLEAR_ICON, width=30, height=30)
 
-        self.transcriptionBox = CTkTextbox(self.transcriptionBoxFrame, width=350, height=500)
+        self.transcriptionBox = CTkTextbox(
+            self.transcriptionBoxFrame,
+            width=350,
+            height=500,
+            font=(TEXTBOX_FONT_FAMILY, TEXTBOX_FONT_SIZE),
+            wrap="word",
+        )
         self.transcriptionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N + E + S + W)
         self.transcriptionBox.insert("0.0", text="Text will generate here")
         self.transcriptionBox.bind("<Button-1>", self.on_transcription_click)
@@ -160,8 +177,13 @@ class audioMenu(CTkFrame):
         self.conventionBoxClearButton = createButton(master=self.conventionBoxFrame, text='Clear Box?', row=0, column=2, 
                                                    command=self.clearGrammarBox, height=10, width=10, lock=False)
         self.conventionBoxClearButton.configure(image=CLEAR_ICON, width=30, height=30)
-
-        self.conventionBox = CTkTextbox(self.conventionBoxFrame, width=350, height=500)
+        self.conventionBox = CTkTextbox(
+            self.conventionBoxFrame,
+            width=350,
+            height=500,
+            font=(TEXTBOX_FONT_FAMILY, TEXTBOX_FONT_SIZE),
+            wrap="word",
+        )
         self.conventionBox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky=N + E + S + W)
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
