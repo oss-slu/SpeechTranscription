@@ -277,7 +277,7 @@ class mainGUI(CTk):
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
 
         self.userFrame = userMenu(master=self)
-        self.userFrame.grid(row=0, column=0, padx=1, sticky=nsw)
+        self.userFrame.grid(row=0, column=0, padx=1, sticky="nsw")
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0)
