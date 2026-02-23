@@ -173,7 +173,7 @@ class mainGUI(CTk):
         for i, frame in enumerate(self.audioMenuList):
             if i == num:
                 self.audioFrame = frame
-                frame.grid(row=0, column=1, padx=5)
+                frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
                 # Unlock "Show Audio Graph" button if a file exists in the selected session
                 if frame.audio.filePath:
                     unlockItem(self.showGraphButton)
@@ -277,7 +277,11 @@ class mainGUI(CTk):
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
 
         self.userFrame = userMenu(master=self)
-        self.userFrame.grid(row=0, column=0, padx=1, sticky=NW)
+        self.userFrame.grid(row=0, column=0, padx=1, sticky=nsw)
+
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=1)
 
         # Replace "New Audio" button with "New Session" button
         self.newSessionButton = createButton(self.userFrame, "New Session", 1, 0, self.new_session, 

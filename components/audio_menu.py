@@ -53,8 +53,18 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def __init__(self, master):
         super().__init__(master)
-        self.configure(width=master.WIDTH * .8)
-        self.configure(height=master.HEIGHT)
+        #making the columns expandable 
+        for col in range(6):
+            self.grid_columnconfigure(col, weight=1)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=0)
+        self.grid_rowconfigure(3, weight=0)
+        self.grid_rowconfigure(4, weight=0)
+        self.grid_rowconfigure(5, weight=0)
+        #self.configure(width=master.WIDTH * .8)
+        #self.configure(height=master.HEIGHT)
+        #commented out fro now to make sure it resizes cleanly 
 
         # Create a unique AudioManager instance for this session
         self.audio = AudioManager(master)
@@ -144,6 +154,8 @@ class audioMenu(CTkFrame):
         # Transcription Box Control and Frame
         self.transcriptionBoxFrame = CTkFrame(self)
         self.transcriptionBoxFrame.grid(row=0, column=2, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
+        self.transcriptionBoxFrame.grid_rowconfigure(1, weight=1) 
+        self.transcriptionBoxFrame.grid_columnconfigure(0, weight=1)
         self.transcriptionBoxLabel = CTkLabel(self.transcriptionBoxFrame, height=10, text="Transcription Box", font=("Arial", LARGE_FONT_SIZE))
         self.transcriptionBoxLabel.grid(row=0, column=0, padx=5)
         self.transcriptionBoxLockButton = createButton(master=self.transcriptionBoxFrame, text='', row=0, column=1, 
@@ -156,7 +168,6 @@ class audioMenu(CTkFrame):
         self.transcriptionBox = CTkTextbox(
             self.transcriptionBoxFrame,
             width=350,
-            height=500,
             font=(TEXTBOX_FONT_FAMILY, TEXTBOX_FONT_SIZE),
             wrap="word",
         )
@@ -168,6 +179,8 @@ class audioMenu(CTkFrame):
         # Conventions Box Control and Frame
         self.conventionBoxFrame = CTkFrame(self)
         self.conventionBoxFrame.grid(row=0, column=4, rowspan=5, columnspan=2, padx=10, pady=10, sticky=N + E + S + W)
+        self.conventionBoxFrame.grid_rowconfigure(1, weight=1)
+        self.conventionBoxFrame.grid_columnconfigure(0, weight=1)
         self.conventionBoxLabel = CTkLabel(self.conventionBoxFrame, height=10, text="Convention Box", font=("Arial", LARGE_FONT_SIZE))
         self.conventionBoxLabel.grid(row=0, column=0, padx=5)
 
@@ -180,7 +193,6 @@ class audioMenu(CTkFrame):
         self.conventionBox = CTkTextbox(
             self.conventionBoxFrame,
             width=350,
-            height=500,
             font=(TEXTBOX_FONT_FAMILY, TEXTBOX_FONT_SIZE),
             wrap="word",
         )
