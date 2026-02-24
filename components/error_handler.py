@@ -27,7 +27,7 @@ def show_error_popup(master, error_message):
     popup.geometry("400x200")
     popup.resizable(False, False)
 
-    error_label = CTkLabel(popup, text="ERROR", font=("Arial", 24, "bold"))
+    error_label = CTkLabel(popup, text="ERROR", font=("Arial", 26, "bold"))
     error_label.pack(pady=20)
 
     message_label = CTkLabel(popup, text=error_message, wraplength=350)
