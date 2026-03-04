@@ -59,7 +59,7 @@ class audioMenu(CTkFrame):
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=0)
         self.grid_rowconfigure(2, weight=0)
-        self.grid_rowconfigure(3, weight=0)
+        self.grid_rowconfigure(3, weight=1) #should allow ttextbox to mamximize
         self.grid_rowconfigure(4, weight=0)
         self.grid_rowconfigure(5, weight=0)
         #self.configure(width=master.WIDTH * .8)
@@ -94,7 +94,7 @@ class audioMenu(CTkFrame):
 
         # ROW 1: Playback Controls in a Frame
         self.playbackFrame = CTkFrame(self, height=125, width=250)
-        self.playbackFrame.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+        self.playbackFrame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky = "ew")
         self.playbackFrame.grid_propagate(False)  # Prevent frame from shrinking
 
         self.backwardButton = createButton(self.playbackFrame, "<<", 0, 0, self.backwardAudio, height=60,
