@@ -252,7 +252,6 @@ class mainGUI(CTk):
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
         
-        self.after(100, lambda: self.geometry("1375x740"))
         self.currentAudioNum = 0
         self.audioButtonList = []
         self.audioMenuList = []
@@ -273,8 +272,11 @@ class mainGUI(CTk):
         
         set_default_color_theme("blue")
         deactivate_automatic_dpi_awareness()
-        self.resizable(False, False)
+        self.resizable(True, True)
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
+        
+        #To prevent shrinking 
+        self.minsize(self.WIDTH, self.HEIGHT)
 
         self.userFrame = userMenu(master=self)
         self.userFrame.grid(row=0, column=0, padx=1, sticky="nsw")
