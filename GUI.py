@@ -267,6 +267,8 @@ class mainGUI(CTk):
         - Submit: Submit grammar corrections.
         - Clear Box?: Clear the transcription or convention box.
         - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
+        - Rename Session: Double-click on a session name in the session list to rename it (Press Enter to save the new name or Esc to cancel)
+        - Delete Session: Click the "X" button next to a session to delete it.
         """
 
         helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400, state="normal")
