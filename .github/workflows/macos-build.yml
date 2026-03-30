@@ -17,38 +17,55 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
+      # ── 2. Python setup ────────────────────────────────────────────────────
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.11.7
+          python-version: "3.11.7"
 
+      # ── 3. Cache pip ───────────────────────────────────────────────────────
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
+      # ── 4. System tools (NO java) ──────────────────────────────────────────
       - name: Install system tools
         run: |
           brew install ffmpeg portaudio mysql
+          echo "Java check (should be absent or unused):"
+          java -version 2>&1 || echo "Java not present — good, it is not needed."
 
+      # ── 5. Python dependencies ─────────────────────────────────────────────
       - name: Install Python requirements
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
           pip install mysql-connector-python pyaudio
-        # python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
+          pip uninstall -y typing || echo "typing not installed"
 
+      # ── 6. Git submodules ──────────────────────────────────────────────────
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
 
-      - name: Remove obsolete typing package
-        run: pip uninstall -y typing || echo "typing not installed"
+      # ── 7. Confirm NO Java subprocess calls in source ──────────────────────
+      - name: Verify Java is not a runtime dependency
+        run: |
+          echo "Scanning source for java subprocess calls..."
+          if grep -rn "subprocess.*java\|os\.system.*java\|java.*jar" \
+               --include="*.py" . 2>/dev/null | grep -v ".git"; then
+            echo " Java subprocess calls found — remove them before building."
+            exit 1
+          else
+            echo " No Java runtime calls found."
+          fi
 
-      # ✅ NEW: build-time NLTK download
+      # ── 8. Download & bundle NLTK data ─────────────────────────────────────
       - name: Download NLTK corpora for bundling
         run: |
           mkdir -p nltk_data
@@ -56,59 +73,153 @@ jobs:
           import nltk, os
           download_dir = "nltk_data"
           os.makedirs(download_dir, exist_ok=True)
-          # the ones that kept failing on client mac
-          nltk.download("wordnet", download_dir=download_dir)
-          nltk.download("omw-1.4", download_dir=download_dir)
-          # these two names fix your developer's odd names
-          nltk.download("punkt", download_dir=download_dir)
-          nltk.download("averaged_perceptron_tagger", download_dir=download_dir)
+          packages = [
+              "wordnet",
+              "omw-1.4",
+              "punkt",
+              "punkt_tab",
+              "averaged_perceptron_tagger",
+              "averaged_perceptron_tagger_eng",
+              "stopwords",
+              "vader_lexicon",
+              "maxent_ne_chunker",
+              "words",
+          ]
+          for pkg in packages:
+              try:
+                  nltk.download(pkg, download_dir=download_dir)
+                  print(f" Downloaded: {pkg}")
+              except Exception as e:
+                  print(f"  Could not download {pkg}: {e}")
           PYCODE
 
+      # ── 9. Locate portaudio dylib (Intel vs Apple Silicon) ─────────────────
+      - name: Locate portaudio dylib
+        run: |
+          if [ -f "/opt/homebrew/lib/libportaudio.2.dylib" ]; then
+            echo "PORTAUDIO_PATH=/opt/homebrew/lib/libportaudio.2.dylib" >> $GITHUB_ENV
+            echo " Apple Silicon portaudio found"
+          elif [ -f "/usr/local/opt/portaudio/lib/libportaudio.2.dylib" ]; then
+            echo "PORTAUDIO_PATH=/usr/local/opt/portaudio/lib/libportaudio.2.dylib" >> $GITHUB_ENV
+            echo " Intel Mac portaudio found"
+          else
+            echo " libportaudio not found"; exit 1
+          fi
+
+      # ── 10. Locate ffmpeg / ffprobe ────────────────────────────────────────
+      - name: Locate ffmpeg binaries
+        run: |
+          FFMPEG_PATH=$(which ffmpeg)
+          FFPROBE_PATH=$(which ffprobe)
+          echo "FFMPEG_PATH=$FFMPEG_PATH"   >> $GITHUB_ENV
+          echo "FFPROBE_PATH=$FFPROBE_PATH" >> $GITHUB_ENV
+          echo " ffmpeg:  $FFMPEG_PATH"
+          echo " ffprobe: $FFPROBE_PATH"
+
+      # ── 11. Build with PyInstaller (--onedir, not --onefile) ───────────────
       - name: Build macOS App
         run: |
-          pyinstaller --name Saltify \
-          --windowed \
-          --noconfirm \
-          --onefile \
-          --add-data "images:images" \
-          --add-data "build_assets/en-model.slp:pattern/text/en" \
-          --add-data "CTkXYFrame:CTkXYFrame" \
-          --add-data "nltk_data:nltk_data" \
-          --collect-data whisper \
-          --collect-data lightning_fabric \
-          --collect-data pytorch_lightning \
-          --collect-data pyannote.audio \
-          --copy-metadata torch \
-          --copy-metadata tqdm \
-          --copy-metadata regex \
-          --copy-metadata sacremoses \
-          --copy-metadata requests \
-          --copy-metadata packaging \
-          --copy-metadata filelock \
-          --copy-metadata numpy \
-          --copy-metadata tokenizers \
-          --copy-metadata importlib_metadata \
-          --collect-data sv_ttk \
-          --hidden-import "lightning_fabric" \
-          --hidden-import "torch" \
-          --hidden-import "torchvision" \
-          --hidden-import "pytorch_lightning" \
-          --hidden-import "pyannote.audio" \
-          GUI.py
+          pyinstaller \
+            --name Saltify \
+            --windowed \
+            --noconfirm \
+            --onedir \
+            --add-data "images:images" \
+            --add-data "build_assets/en-model.slp:pattern/text/en" \
+            --add-data "CTkXYFrame:CTkXYFrame" \
+            --add-data "nltk_data:nltk_data" \
+            --add-binary "${{ env.PORTAUDIO_PATH }}:." \
+            --add-binary "${{ env.FFMPEG_PATH }}:." \
+            --add-binary "${{ env.FFPROBE_PATH }}:." \
+            --collect-all whisper \
+            --collect-all torch \
+            --collect-all lightning_fabric \
+            --collect-all pytorch_lightning \
+            --collect-all "pyannote.audio" \
+            --collect-all nltk \
+            --collect-data sv_ttk \
+            --copy-metadata torch \
+            --copy-metadata tqdm \
+            --copy-metadata regex \
+            --copy-metadata sacremoses \
+            --copy-metadata requests \
+            --copy-metadata packaging \
+            --copy-metadata filelock \
+            --copy-metadata numpy \
+            --copy-metadata tokenizers \
+            --copy-metadata importlib_metadata \
+            --hidden-import "lightning_fabric" \
+            --hidden-import "torch" \
+            --hidden-import "torchvision" \
+            --hidden-import "pytorch_lightning" \
+            --hidden-import "pyannote.audio" \
+            --hidden-import "nltk" \
+            --hidden-import "nltk.tokenize" \
+            --hidden-import "nltk.corpus" \
+            --hidden-import "nltk.sentiment" \
+            --hidden-import "nltk.tag" \
+            GUI.py
 
+      # ── 12. Verify bundle — NLTK data + no .jar files ─────────────────────
+      - name: Verify bundle contents
+        run: |
+          echo "=== Top-level bundle structure ==="
+          find dist/Saltify -maxdepth 3 | head -80
+
+          echo ""
+          echo "=== NLTK data check ==="
+          if find dist/Saltify -name "punkt*" | grep -q .; then
+            echo " NLTK punkt found in bundle"
+          else
+            echo " NLTK punkt MISSING — copying manually"
+            cp -r nltk_data dist/Saltify/_internal/nltk_data || \
+            cp -r nltk_data dist/Saltify/nltk_data
+          fi
+
+          echo ""
+          echo "=== Java artifact check ==="
+          if find dist/Saltify -name "*.jar" | grep -q .; then
+            echo " .jar files found — Java dependency not eliminated:"
+            find dist/Saltify -name "*.jar"
+            exit 1
+          else
+            echo " No .jar files — Java fully eliminated from bundle"
+          fi
+
+          echo ""
+          echo "=== ffmpeg check ==="
+          if find dist/Saltify -name "ffmpeg" | grep -q .; then
+            echo " ffmpeg bundled"
+          else
+            echo "  ffmpeg not found in bundle"
+          fi
+
+          echo ""
+          echo "=== portaudio check ==="
+          if find dist/Saltify -name "libportaudio*" | grep -q .; then
+            echo " portaudio bundled"
+          else
+            echo "  portaudio not found in bundle"
+          fi
+
+      # ── 13. Headless smoke-test ────────────────────────────────────────────
       - name: Run GUI headless for log
         run: |
           export HEADLESS=true
-          python GUI.py > app.log 2>&1 || true
+          timeout 15 dist/Saltify/Saltify > app.log 2>&1 || true
+          echo "=== app.log tail ==="
+          tail -40 app.log
 
+      # ── 14. Upload logs ────────────────────────────────────────────────────
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: SpeechTranscription_macos_logs
           path: app.log
 
+      # ── 15. Upload app bundle ──────────────────────────────────────────────
       - uses: actions/upload-artifact@v4
         if: always()
-        with: 
+        with:
           name: SpeechTranscription_macos
           path: dist/Saltify
