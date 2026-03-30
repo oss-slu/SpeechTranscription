@@ -67,6 +67,44 @@ if "No installed package found matching input criteria." in output[len(output)-2
 
 class mainGUI(CTk):
 
+    def start_rename_session(self, index, button):
+        parent = button.master
+        old_text = button.cget("text")
+
+        # Get Button measurements Before Hiding it
+        button.update_idletasks()
+        btn_width = button.winfo_width()
+        btn_height = button.winfo_height()
+
+    # Hide button
+        button.pack_forget()
+
+    # Create entry
+        entry = CTkEntry(parent, width=btn_width, height=btn_height)
+        entry.insert(0, old_text)
+        entry.pack(side="left", fill="x", expand=True)
+        entry.focus_set()
+        entry.select_range(0, "end")
+
+        def confirm(event=None):
+            new_text = entry.get().strip() or old_text
+            cleanup(new_text)
+
+        def cancel(event=None):
+            cleanup(old_text)
+
+        def cleanup(final_text):
+            entry.destroy()
+            button.configure(text=final_text)
+            button.pack(side="left", fill="x", expand=True)
+
+        # Optional: store on session object
+            self.audioMenuList[index].name = final_text
+
+    # Key bindings
+        entry.bind("<Return>", confirm)
+        entry.bind("<Escape>", cancel)
+
     @global_error_handler
     def restartPromptPopup(self):
         popup = CTkToplevel(self)
@@ -110,7 +148,13 @@ class mainGUI(CTk):
         )
         btn.pack(side="left", fill="x", expand=True)
 
-        # Delete button
+        #Double-Click to rename
+        btn.bind(
+            "<Double-Button-1>",
+            lambda e, i=session_number-1, b=btn: self.start_rename_session(i, b)
+        )
+
+        # Delete button to remove all instances of current selected session
         del_btn = CTkButton(
             session_frame,
             text="✖",
@@ -225,6 +269,8 @@ class mainGUI(CTk):
         - Submit: Submit grammar corrections.
         - Clear Box?: Clear the transcription or convention box.
         - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
+        - Rename Session: Double-click on a session name in the session list to rename it (Press Enter to save the new name or Esc to cancel)
+        - Delete Session: Click the "X" button next to a session to delete it.
         """
 
         helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", DEFAULT_FONT_SIZE), wraplength=400, state="normal")
