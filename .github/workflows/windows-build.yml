@@ -48,6 +48,15 @@ jobs:
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
 
+      - name: Download Temurin JDK 17
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12+7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.12_7.zip" -OutFile "temurin17.zip"
+          Expand-Archive -Path "temurin17.zip" -DestinationPath "."
+          $jdkFolder = Get-ChildItem -Directory | Where-Object { $_.Name -like "jdk-17*" } | Select-Object -First 1
+          Rename-Item -Path $jdkFolder.FullName -NewName "jre"
+
+
       - name: Build Windows EXE
         shell: cmd
         run: |

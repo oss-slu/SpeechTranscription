@@ -2,6 +2,7 @@ import logging
 import nltk
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
+from java_runtime import configure_bundled_java
 
 try:
     from pattern.text.en import conjugate as pattern_conjugate
@@ -20,12 +21,28 @@ def safe_conjugate(word: str, **kwargs) -> str:
     return word
 
 wnl = WordNetLemmatizer()
-tool = language_tool_python.LanguageTool("en-US")
+_tool = None
+
+def get_grammar_tool():
+    global _tool
+
+    if _tool is not None:
+        return _tool
+
+    try:
+        print("Setting up bundled Java...")
+        configure_bundled_java()
+        _tool = language_tool_python.LanguageTool("en-US")
+        print("Initializing LanguageTool with bundled Java...")
+        return _tool
+    except Exception as e:
+        logging.exception(f"addConventions: failed to start LanguageTool: {e}")
+        return None
 
 def isToBeVerb(verb):
     toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been",
                  "'m", "'s", "'re"]
-    if (verb in toBeVerbs):
+    if verb in toBeVerbs:
         return True
     else:
         return False
@@ -37,18 +54,18 @@ def removeErrorCoding(x):
     repeatedWordFlag = False
     for word in words:
         # Currently handling repeated words
-        if (repeatedWordFlag == True):
+        if repeatedWordFlag is True:
             # Ends handling of repeated words (')' indicates the end)
-            if (")" in word):
+            if ")" in word:
                 repeatedWordFlag = False
             # Continues handling of repeated words (')' has not yet been reached)
             else:
-                pass       
+                pass
         # Handles all cases where there is error coding with a bracket
-        elif ("[" in word):
+        elif "[" in word:
             # This case handles bracketed error codes that also have a suggestion by getting the substring between : and ]
-            # ex: "are[EW:is]"" returns "is"
-            if (":" in word):
+            # ex: "are[EW:is]" returns "is"
+            if ":" in word:
                 colonIndex = word.find(":")
                 closeBracketIndex = word.find("]")
                 sentence += word[colonIndex + 1:closeBracketIndex] + " "
@@ -56,27 +73,35 @@ def removeErrorCoding(x):
             # ex: "at[EW]" returns ""
             else:
                 pass
-        elif("/*3s" in word):
+        elif "/*3s" in word:
             # This try-catch block is NECESSARY. The "pattern" library is not being maintained and slightly broke with Python 3.7. This bypasses the problem.
             try:
                 safe_conjugate(word.replace("/*3s", ""))
-            except:
+            except Exception:
                 pass
-            sentence += safe_conjugate(word.replace("/*3s", ""), tense = "present", person = 3, number = "singular", mood = "indicative", aspect = "imperfective", negated = False)
+            sentence += safe_conjugate(
+                word.replace("/*3s", ""),
+                tense="present",
+                person=3,
+                number="singular",
+                mood="indicative",
+                aspect="imperfective",
+                negated=False
+            )
             sentence += " "
-       
+
         # Handles missing word case (*)
-        elif ("*" in word):
+        elif "*" in word:
             sentence += word.replace("*", "") + " "
         # Begins handling of repeated word case
-        elif ("(" in word):
+        elif "(" in word:
             repeatedWordFlag = True
         # Word has no error coding, can be appended as normal
         else:
             sentence += word + " "
 
     # Removes final space
-    if (sentence[-1] == " "):
+    if sentence and sentence[-1] == " ":
         sentence = sentence[:-1]
     return sentence
 
@@ -84,12 +109,12 @@ def removeErrorCoding(x):
 # Sentences with error coding are sent to removeErrorCoding() first so NLTK can process them
 def addInflectionalMorphemes(x):
     sentences = []
-    
+
     sentences = sent_tokenize(x)
-    converting = "" # Will contain entire transcript fully corrected at end of function
+    converting = ""  # Will contain entire transcript fully corrected at end of function
     for sentence in sentences:
         # There is error coding in the sentence
-        if ("[" in sentence or "*" in sentence or "(" in sentence):
+        if "[" in sentence or "*" in sentence or "(" in sentence:
             # First, removes error coding then applies morphemes to clean sentence
             errorCodingRemoved = removeErrorCoding(sentence)
             morphemesOnCorrectedSentence = addInflectionalMorphemesToSentence(errorCodingRemoved)
@@ -100,37 +125,47 @@ def addInflectionalMorphemes(x):
             finalSentence = ""
             originalWordIndex = 0
             correctedWordIndex = 0
-            while (originalWordIndex < len(originalWords)):
+            while originalWordIndex < len(originalWords):
                 # Extra word; was not processed during saltification so do NOT increment correctedWordIndex
-                if ("[EW]" in originalWords[originalWordIndex]):
+                if "[EW]" in originalWords[originalWordIndex]:
                     finalSentence += originalWords[originalWordIndex] + " "
                     originalWordIndex += 1
                 # Word contains error coding; preserve it from original sentence
-                elif ("[" in originalWords[originalWordIndex] or "*" in originalWords[originalWordIndex]):
+                elif "[" in originalWords[originalWordIndex] or "*" in originalWords[originalWordIndex]:
                     finalSentence += originalWords[originalWordIndex] + " "
                     originalWordIndex += 1
                     correctedWordIndex += 1
                 # Word contains marker for beginning of repeated words; preserve it from original sentence
-                elif ("(" in originalWords[originalWordIndex]):
+                elif "(" in originalWords[originalWordIndex]:
                     finalSentence += originalWords[originalWordIndex] + " "
                     correctedWordIndex += 1
-                    repeatedWord = originalWords[originalWordIndex][1:] # Remove parenthesis
+                    repeatedWord = originalWords[originalWordIndex][1:]  # Remove parenthesis
                     originalWordIndex += 1
-                    if (originalWordIndex < len(originalWords)):
+                    if originalWordIndex < len(originalWords):
                         # While words are repeating, preserve from original
                         potentialRepeat = originalWords[originalWordIndex].lower().replace('.', '').replace('?', '').replace('!', '').replace(',', '')
-                        while ((originalWordIndex < len(originalWords)) and (potentialRepeat == repeatedWord.lower() or potentialRepeat == repeatedWord.lower() + ")")):
+                        while (
+                            originalWordIndex < len(originalWords)
+                            and (
+                                potentialRepeat == repeatedWord.lower()
+                                or potentialRepeat == repeatedWord.lower() + ")"
+                            )
+                        ):
                             finalSentence += originalWords[originalWordIndex] + " "
                             originalWordIndex += 1
-                # Original word has no error coding; get word from saltified sentence 
+                            if originalWordIndex < len(originalWords):
+                                potentialRepeat = originalWords[originalWordIndex].lower().replace('.', '').replace('?', '').replace('!', '').replace(',', '')
+                # Original word has no error coding; get word from saltified sentence
                 else:
-                    if correctedWordIndex < len(correctedWords): finalSentence += correctedWords[correctedWordIndex] + " "
-                    elif originalWordIndex < len(originalWords): finalSentence += originalWords[originalWordIndex] + " "
+                    if correctedWordIndex < len(correctedWords):
+                        finalSentence += correctedWords[correctedWordIndex] + " "
+                    elif originalWordIndex < len(originalWords):
+                        finalSentence += originalWords[originalWordIndex] + " "
                     originalWordIndex += 1
                     correctedWordIndex += 1
             converting += finalSentence + "\n"
         # There is no error coding in the sentence
-        else: 
+        else:
             converting += addInflectionalMorphemesToSentence(sentence) + "\n"
     return converting
 
@@ -139,60 +174,60 @@ def addInflectionalMorphemesToSentence(x):
     tokens = pos_tag(word_tokenize(x))
     converted = ""
     mostRecentVerbIsToBe = False
-    for tuple in tokens:
+    for tuple_item in tokens:
         # Token is C or E for child/examiner
-        if (tuple[0] == "C" or tuple[0] == "E"):
-            converted += "\n" + tuple[0] + " "
+        if tuple_item[0] == "C" or tuple_item[0] == "E":
+            converted += "\n" + tuple_item[0] + " "
         # Token is plural and ends in s
-        elif (tuple[1] == "NNS" and tuple[0][-1] == 's'):
-            converted += wnl.lemmatize(tuple[0], "n") + "/s "
+        elif tuple_item[1] == "NNS" and tuple_item[0][-1] == 's':
+            converted += wnl.lemmatize(tuple_item[0], "n") + "/s "
         # Token is "'s" and is possessive
-        elif (tuple[0] == "'s" and tuple[1] == "POS"):
+        elif tuple_item[0] == "'s" and tuple_item[1] == "POS":
             converted = converted[:-1] + "/z "
         # Token is "'s" and is verb contraction
-        elif (tuple[0] == "'s"):
+        elif tuple_item[0] == "'s":
             converted = converted[:-1] + "/'s "
         # Token is past tense verb ending in "ed"
-        elif (tuple[1] == "VBD" and tuple[0][-2:] == "ed"):
-            converted += wnl.lemmatize(tuple[0], "v") + "/ed "
+        elif tuple_item[1] == "VBD" and tuple_item[0][-2:] == "ed":
+            converted += wnl.lemmatize(tuple_item[0], "v") + "/ed "
         # Token is third-person singular present verb
-        elif (tuple[1] == "VBZ" and tuple[0] != "is" and tuple[0] != "has"):
-            converted += wnl.lemmatize(tuple[0], "v") + "/3s "
+        elif tuple_item[1] == "VBZ" and tuple_item[0] != "is" and tuple_item[0] != "has":
+            converted += wnl.lemmatize(tuple_item[0], "v") + "/3s "
         # Token is present participle
-        elif (tuple[1] == "VBG" and mostRecentVerbIsToBe):
-            if wnl.lemmatize(tuple[0], "v") == tuple[0]:
-                converted += wnl.lemmatize(tuple[0], "v") + " "
+        elif tuple_item[1] == "VBG" and mostRecentVerbIsToBe:
+            if wnl.lemmatize(tuple_item[0], "v") == tuple_item[0]:
+                converted += wnl.lemmatize(tuple_item[0], "v") + " "
             else:
-                converted += wnl.lemmatize(tuple[0], "v") + "/ing "
+                converted += wnl.lemmatize(tuple_item[0], "v") + "/ing "
         # Contraction tokens
-        elif (tuple[0] == "n't"):
+        elif tuple_item[0] == "n't":
             converted = converted[:-1] + "/n't "
-        elif (tuple[0] == "'t"):
+        elif tuple_item[0] == "'t":
             converted = converted[:-1] + "/'t "
-        elif (tuple[0] == "'ll"):
+        elif tuple_item[0] == "'ll":
             converted = converted[:-1] + "/'ll "
-        elif (tuple[0] == "'m"):
+        elif tuple_item[0] == "'m":
             converted = converted[:-1] + "/'m "
-        elif (tuple[0] == "'d"):
+        elif tuple_item[0] == "'d":
             converted = converted[:-1] + "/'d "
-        elif (tuple[0] == "'re"):
+        elif tuple_item[0] == "'re":
             converted = converted[:-1] + "/'re "
-        elif (tuple[0] == "'ve"):  
+        elif tuple_item[0] == "'ve":
             converted = converted[:-1] + "/'ve "
         # Token is punctuation
-        elif (tuple[0] == "," or tuple[0] == "." or tuple[0] == "?" or tuple[0] == "!" or tuple[0] == ";"):
-            if (tuple[0] != "," and tuple[0] != ";"):
-                converted = converted[:-1] + tuple[0]
+        elif tuple_item[0] == "," or tuple_item[0] == "." or tuple_item[0] == "?" or tuple_item[0] == "!" or tuple_item[0] == ";":
+            if tuple_item[0] != "," and tuple_item[0] != ";":
+                converted = converted[:-1] + tuple_item[0]
             else:
-                converted = converted[:-1] + tuple[0] + " "
+                converted = converted[:-1] + tuple_item[0] + " "
         # Token is a word with no changes needed
         else:
-            converted += tuple[0] + " "
+            converted += tuple_item[0] + " "
         # Updates mostRecentVerbIsToBe to be used to distinguish later potential gerunds from participles
         # (Participles should be given /ing convention while gerunds should not, so this flag is used for that)
-        if (tuple[1] == "VB" or tuple[1] == "VBD" or tuple[1] == "VBP" or tuple[1] == "VBZ" or tuple[0] == "been"):
-            if (isToBeVerb(tuple[0])):
-                mostRecentVerbIsToBe = True 
+        if tuple_item[1] == "VB" or tuple_item[1] == "VBD" or tuple_item[1] == "VBP" or tuple_item[1] == "VBZ" or tuple_item[0] == "been":
+            if isToBeVerb(tuple_item[0]):
+                mostRecentVerbIsToBe = True
             else:
                 mostRecentVerbIsToBe = False
 
@@ -203,8 +238,19 @@ def addInflectionalMorphemesToSentence(x):
     return converted
 
 # Takes a sentence x and returns the correct form in SALT standard with error coding
-def correctSentence(x) :
-    is_bad_rule = lambda rule: rule.category == 'PUNCTUATION' or rule.message == 'This word is normally spelled with a hyphen.' or rule.message == 'Possible typo: you repeated a word'
+def correctSentence(x):
+    tool = get_grammar_tool()
+
+    if tool is None:
+        logging.warning("addConventions: grammar tool unavailable, returning original sentence")
+        return x
+
+    is_bad_rule = lambda rule: (
+        rule.category == 'PUNCTUATION'
+        or rule.message == 'This word is normally spelled with a hyphen.'
+        or rule.message == 'Possible typo: you repeated a word'
+    )
+
     matches = tool.check(x)
     matches = [rule for rule in matches if not is_bad_rule(rule)]
     # print(matches) # Can be used to identify what error the tool is recognizing
@@ -214,40 +260,44 @@ def correctSentence(x) :
     originalIndex = 0
     correctedIndex = 0
     saltSentence = ""
-    while (originalIndex < len(originalWords) or correctedIndex < len(correctedWords)):
-        #print('original words:', originalWords)
+
+    while originalIndex < len(originalWords) or correctedIndex < len(correctedWords):
         # Words only remain in the corrected sentence, append all with asterisk (missing word)
-        if (originalIndex >= len(originalWords)):
-            while (correctedIndex < len(correctedWords)):
+        if originalIndex >= len(originalWords):
+            while correctedIndex < len(correctedWords):
                 saltSentence += correctedWords[correctedIndex] + "* "
                 correctedIndex += 1
         # Words only remain in the original sentence, append all unchanged
-        elif (correctedIndex >= len(correctedWords)):
-            while (originalIndex < len(originalWords)):
+        elif correctedIndex >= len(correctedWords):
+            while originalIndex < len(originalWords):
                 saltSentence += originalWords[originalIndex] + "* "
                 originalIndex += 1
         # The current word in each sentence is the same
         # Check if the original sentence repeated the word several times,
         # if so provide correct coding "(And and) and" and increment accordingly
         # Otherwise, simply append and increment both sentences by one
-        elif (originalWords[originalIndex] == correctedWords[correctedIndex]):
+        elif originalWords[originalIndex] == correctedWords[correctedIndex]:
             repeatCounter = 0
             punctuationFlag = False
             punctuation = ['.', '?', '!', ',']
             foundPunctuation = ""
-            while (originalIndex + repeatCounter + 1 < len(originalWords) and originalWords[originalIndex + repeatCounter + 1].lower().replace('.', '').replace('?', '').replace('!', '').replace(',', '') == correctedWords[correctedIndex].lower()):
+            while (
+                originalIndex + repeatCounter + 1 < len(originalWords)
+                and originalWords[originalIndex + repeatCounter + 1].lower().replace('.', '').replace('?', '').replace('!', '').replace(',', '') == correctedWords[correctedIndex].lower()
+            ):
                 if any(x in originalWords[originalIndex + repeatCounter + 1] for x in punctuation):
                     punctuationFlag = True
                     # Get final character, which should be punctuation
                     foundPunctuation = originalWords[originalIndex + repeatCounter + 1][-1]
                 repeatCounter += 1
-            if (repeatCounter > 0):
+
+            if repeatCounter > 0:
                 repeatedWord = originalWords[originalIndex]
                 saltSentence += "(" + repeatedWord
-                for i in range(repeatCounter-1):
+                for i in range(repeatCounter - 1):
                     saltSentence += " " + repeatedWord
                 saltSentence += ") " + repeatedWord + " "
-                if (punctuationFlag == True):
+                if punctuationFlag is True:
                     saltSentence = saltSentence[:-1]
                     saltSentence += foundPunctuation + " "
                 originalIndex += repeatCounter + 1
@@ -258,24 +308,25 @@ def correctSentence(x) :
                 correctedIndex += 1
         # The current word in the original sentence matches the next word in the corrected one, append word in corrected with asterisk
         # (Checks to make sure index won't go out of bounds)
-        elif (correctedIndex < len(correctedWords)-1 and originalWords[originalIndex] == correctedWords[correctedIndex+1]):
-            #print('corrected Index:', correctedIndex)
-            #print('corrected Words len:', len(correctedWords))
+        elif correctedIndex < len(correctedWords) - 1 and originalWords[originalIndex] == correctedWords[correctedIndex + 1]:
             saltSentence += correctedWords[correctedIndex] + "* "
             correctedIndex += 1
         # The current word in the corrected sentence matches the next word in the original one, append word in original with [EW]
         # (Checks to make sure index won't go out of bounds)
-        elif (originalIndex + 1 < len(originalWords) and originalWords[originalIndex+1] == correctedWords[correctedIndex]):
+        elif originalIndex + 1 < len(originalWords) and originalWords[originalIndex + 1] == correctedWords[correctedIndex]:
             saltSentence += originalWords[originalIndex] + "[EW] "
             originalIndex += 1
         # If either index is at the last element, default to word-level error
-        elif (originalIndex == len(originalWords) - 1 or correctedIndex == len(correctedWords) - 1):
+        elif originalIndex == len(originalWords) - 1 or correctedIndex == len(correctedWords) - 1:
             saltSentence += originalWords[originalIndex] + "[EW:" + correctedWords[correctedIndex] + "] "
             originalIndex += 1
             correctedIndex += 1
         # Word-level error if both words up next are matching
-        elif (originalWords[originalIndex+1] == correctedWords[correctedIndex+1]):
-            if (correctedWords[correctedIndex].endswith('s') and ((wnl.lemmatize(correctedWords[correctedIndex], 'v') == originalWords[originalIndex]) and originalWords[originalIndex] != "have")):
+        elif originalWords[originalIndex + 1] == correctedWords[correctedIndex + 1]:
+            if (
+                correctedWords[correctedIndex].endswith('s')
+                and ((wnl.lemmatize(correctedWords[correctedIndex], 'v') == originalWords[originalIndex]) and originalWords[originalIndex] != "have")
+            ):
                 saltSentence += originalWords[originalIndex] + "/*3s "
             else:
                 saltSentence += originalWords[originalIndex] + "[EW:" + correctedWords[correctedIndex] + "] "
@@ -288,5 +339,4 @@ def correctSentence(x) :
             correctedIndex += 1
 
     saltSentence = saltSentence[:-1]
-
-    return saltSentence 
+    return saltSentence
