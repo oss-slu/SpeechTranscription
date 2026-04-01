@@ -14,7 +14,7 @@ on:
       - feature/addMorphemesError
       - excellenceGUI
       - nltkDownloads
-      - remove-java-prerequisite_windows
+      - feature/remove-java-prerequisite_windows
 
 jobs:
   build-windows:
