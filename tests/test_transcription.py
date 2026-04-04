@@ -1,5 +1,5 @@
 # test_transcription.py
-from components.constants import addInflectionalMorphemes, correctSentence
+from components.transcription_utils import addInflectionalMorphemes, correctSentence
 
 # Sample transcription with errors
 sample_text = """
