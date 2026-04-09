@@ -40,13 +40,22 @@ jobs:
       - name: Install system tools
         run: |
           brew install ffmpeg portaudio mysql
-          curl -L https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jre_x64_mac_hotspot_17.0.9_9.tar.gz \
-           -o jre.tar.gz
+          
+          # Detect architecture and download correct JRE
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "arm64" ]; then
+            JRE_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jre_aarch64_mac_hotspot_17.0.9_9.tar.gz"
+            echo "Apple Silicon detected, using aarch64 JRE"
+          else
+            JRE_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jre_x64_mac_hotspot_17.0.9_9.tar.gz"
+            echo "Intel Mac detected, using x64 JRE"
+          fi
+          
+          curl -L "$JRE_URL" -o jre.tar.gz
           mkdir -p bundled_jre
           tar -xzf jre.tar.gz -C bundled_jre --strip-components=1
           echo "JRE bundled at: $(ls bundled_jre)"
-                
-                
+  
       # ── 5. Python dependencies ─────────────────────────────────────────────
       - name: Install Python requirements
         run: |
