@@ -24,8 +24,6 @@ logger = logging.getLogger(__name__)
 
 nltk.download = lambda *args, **kwargs: None
 
-from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE 
-
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
 app_dir = os.path.dirname(os.path.abspath(__file__))
 nltk_data_dir = os.path.join(app_dir, "nltk_data")
@@ -77,7 +75,7 @@ class mainGUI(CTk):
 
         text = "RESTART REQUIRED\nPlease close and reopen Saltify"
 
-        text = CTkLabel(popup, text=text, justify=CENTER, font=("Arial", LARGE_FONT_SIZE), wraplength=400)
+        text = CTkLabel(popup, text=text, justify=CENTER, font=("Arial", 20), wraplength=400)
         text.pack(padx=10, pady=10)
 
         closeButton = createButton(popup, "Close", None, None, height=30, width=80, lock=False, command=self.close_program)
@@ -173,7 +171,7 @@ class mainGUI(CTk):
         for i, frame in enumerate(self.audioMenuList):
             if i == num:
                 self.audioFrame = frame
-                frame.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
+                frame.grid(row=0, column=1, padx=5)
                 # Unlock "Show Audio Graph" button if a file exists in the selected session
                 if frame.audio.filePath:
                     unlockItem(self.showGraphButton)
@@ -227,7 +225,7 @@ class mainGUI(CTk):
         - Lock/Unlock: Lock or unlock the transcription or convention box in order to manually edit the transcribed/convention text.
         """
 
-        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", DEFAULT_FONT_SIZE), wraplength=400, state="normal")
+        helpLabel = CTkLabel(popup, text=helpText, justify=LEFT, font=("Arial", 12), wraplength=400, state="normal")
         helpLabel.pack(padx=10, pady=10)
 
         closeButton = createButton(popup, "Close", None, None, on_closing, height=30, width=80, lock=False)
@@ -252,6 +250,7 @@ class mainGUI(CTk):
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
         
+        self.after(100, lambda: self.geometry("1375x740"))
         self.currentAudioNum = 0
         self.audioButtonList = []
         self.audioMenuList = []
@@ -272,18 +271,11 @@ class mainGUI(CTk):
         
         set_default_color_theme("blue")
         deactivate_automatic_dpi_awareness()
-        self.resizable(True, True)
+        self.resizable(False, False)
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
-        
-        #To prevent shrinking 
-        self.minsize(self.WIDTH, self.HEIGHT)
 
         self.userFrame = userMenu(master=self)
-        self.userFrame.grid(row=0, column=0, padx=1, sticky="nsw")
-
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=0)
-        self.grid_columnconfigure(1, weight=1)
+        self.userFrame.grid(row=0, column=0, padx=1, sticky=NW)
 
         # Replace "New Audio" button with "New Session" button
         self.newSessionButton = createButton(self.userFrame, "New Session", 1, 0, self.new_session, 

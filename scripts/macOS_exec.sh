@@ -3,16 +3,21 @@ BASE_DIR="$SCRIPT_DIR/.."
 
 VENV_NAME=$(basename "$VIRTUAL_ENV")
 
-pyinstaller --onedir --windowed \
+pyinstaller --onefile --noconsole \
   --add-data "$BASE_DIR/images:images" \
   --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
   --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
-  --add-binary "/usr/local/opt/portaudio/lib/libportaudio.2.dylib:." \
-  --add-binary "/usr/local/bin/ffmpeg:." \
-  --add-binary "/usr/local/bin/ffprobe:." \
-  --collect-all lightning_fabric \
-  --collect-all whisper \
-  --collect-all pyannote.audio \
-  --hidden-import torch \
-  --hidden-import torchvision \
-  "$BASE_DIR/GUI.py"q
+  --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
+  --add-binary "/opt/homebrew/bin/ffmpeg:." \
+  --add-binary "/opt/homebrew/bin/ffprobe:." \
+  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
+  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/whisper:whisper" \
+  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/filelock:filelock" \
+  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
+  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/pyannote:pyannote" \
+  --hidden-import "lightning_fabric" \
+  --hidden-import "torch" \
+  --hidden-import "torchvision" \
+  --hidden-import "pytorch_lightning" \
+  --hidden-import "pyannote.audio" \
+  "$BASE_DIR/GUI.py"

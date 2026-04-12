@@ -8,14 +8,6 @@ WIDTH = 1500
 HEIGHT = 750
 SETTINGS_FILE = "user_settings.txt"
 
-#default font styling 
-DEFAULT_FONT_SIZE = 14
-LARGE_FONT_SIZE = 22
-BUTTON_FONT_SIZE = 18
-LABEL_FONT_SIZE = 18
-TEXTBOX_FONT_FAMILY = "Arial"
-TEXTBOX_FONT_SIZE = 16
-
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)

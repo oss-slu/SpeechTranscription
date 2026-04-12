@@ -8,7 +8,7 @@ class userMenu(CTkFrame):
         self.configure(width=master.WIDTH / 5)
         self.configure(height=master.HEIGHT)
 
-        self.label = CTkLabel(self, text="Speech Transcription", height=75, font=("Arial", 28))
+        self.label = CTkLabel(self, text="Speech Transcription", height=75, font=("Arial", 26))
         self.label.grid(row=0, columnspan=2, padx=10, pady=10, sticky=N+E+S+W)
 
         self.audioTabs = CTkXYFrame(self, height=450, scrollbar_width=15)
