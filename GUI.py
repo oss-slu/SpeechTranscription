@@ -4,43 +4,48 @@ warnings.filterwarnings("ignore", module="matplotlib")  # suppress font warnings
 import logging
 logging.getLogger("language_tool_python").setLevel(logging.ERROR)  # suppress LanguageTool INFO
 # Adding Logging - CICD Internal Dev 
-import logging
 import os
 import sys
-import nltk
-nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
-nltk.download('wordnet')
-nltk.download('wordnet_ic')
-import os
-import sys
-from tkinter import Text
-import nltk # type: ignore
 import platform
 import subprocess
-import logging
+import nltk # type: ignore
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Frozen-app asset resolution
+# ---------------------------------------------------------------------------
+# When PyInstaller bundles the app as a single-file executable it extracts
+# everything into a temporary directory pointed to by sys._MEIPASS.  We need
+# to check that location *first* so bundled NLTK data, images, and models
+# are found before any fallback to the working directory.
+# ---------------------------------------------------------------------------
+if getattr(sys, 'frozen', False):
+    _base_dir = sys._MEIPASS
+else:
+    _base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# ---------------------------------------------------------------------------
+# Put the bundle directory on PATH so that subprocess calls to bundled
+# binaries (ffmpeg, ffprobe) from pydub / whisper work correctly.
+# ---------------------------------------------------------------------------
+if _base_dir not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = _base_dir + os.pathsep + os.environ.get("PATH", "")
+
+# Tell NLTK where the bundled corpora live
+_nltk_data_dir = os.path.join(_base_dir, "nltk_data")
+if os.path.exists(_nltk_data_dir):
+    nltk.data.path.insert(0, _nltk_data_dir)
+else:
+    logging.warning("GUI.py: bundled nltk_data not found at %s", _nltk_data_dir)
+
+# Disable runtime NLTK downloads — all data is bundled at build time
 nltk.download = lambda *args, **kwargs: None
 
+from tkinter import Text
+
 from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE 
-
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
-if os.path.exists(nltk_data_dir):
-    # put it first, not last
-    nltk.data.path.insert(0, nltk_data_dir)
-
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
-if os.path.exists(nltk_data_dir):
-    # put it first, not last
-    nltk.data.path.insert(0, nltk_data_dir)
-else:
-    logging.warning("GUI.py: bundled nltk_data not found")
 
 # main.py
 from customtkinter import *
@@ -57,13 +62,20 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
+# ---------------------------------------------------------------------------
+# Windows-only: ensure ffmpeg is installed via winget
+# ---------------------------------------------------------------------------
 promptRestart = False
-proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-output = proc.stdout.split('\n')
-if "No installed package found matching input criteria." in output[len(output)-2]:
-    print("Installing ffmpeg. This is a one time installation.")
-    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-    promptRestart = True
+if platform.system() == "Windows":
+    try:
+        proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+        output = proc.stdout.split('\n')
+        if "No installed package found matching input criteria." in output[len(output)-2]:
+            print("Installing ffmpeg. This is a one time installation.")
+            subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+            promptRestart = True
+    except Exception as e:
+        logging.warning("ffmpeg auto-install check failed: %s", e)
 
 class mainGUI(CTk):
 

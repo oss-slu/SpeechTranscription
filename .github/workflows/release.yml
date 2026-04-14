@@ -2,9 +2,7 @@ name: Release
 on:
   push:
     branches:
-      - issue178_build-test-failures
       - main
-      - fix_macOSTerminal
 permissions:
   contents: write
   packages: read

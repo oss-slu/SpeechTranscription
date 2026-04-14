@@ -1,24 +1,46 @@
 # Client's Guide for Installing and Running SpeechTranscription
-# System Requirements
 
-Before installing, ensure your system meets these requirements:
-* Java: Installed on your system [Download Here](https://www.oracle.com/java/technologies/downloads/)
+## System Requirements
 
-# Installation Instructions
-* Download the latest release zip for your operating system from the GitHub Releases page (https://github.com/oss-slu/SpeechTranscription/releases):
-    * saltify_macos.zip for macOS
-    * saltify_windows.zip for Windows
-* Extract the zip file to a preferred location on your computer.
-    * Right-click the downloaded file
-    * Extract All
-    * Choose a Folder
+The application is a self-contained executable — **no additional software** (Python, Java, etc.) needs to be installed.
 
-# Running the Application
-* Open the extracted folder.
-* Double Click on Saltify.exe.
+> **Note:** Grammar checking uses an online API and requires an internet connection.
 
-# Notes for Clients
-* You do not need to modify environment variables—everything required for running the app is pre-packaged.
-* The application does not require Python installation if packaged with the executable (for releases).
-* For Windows users: The first time the application is opened, you will be prompted to restart it. Close and reopen the application to use. 
-* The app takes some time to open.
+## Installation Instructions
+
+1. Download the latest release ZIP for your operating system from the
+   [GitHub Releases page](https://github.com/oss-slu/SpeechTranscription/releases):
+   - `Saltify_macos.zip` for macOS
+   - `Saltify_windows.zip` for Windows
+2. Extract the ZIP file to a preferred location on your computer.
+   - Right-click the downloaded file → **Extract All** → choose a folder.
+
+## Running the Application
+
+### Windows
+- Open the extracted folder.
+- Double-click **Saltify.exe**.
+
+### macOS
+- Open the extracted folder.
+- Double-click **Saltify**.
+- **First launch:** macOS Gatekeeper may block the app because it is not
+  notarized. To allow it:
+  1. Open **System Preferences → Privacy & Security**.
+  2. Under *Security*, click **Open Anyway** next to the Saltify message.
+  - Alternatively, run the following command in Terminal before first launch:
+    ```
+    xattr -cr /path/to/Saltify
+    ```
+
+## Notes for Clients
+
+- You do **not** need to install Python, Java, or any other runtime —
+  everything required is pre-packaged in the executable.
+- Grammar checking requires an active internet connection (the feature
+  uses the LanguageTool public API).
+- All other features (transcription, playback, export) work fully offline.
+- For Windows users: the first time the application is opened, you may be
+  prompted to restart it. Close and reopen the application to continue.
+- The application may take a moment to start on its first launch while
+  it unpacks internal resources.

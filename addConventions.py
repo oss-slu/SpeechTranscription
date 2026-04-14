@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 import nltk
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
@@ -20,7 +22,24 @@ def safe_conjugate(word: str, **kwargs) -> str:
     return word
 
 wnl = WordNetLemmatizer()
-tool = language_tool_python.LanguageTool("en-US")
+
+# ---------------------------------------------------------------------------
+# Use the LanguageTool *Public API* so end-users do NOT need Java installed.
+# Trade-off: grammar checking requires an internet connection.
+# ---------------------------------------------------------------------------
+_tool = None
+
+def _get_tool():
+    """Lazy-init the LanguageTool client; gracefully handle offline/error."""
+    global _tool
+    if _tool is not None:
+        return _tool
+    try:
+        _tool = language_tool_python.LanguageToolPublicAPI("en-US")
+        return _tool
+    except Exception as e:
+        logging.error("Failed to initialise LanguageTool Public API: %s", e)
+        return None
 
 def isToBeVerb(verb):
     toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been",
@@ -204,11 +223,21 @@ def addInflectionalMorphemesToSentence(x):
 
 # Takes a sentence x and returns the correct form in SALT standard with error coding
 def correctSentence(x) :
-    is_bad_rule = lambda rule: rule.category == 'PUNCTUATION' or rule.message == 'This word is normally spelled with a hyphen.' or rule.message == 'Possible typo: you repeated a word'
-    matches = tool.check(x)
-    matches = [rule for rule in matches if not is_bad_rule(rule)]
-    # print(matches) # Can be used to identify what error the tool is recognizing
-    corrected = language_tool_python.utils.correct(x, matches)
+    tool = _get_tool()
+    if tool is None:
+        logging.warning("Grammar check unavailable (no internet?). Returning sentence as-is.")
+        return x
+
+    try:
+        is_bad_rule = lambda rule: rule.category == 'PUNCTUATION' or rule.message == 'This word is normally spelled with a hyphen.' or rule.message == 'Possible typo: you repeated a word'
+        matches = tool.check(x)
+        matches = [rule for rule in matches if not is_bad_rule(rule)]
+        # print(matches) # Can be used to identify what error the tool is recognizing
+        corrected = language_tool_python.utils.correct(x, matches)
+    except Exception as e:
+        logging.warning("Grammar check failed for sentence: %s", e)
+        return x
+
     originalWords = x.split()
     correctedWords = corrected.split()
     originalIndex = 0

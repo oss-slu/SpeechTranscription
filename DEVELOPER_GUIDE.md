@@ -2,9 +2,12 @@
 
 Ensure you have the following prerequisites downloaded:
 
-* `Java` --> [Download Here](https://www.oracle.com/java/technologies/downloads/)
-* `MySQL` --> [Download Here](https://dev.mysql.com/downloads/mysql/)
 * Python Version: `3.11.x`, where x >= 7
+* `MySQL` --> [Download Here](https://dev.mysql.com/downloads/mysql/)
+
+> **Note:** Java is **not** required. The grammar-check feature now uses the
+> [LanguageTool Public API](https://languagetool.org/http-api/) instead of
+> a local Java server. End-users do not need Java installed at all.
 
 ## Setting Up For MacOS:
 
@@ -59,6 +62,22 @@ Finally, run these two commands:
 * `git submodule update` to ensure the submodules are up-to-date
 
 **You should now be able to run the program using `python GUI.py`.**
+
+## Building the macOS Executable Locally
+
+You can build a standalone executable on your Mac using the provided script:
+
+```bash
+bash scripts/macOS_exec.sh
+```
+
+This will:
+1. Download NLTK corpora into `nltk_data/` (if not already present).
+2. Locate Homebrew-installed `ffmpeg`, `ffprobe`, and `portaudio`.
+3. Run PyInstaller to produce `dist/Saltify`.
+
+The resulting binary is fully self-contained and does not require Python,
+Java, or Homebrew on the target machine.
 
 ## Setting Up For Windows/Linux:
 
