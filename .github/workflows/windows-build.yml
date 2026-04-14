@@ -14,6 +14,11 @@ on:
       - feature/addMorphemesError
       - excellenceGUI
       - nltkDownloads
+      - fix/macos-standalone-build
+  pull_request:
+    branches:
+      - fix/macos-standalone-build
+  workflow_dispatch: {}
 
 jobs:
   build-windows:
