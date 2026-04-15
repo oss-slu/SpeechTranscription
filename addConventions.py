@@ -2,6 +2,7 @@ import logging
 import nltk
 from nltk import sent_tokenize, word_tokenize, pos_tag, WordNetLemmatizer
 import language_tool_python
+from java_runtime import configure_bundled_java
 
 try:
     from pattern.text.en import conjugate as pattern_conjugate
@@ -20,7 +21,21 @@ def safe_conjugate(word: str, **kwargs) -> str:
     return word
 
 wnl = WordNetLemmatizer()
-tool = language_tool_python.LanguageTool("en-US")
+_tool = None
+
+def get_grammar_tool():
+    global _tool
+
+    if _tool is not None:
+        return _tool
+
+    try:
+        configure_bundled_java()
+        _tool = language_tool_python.LanguageTool("en-US")
+        return _tool
+    except Exception as e:
+        logging.exception(f"addConventions: failed to start LanguageTool: {e}")
+        return None
 
 def isToBeVerb(verb):
     toBeVerbs = ["am", "is", "are", "will be", "was", "were", "been",
@@ -43,11 +58,11 @@ def removeErrorCoding(x):
                 repeatedWordFlag = False
             # Continues handling of repeated words (')' has not yet been reached)
             else:
-                pass       
+                pass
         # Handles all cases where there is error coding with a bracket
         elif ("[" in word):
             # This case handles bracketed error codes that also have a suggestion by getting the substring between : and ]
-            # ex: "are[EW:is]"" returns "is"
+            # ex: "are[EW:is]" returns "is"
             if (":" in word):
                 colonIndex = word.find(":")
                 closeBracketIndex = word.find("]")
@@ -64,7 +79,7 @@ def removeErrorCoding(x):
                 pass
             sentence += safe_conjugate(word.replace("/*3s", ""), tense = "present", person = 3, number = "singular", mood = "indicative", aspect = "imperfective", negated = False)
             sentence += " "
-       
+
         # Handles missing word case (*)
         elif ("*" in word):
             sentence += word.replace("*", "") + " "
@@ -84,7 +99,7 @@ def removeErrorCoding(x):
 # Sentences with error coding are sent to removeErrorCoding() first so NLTK can process them
 def addInflectionalMorphemes(x):
     sentences = []
-    
+
     sentences = sent_tokenize(x)
     converting = "" # Will contain entire transcript fully corrected at end of function
     for sentence in sentences:
@@ -122,7 +137,7 @@ def addInflectionalMorphemes(x):
                         while ((originalWordIndex < len(originalWords)) and (potentialRepeat == repeatedWord.lower() or potentialRepeat == repeatedWord.lower() + ")")):
                             finalSentence += originalWords[originalWordIndex] + " "
                             originalWordIndex += 1
-                # Original word has no error coding; get word from saltified sentence 
+                # Original word has no error coding; get word from saltified sentence
                 else:
                     if correctedWordIndex < len(correctedWords): finalSentence += correctedWords[correctedWordIndex] + " "
                     elif originalWordIndex < len(originalWords): finalSentence += originalWords[originalWordIndex] + " "
@@ -130,7 +145,7 @@ def addInflectionalMorphemes(x):
                     correctedWordIndex += 1
             converting += finalSentence + "\n"
         # There is no error coding in the sentence
-        else: 
+        else:
             converting += addInflectionalMorphemesToSentence(sentence) + "\n"
     return converting
 
@@ -177,7 +192,7 @@ def addInflectionalMorphemesToSentence(x):
             converted = converted[:-1] + "/'d "
         elif (tuple[0] == "'re"):
             converted = converted[:-1] + "/'re "
-        elif (tuple[0] == "'ve"):  
+        elif (tuple[0] == "'ve"):
             converted = converted[:-1] + "/'ve "
         # Token is punctuation
         elif (tuple[0] == "," or tuple[0] == "." or tuple[0] == "?" or tuple[0] == "!" or tuple[0] == ";"):
@@ -192,7 +207,7 @@ def addInflectionalMorphemesToSentence(x):
         # (Participles should be given /ing convention while gerunds should not, so this flag is used for that)
         if (tuple[1] == "VB" or tuple[1] == "VBD" or tuple[1] == "VBP" or tuple[1] == "VBZ" or tuple[0] == "been"):
             if (isToBeVerb(tuple[0])):
-                mostRecentVerbIsToBe = True 
+                mostRecentVerbIsToBe = True
             else:
                 mostRecentVerbIsToBe = False
 
@@ -204,6 +219,11 @@ def addInflectionalMorphemesToSentence(x):
 
 # Takes a sentence x and returns the correct form in SALT standard with error coding
 def correctSentence(x) :
+    tool = get_grammar_tool()
+    if tool is None:
+        logging.warning("addConventions: grammar tool unavailable, returning original sentence")
+        return x
+
     is_bad_rule = lambda rule: rule.category == 'PUNCTUATION' or rule.message == 'This word is normally spelled with a hyphen.' or rule.message == 'Possible typo: you repeated a word'
     matches = tool.check(x)
     matches = [rule for rule in matches if not is_bad_rule(rule)]
@@ -289,4 +309,4 @@ def correctSentence(x) :
 
     saltSentence = saltSentence[:-1]
 
-    return saltSentence 
+    return saltSentence

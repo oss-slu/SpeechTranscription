@@ -14,6 +14,7 @@ on:
       - feature/addMorphemesError
       - excellenceGUI
       - nltkDownloads
+      - feature/remove-java-prerequisite_windows
 
 jobs:
   build-windows:
@@ -48,6 +49,15 @@ jobs:
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
 
+      - name: Download Temurin JDK 17
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12+7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.12_7.zip" -OutFile "temurin17.zip"
+          Expand-Archive -Path "temurin17.zip" -DestinationPath "."
+          $jdkFolder = Get-ChildItem -Directory | Where-Object { $_.Name -like "jdk-17*" } | Select-Object -First 1
+          Rename-Item -Path $jdkFolder.FullName -NewName "jre"
+
+
       - name: Build Windows EXE
         shell: cmd
         run: |
@@ -58,6 +68,7 @@ jobs:
           --add-data "images;images" ^
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
+          --add-data "jre;jre" ^
           --collect-data whisper ^
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^
