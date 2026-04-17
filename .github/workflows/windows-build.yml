@@ -15,6 +15,7 @@ on:
       - excellenceGUI
       - nltkDownloads
       - feature/remove-java-prerequisite_windows
+      - fix/salt-submit-annotation
 
 jobs:
   build-windows:
