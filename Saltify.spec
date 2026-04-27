@@ -1,12 +1,43 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_data_files, copy_metadata
 
+datas = [
+    ('images', 'images'),
+    ('build_assets/en-model.slp', 'pattern/text/en'),
+    ('CTkXYFrame', 'CTkXYFrame'),
+    ('nltk_data', 'nltk_data'),
+    ('bundled_jre', 'jre'),
+]
+
+datas += collect_data_files('whisper')
+datas += collect_data_files('lightning_fabric')
+datas += collect_data_files('pytorch_lightning')
+datas += collect_data_files('pyannote.audio')
+datas += collect_data_files('sv_ttk')
+
+datas += copy_metadata('torch')
+datas += copy_metadata('tqdm')
+datas += copy_metadata('regex')
+datas += copy_metadata('sacremoses')
+datas += copy_metadata('requests')
+datas += copy_metadata('packaging')
+datas += copy_metadata('filelock')
+datas += copy_metadata('numpy')
+datas += copy_metadata('tokenizers')
+datas += copy_metadata('importlib_metadata')
 
 a = Analysis(
     ['GUI.py'],
     pathex=[],
     binaries=[],
-    datas=[('images', 'images')],
-    hiddenimports=[],
+    datas=datas,
+    hiddenimports=[
+        'lightning_fabric',
+        'torch',
+        'torchvision',
+        'pytorch_lightning',
+        'pyannote.audio'
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -35,4 +66,11 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+
+app = BUNDLE(
+    exe,
+    name='Saltify.app',
+    icon=None,
+    bundle_identifier=None,
 )

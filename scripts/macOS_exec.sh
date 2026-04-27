@@ -1,23 +1,21 @@
+#!/bin/bash
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 BASE_DIR="$SCRIPT_DIR/.."
 
-VENV_NAME=$(basename "$VIRTUAL_ENV")
+cd "$BASE_DIR"
 
-pyinstaller --onefile --noconsole \
-  --add-data "$BASE_DIR/images:images" \
-  --add-data "$BASE_DIR/build_assets/en-model.slp:pattern/text/en" \
-  --add-data "$BASE_DIR/CTkXYFrame:CTkXYFrame" \
-  --add-binary "/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib:." \
-  --add-binary "/opt/homebrew/bin/ffmpeg:." \
-  --add-binary "/opt/homebrew/bin/ffprobe:." \
-  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/lightning_fabric:lightning_fabric" \
-  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/whisper:whisper" \
-  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/filelock:filelock" \
-  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/pytorch_lightning:torchlightning" \
-  --add-data "$BASE_DIR/$VENV_NAME/lib/python3.11/site-packages/pyannote:pyannote" \
-  --hidden-import "lightning_fabric" \
-  --hidden-import "torch" \
-  --hidden-import "torchvision" \
-  --hidden-import "pytorch_lightning" \
-  --hidden-import "pyannote.audio" \
-  "$BASE_DIR/GUI.py"
+# Download JRE if not present
+if [ ! -d "bundled_jre" ]; then
+    echo "Downloading Temurin JRE 17 for local build..."
+    curl -L "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jre_x64_mac_hotspot_17.0.12_7.tar.gz" -o jre.tar.gz
+    mkdir -p bundled_jre
+    tar -xzf jre.tar.gz -C bundled_jre --strip-components 1
+    rm jre.tar.gz
+fi
+
+# Set JAVA_HOME to bundled JRE for the build process (if needed by any scripts)
+export JAVA_HOME="$BASE_DIR/bundled_jre/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+echo "Building with PyInstaller..."
+pyinstaller --noconfirm Saltify.spec

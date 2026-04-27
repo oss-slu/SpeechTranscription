@@ -15,6 +15,7 @@ on:
       - excellenceGUI
       - nltkDownloads
       - feature/remove-java-prerequisite_windows
+      - fix/macos-bundle-dependencies
 
 jobs:
   build-windows:

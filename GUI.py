@@ -28,19 +28,29 @@ from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT
 
 # Ensure NLTK knows where to find the bundled data when running as a frozen app
 app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
-if os.path.exists(nltk_data_dir):
-    # put it first, not last
-    nltk.data.path.insert(0, nltk_data_dir)
+if getattr(sys, 'frozen', False):
+    app_dir = sys._MEIPASS
 
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
 nltk_data_dir = os.path.join(app_dir, "nltk_data")
 if os.path.exists(nltk_data_dir):
-    # put it first, not last
     nltk.data.path.insert(0, nltk_data_dir)
 else:
-    logging.warning("GUI.py: bundled nltk_data not found")
+    logging.warning(f"GUI.py: bundled nltk_data not found at {nltk_data_dir}")
+
+# Set JAVA_HOME for bundled JRE
+if getattr(sys, 'frozen', False):
+    jre_path = os.path.join(sys._MEIPASS, "jre")
+    if platform.system() == "Darwin":
+        jre_home = os.path.join(jre_path, "Contents", "Home")
+    else:
+        jre_home = jre_path
+    
+    if os.path.exists(jre_home):
+        os.environ["JAVA_HOME"] = jre_home
+        os.environ["PATH"] = os.path.join(jre_home, "bin") + os.pathsep + os.environ.get("PATH", "")
+        logging.info(f"JAVA_HOME set to bundled JRE: {jre_home}")
+    else:
+        logging.warning(f"Bundled JRE not found at {jre_home}")
 
 # main.py
 from customtkinter import *
