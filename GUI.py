@@ -1,46 +1,76 @@
-import warnings
-warnings.filterwarnings("ignore", module="matplotlib")  # suppress font warnings
-
-import logging
-logging.getLogger("language_tool_python").setLevel(logging.ERROR)  # suppress LanguageTool INFO
-# Adding Logging - CICD Internal Dev 
 import logging
 import os
 import sys
-import nltk
-nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
-nltk.download('wordnet')
-nltk.download('wordnet_ic')
-import os
-import sys
-from tkinter import Text
-import nltk # type: ignore
 import platform
 import subprocess
-import logging
+import warnings
+
+# Suppress warnings
+warnings.filterwarnings("ignore", module="matplotlib")
+logging.getLogger("language_tool_python").setLevel(logging.ERROR)
+
+import nltk
+
+# Ensure NLTK knows where to find the bundled data when running as a frozen app
+if getattr(sys, 'frozen', False):
+    app_dir = sys._MEIPASS
+else:
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+
+nltk_data_dir = os.path.join(app_dir, "nltk_data")
+if os.path.exists(nltk_data_dir):
+    nltk.data.path.insert(0, nltk_data_dir)
+else:
+    logging.warning(f"GUI.py: bundled nltk_data not found at {nltk_data_dir}")
+
+# Prevent NLTK from trying to download data at runtime in the packaged app
+if getattr(sys, 'frozen', False):
+    nltk.download = lambda *args, **kwargs: None
+else:
+    # Only download if not frozen (development mode)
+    try:
+        nltk.download('punkt_tab', quiet=True)
+        nltk.download('averaged_perceptron_tagger_eng', quiet=True)
+        nltk.download('wordnet', quiet=True)
+        nltk.download('wordnet_ic', quiet=True)
+    except Exception as e:
+        logging.warning(f"Failed to download NLTK data: {e}")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-nltk.download = lambda *args, **kwargs: None
-
 from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE 
 
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
-if os.path.exists(nltk_data_dir):
-    # put it first, not last
-    nltk.data.path.insert(0, nltk_data_dir)
 
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
-if os.path.exists(nltk_data_dir):
-    # put it first, not last
-    nltk.data.path.insert(0, nltk_data_dir)
-else:
-    logging.warning("GUI.py: bundled nltk_data not found")
+# Set JAVA_HOME for bundled JRE and PATH for FFmpeg
+if getattr(sys, 'frozen', False):
+    # JRE Setup
+    jre_path = os.path.join(sys._MEIPASS, "jre")
+    if platform.system() == "Darwin":
+        jre_home = os.path.join(jre_path, "Contents", "Home")
+    else:
+        jre_home = jre_path
+    
+    if os.path.exists(jre_home):
+        os.environ["JAVA_HOME"] = jre_home
+        os.environ["PATH"] = os.path.join(jre_home, "bin") + os.pathsep + os.environ.get("PATH", "")
+        logging.info(f"JAVA_HOME set to bundled JRE: {jre_home}")
+    
+    # FFmpeg Setup
+    ffmpeg_dir = os.path.join(sys._MEIPASS, "bundled_ffmpeg")
+    if os.path.exists(ffmpeg_dir):
+        os.environ["PATH"] = ffmpeg_dir + os.pathsep + os.environ.get("PATH", "")
+        logging.info(f"Bundled FFmpeg found at {ffmpeg_dir}, added to PATH")
+        
+        # Explicitly set pydub paths to avoid any lookup issues
+        try:
+            from pydub import AudioSegment
+            AudioSegment.converter = os.path.join(ffmpeg_dir, "ffmpeg")
+            AudioSegment.ffprobe = os.path.join(ffmpeg_dir, "ffprobe")
+        except ImportError:
+            pass
+    else:
+        logging.warning(f"Bundled FFmpeg not found at {ffmpeg_dir}")
 
 # main.py
 from customtkinter import *
@@ -58,12 +88,16 @@ if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
 promptRestart = False
-proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-output = proc.stdout.split('\n')
-if "No installed package found matching input criteria." in output[len(output)-2]:
-    print("Installing ffmpeg. This is a one time installation.")
-    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-    promptRestart = True
+if platform.system() == "Windows":
+    try:
+        proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = proc.stdout.split('\n')
+        if len(output) > 1 and "No installed package found matching input criteria." in output[len(output)-2]:
+            print("Installing ffmpeg. This is a one time installation.")
+            subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+            promptRestart = True
+    except Exception as e:
+        logging.debug(f"Winget check failed: {e}")
 
 class mainGUI(CTk):
 

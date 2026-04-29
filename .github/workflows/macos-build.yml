@@ -11,6 +11,7 @@ on:
       - issue178_build-test-failures
       - issue-2-cicd-logging
       - macOS-testRelease
+      - fix/macos-bundle-dependencies
 
 jobs:
   build-macos:
@@ -40,13 +41,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
           pip install mysql-connector-python pyaudio
-        # python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
 
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
+
+      # ✅ NEW: build-time JRE download for macOS
+      - name: Download Temurin JRE 17 (macOS x64)
+        run: |
+          curl -L "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jre_x64_mac_hotspot_17.0.12_7.tar.gz" -o jre.tar.gz
+          mkdir -p bundled_jre
+          tar -xzf jre.tar.gz -C bundled_jre --strip-components 1
 
       # ✅ NEW: build-time NLTK download
       - name: Download NLTK corpora for bundling
@@ -56,50 +63,54 @@ jobs:
           import nltk, os
           download_dir = "nltk_data"
           os.makedirs(download_dir, exist_ok=True)
-          # the ones that kept failing on client mac
           nltk.download("wordnet", download_dir=download_dir)
           nltk.download("omw-1.4", download_dir=download_dir)
-          # these two names fix your developer's odd names
           nltk.download("punkt", download_dir=download_dir)
           nltk.download("averaged_perceptron_tagger", download_dir=download_dir)
+          nltk.download("punkt_tab", download_dir=download_dir)
+          nltk.download("averaged_perceptron_tagger_eng", download_dir=download_dir)
+          nltk.download("wordnet_ic", download_dir=download_dir)
           PYCODE
+
+      # ✅ NEW: build-time FFmpeg download for macOS
+      - name: Download FFmpeg and FFprobe (macOS x64)
+        run: |
+          mkdir -p bundled_ffmpeg
+          curl -L "https://ffbinaries.com/api/v1/version/latest" -o ffbinaries.json
+          FFMPEG_URL=$(python3 -c "import json; print(json.load(open('ffbinaries.json'))['bin']['osx-64']['ffmpeg'])")
+          FFPROBE_URL=$(python3 -c "import json; print(json.load(open('ffbinaries.json'))['bin']['osx-64']['ffprobe'])")
+          curl -L "$FFMPEG_URL" -o ffmpeg.zip
+          curl -L "$FFPROBE_URL" -o ffprobe.zip
+          unzip -o ffmpeg.zip -d bundled_ffmpeg
+          unzip -o ffprobe.zip -d bundled_ffmpeg
+          chmod +x bundled_ffmpeg/ffmpeg bundled_ffmpeg/ffprobe
+
+      - name: Verify asset paths before build
+        run: |
+          ls -R bundled_jre
+          ls -R nltk_data
+          ls -R bundled_ffmpeg
+          if [ ! -f "build_assets/en-model.slp" ]; then echo "Error: en-model.slp missing"; exit 1; fi
+          if [ ! -f "bundled_ffmpeg/ffmpeg" ]; then echo "Error: ffmpeg missing"; exit 1; fi
+          if [ ! -f "bundled_ffmpeg/ffprobe" ]; then echo "Error: ffprobe missing"; exit 1; fi
 
       - name: Build macOS App
         run: |
-          pyinstaller --name Saltify \
-          --windowed \
-          --noconfirm \
-          --onefile \
-          --add-data "images:images" \
-          --add-data "build_assets/en-model.slp:pattern/text/en" \
-          --add-data "CTkXYFrame:CTkXYFrame" \
-          --add-data "nltk_data:nltk_data" \
-          --collect-data whisper \
-          --collect-data lightning_fabric \
-          --collect-data pytorch_lightning \
-          --collect-data pyannote.audio \
-          --copy-metadata torch \
-          --copy-metadata tqdm \
-          --copy-metadata regex \
-          --copy-metadata sacremoses \
-          --copy-metadata requests \
-          --copy-metadata packaging \
-          --copy-metadata filelock \
-          --copy-metadata numpy \
-          --copy-metadata tokenizers \
-          --copy-metadata importlib_metadata \
-          --collect-data sv_ttk \
-          --hidden-import "lightning_fabric" \
-          --hidden-import "torch" \
-          --hidden-import "torchvision" \
-          --hidden-import "pytorch_lightning" \
-          --hidden-import "pyannote.audio" \
-          GUI.py
+          pyinstaller --noconfirm Saltify.spec
 
-      - name: Run GUI headless for log
+      - name: Smoke Test (Headless)
         run: |
           export HEADLESS=true
+          # Try to run the app. It should exit with 0 (due to our headless exit) 
+          # or fail on import.
+          # We search the log for critical import errors.
           python GUI.py > app.log 2>&1 || true
+          cat app.log
+          if grep -q "ImportError:" app.log || grep -q "ModuleNotFoundError:" app.log; then
+            echo "Smoke test failed with import error!"
+            exit 1
+          fi
+          echo "Smoke test passed (no critical import errors found)."
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -111,4 +122,4 @@ jobs:
         if: always()
         with: 
           name: SpeechTranscription_macos
-          path: dist/Saltify
+          path: dist/Saltify.app
