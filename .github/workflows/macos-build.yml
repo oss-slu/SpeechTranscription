@@ -69,13 +69,31 @@ jobs:
           nltk.download("averaged_perceptron_tagger", download_dir=download_dir)
           nltk.download("punkt_tab", download_dir=download_dir)
           nltk.download("averaged_perceptron_tagger_eng", download_dir=download_dir)
+          nltk.download("wordnet_ic", download_dir=download_dir)
           PYCODE
+
+      # ✅ NEW: build-time FFmpeg download for macOS
+      - name: Download FFmpeg and FFprobe (macOS x64)
+        run: |
+          mkdir -p bundled_ffmpeg
+          curl -L "https://ffbinaries.com/api/v1/get?components=ffmpeg&os=osx-64" -o ffmpeg.json
+          curl -L "https://ffbinaries.com/api/v1/get?components=ffprobe&os=osx-64" -o ffprobe.json
+          FFMPEG_URL=$(python3 -c "import json; print(json.load(open('ffmpeg.json'))['bin']['osx-64']['ffmpeg'])")
+          FFPROBE_URL=$(python3 -c "import json; print(json.load(open('ffprobe.json'))['bin']['osx-64']['ffprobe'])")
+          curl -L "$FFMPEG_URL" -o ffmpeg.zip
+          curl -L "$FFPROBE_URL" -o ffprobe.zip
+          unzip ffmpeg.zip -d bundled_ffmpeg
+          unzip ffprobe.zip -d bundled_ffmpeg
+          chmod +x bundled_ffmpeg/ffmpeg bundled_ffmpeg/ffprobe
 
       - name: Verify asset paths before build
         run: |
           ls -R bundled_jre
           ls -R nltk_data
+          ls -R bundled_ffmpeg
           if [ ! -f "build_assets/en-model.slp" ]; then echo "Error: en-model.slp missing"; exit 1; fi
+          if [ ! -f "bundled_ffmpeg/ffmpeg" ]; then echo "Error: ffmpeg missing"; exit 1; fi
+          if [ ! -f "bundled_ffmpeg/ffprobe" ]; then echo "Error: ffprobe missing"; exit 1; fi
 
       - name: Build macOS App
         run: |

@@ -7,6 +7,7 @@ datas = [
     ('CTkXYFrame', 'CTkXYFrame'),
     ('nltk_data', 'nltk_data'),
     ('bundled_jre', 'jre'),
+    ('bundled_ffmpeg', 'bundled_ffmpeg'),
 ]
 
 datas += collect_data_files('whisper')
