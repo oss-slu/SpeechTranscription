@@ -11,10 +11,11 @@ on:
       - issue178_build-test-failures
       - issue-2-cicd-logging
       - macOS-testRelease
+      - feature/remove-java-prerequisite_macos
 
 jobs:
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-13
 
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +41,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
           pip install mysql-connector-python pyaudio
-        # python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
@@ -48,7 +48,15 @@ jobs:
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
 
-      # ✅ NEW: build-time NLTK download
+      - name: Download Temurin JDK 17 for macOS
+        run: |
+          curl -L -o temurin17.tar.gz "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.12_7.tar.gz"
+          tar -xzf temurin17.tar.gz
+          JDK_FOLDER=$(find . -maxdepth 1 -type d -name "jdk-17*" | head -n 1)
+          mv "$JDK_FOLDER" jre
+          chmod +x jre/Contents/Home/bin/java
+          ./jre/Contents/Home/bin/java -version
+
       - name: Download NLTK corpora for bundling
         run: |
           mkdir -p nltk_data
@@ -56,10 +64,8 @@ jobs:
           import nltk, os
           download_dir = "nltk_data"
           os.makedirs(download_dir, exist_ok=True)
-          # the ones that kept failing on client mac
           nltk.download("wordnet", download_dir=download_dir)
           nltk.download("omw-1.4", download_dir=download_dir)
-          # these two names fix your developer's odd names
           nltk.download("punkt", download_dir=download_dir)
           nltk.download("averaged_perceptron_tagger", download_dir=download_dir)
           PYCODE
@@ -71,6 +77,7 @@ jobs:
           --noconfirm \
           --onefile \
           --add-data "images:images" \
+          --add-data "jre:jre" \
           --add-data "build_assets/en-model.slp:pattern/text/en" \
           --add-data "CTkXYFrame:CTkXYFrame" \
           --add-data "nltk_data:nltk_data" \
@@ -109,6 +116,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         if: always()
-        with: 
+        with:
           name: SpeechTranscription_macos
-          path: dist/Saltify
+          path: dist/Saltify*
