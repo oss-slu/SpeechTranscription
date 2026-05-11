@@ -65,8 +65,9 @@ def test_compare_input_with_output(grammar_checker):
             total_line_tests += 1
 
             # process the input line
-            grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=False) 
-            corrected, _ = grammar_checker.getNextCorrection()
+            grammar_checker.checkGrammar(input_line.strip(), checkAllSentences=True)
+            pre, corr = grammar_checker.getNextCorrection()
+            corrected = corr if corr else ""
             processed_text = grammar_checker.getInflectionalMorphemes(corrected) if corrected else ""
 
             # Print intermediate results for debugging
