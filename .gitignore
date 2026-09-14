@@ -8,6 +8,8 @@ ffmpeg
 diarization.txt
 user_settings.txt
 venv/
+.venv/
+.venv-clean/
 dist/
 venv39/
 myenv/

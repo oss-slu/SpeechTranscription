@@ -10,6 +10,7 @@ import time
 
 import os
 import sys
+import tempfile
 
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
@@ -45,7 +46,9 @@ class AudioManager:
             stream = self.p.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK)
             
             while self.isRecording:
-                data = stream.read(self.CHUNK)
+                # exception_on_overflow=False avoids macOS Input overflowed (-9981)
+                # crashes when the UI update loop briefly stalls mic reads.
+                data = stream.read(self.CHUNK, exception_on_overflow=False)
                 self.frames.append(data)
                 self.root.update()
                 
@@ -54,6 +57,8 @@ class AudioManager:
             if e.errno == -9996 or e.errno == -9999:
                 print("Warning: No default output device available.")
                 self.root.after(0, lambda: msgbox.showerror("Audio Error", "No default audio device available. Please check your audio settings."))
+            elif e.errno == -9981:
+                print("Warning: Audio input overflowed; recording continued with dropped frames.")
             else:
                 raise
 
@@ -146,19 +151,44 @@ class AudioManager:
             return None, None
 
     def normalizeUploadedFile(self):
+        """Normalize loudness and rewrite the session WAV safely.
+
+        Closes any open wave reader before replacement, writes to a temp file,
+        then replaces the destination. Overwriting the same path while a
+        wave.Wave_read handle remains open has caused macOS segmentation faults.
+        """
         print("The audio file is attempting to be normalized")
+
+        # Close existing reader before replacing the underlying file.
+        if self.wf:
+            self.wf.close()
+            self.wf = None
+
         pre_normalized_audio = AudioSegment.from_file(self.filePath, format="wav")
         normalized_audio = normalize(pre_normalized_audio)
-        normalized_audio.export(out_f=self.filePath, format="wav")
+
+        directory = os.path.dirname(os.path.abspath(self.filePath)) or "."
+        fd, temp_path = tempfile.mkstemp(suffix=".wav", dir=directory)
+        os.close(fd)
+        try:
+            normalized_audio.export(out_f=temp_path, format="wav")
+            os.replace(temp_path, self.filePath)
+        except Exception:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise
+
+        # Reopen so playback/seek can use the normalized file.
+        self.wf = wave.open(self.filePath, "rb")
         return self.filePath
         
     def createWaveformFile(self):
         self.audioExists = True
-        raw = wave.open(self.filePath)
-        signal = raw.readframes(-1)
-        signal = np.frombuffer(signal, dtype="int16")
-        f_rate = raw.getframerate()
-        time = np.linspace(0, len(signal) / f_rate, num=len(signal))
+        with wave.open(self.filePath) as raw:
+            signal = raw.readframes(-1)
+            signal = np.frombuffer(signal, dtype="int16")
+            f_rate = raw.getframerate()
+            time = np.linspace(0, len(signal) / f_rate, num=len(signal))
         return (time, signal)
         
     def saveAudioFile(self, filename: str):
