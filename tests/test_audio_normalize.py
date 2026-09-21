@@ -127,3 +127,28 @@ def test_temp_file_removed_after_normalize(audio_manager, tmp_path):
         name for name in (after - before) if name.endswith(".wav") and name != "session.wav"
     ]
     assert leftover_temps == []
+
+
+def test_normalize_export_failure_cleans_temp_and_preserves_source(audio_manager, tmp_path, monkeypatch):
+    path = str(tmp_path / "session.wav")
+    _write_sine_wav(path)
+    with open(path, "rb") as f:
+        original_bytes = f.read()
+
+    audio_manager.filePath = path
+    audio_manager.wf = wave.open(path, "rb")
+
+    def failing_export(self, *args, **kwargs):
+        raise OSError("simulated export failure")
+
+    monkeypatch.setattr(AudioSegment, "export", failing_export)
+
+    with pytest.raises(OSError, match="simulated export failure"):
+        audio_manager.normalizeUploadedFile()
+
+    assert audio_manager.wf is None
+    assert os.path.exists(path)
+    with open(path, "rb") as f:
+        assert f.read() == original_bytes
+    leftover_temps = [name for name in os.listdir(tmp_path) if name.endswith(".wav") and name != "session.wav"]
+    assert leftover_temps == []

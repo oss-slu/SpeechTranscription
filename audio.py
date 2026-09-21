@@ -48,6 +48,7 @@ class AudioManager:
             while self.isRecording:
                 # exception_on_overflow=False avoids macOS Input overflowed (-9981)
                 # crashes when the UI update loop briefly stalls mic reads.
+                # Overflowed frames are dropped silently instead of raising.
                 data = stream.read(self.CHUNK, exception_on_overflow=False)
                 self.frames.append(data)
                 self.root.update()
@@ -57,8 +58,6 @@ class AudioManager:
             if e.errno == -9996 or e.errno == -9999:
                 print("Warning: No default output device available.")
                 self.root.after(0, lambda: msgbox.showerror("Audio Error", "No default audio device available. Please check your audio settings."))
-            elif e.errno == -9981:
-                print("Warning: Audio input overflowed; recording continued with dropped frames.")
             else:
                 raise
 
@@ -156,13 +155,18 @@ class AudioManager:
         Closes any open wave reader before replacement, writes to a temp file,
         then replaces the destination. Overwriting the same path while a
         wave.Wave_read handle remains open has caused macOS segmentation faults.
+
+        Close/reopen of self.wf is done under self.lock so a playback thread
+        cannot readframes() on a handle we are closing. Heavy normalize/export
+        work stays outside the lock to avoid deadlocking with play()'s paused
+        sleep that also holds the lock.
         """
         print("The audio file is attempting to be normalized")
 
-        # Close existing reader before replacing the underlying file.
-        if self.wf:
-            self.wf.close()
-            self.wf = None
+        with self.lock:
+            if self.wf:
+                self.wf.close()
+                self.wf = None
 
         pre_normalized_audio = AudioSegment.from_file(self.filePath, format="wav")
         normalized_audio = normalize(pre_normalized_audio)
@@ -178,8 +182,8 @@ class AudioManager:
                 os.remove(temp_path)
             raise
 
-        # Reopen so playback/seek can use the normalized file.
-        self.wf = wave.open(self.filePath, "rb")
+        with self.lock:
+            self.wf = wave.open(self.filePath, "rb")
         return self.filePath
         
     def createWaveformFile(self):
