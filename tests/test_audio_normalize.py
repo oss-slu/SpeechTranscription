@@ -14,6 +14,8 @@ from audio import AudioManager
 
 def _write_sine_wav(path, seconds=0.25, rate=16000, amp=8000):
     nframes = int(rate * seconds)
+    # Pylint infers wave.open() as Wave_read even when opened in write mode.
+    # pylint: disable=no-member
     with wave.open(path, "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
@@ -22,6 +24,7 @@ def _write_sine_wav(path, seconds=0.25, rate=16000, amp=8000):
             struct.pack("<h", int(amp * ((i % 40) / 20 - 1))) for i in range(nframes)
         )
         wf.writeframes(frames)
+    # pylint: enable=no-member
 
 
 @pytest.fixture
