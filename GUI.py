@@ -1,46 +1,53 @@
+import multiprocessing
+
+# Must run before the heavy imports below: in the frozen app, multiprocessing helper
+# processes re-launch this executable and would otherwise start a second GUI.
+multiprocessing.freeze_support()
+
 import warnings
 warnings.filterwarnings("ignore", module="matplotlib")  # suppress font warnings
 
 import logging
 logging.getLogger("language_tool_python").setLevel(logging.ERROR)  # suppress LanguageTool INFO
-# Adding Logging - CICD Internal Dev 
-import logging
-import os
-import sys
-import nltk
-nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
-nltk.download('wordnet')
-nltk.download('wordnet_ic')
+# Adding Logging - CICD Internal Dev
 import os
 import sys
 from tkinter import Text
-import nltk # type: ignore
 import platform
 import subprocess
-import logging
+
+import nltk  # type: ignore
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-nltk.download = lambda *args, **kwargs: None
+from java_runtime import get_base_path
+from ffmpeg_runtime import configure_bundled_ffmpeg
 
-from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE 
+configure_bundled_ffmpeg()
 
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
+# Frozen apps must use bundled nltk_data and never download at startup.
+nltk_data_dir = os.path.join(get_base_path(), "nltk_data")
 if os.path.exists(nltk_data_dir):
-    # put it first, not last
-    nltk.data.path.insert(0, nltk_data_dir)
-
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
-if os.path.exists(nltk_data_dir):
-    # put it first, not last
     nltk.data.path.insert(0, nltk_data_dir)
 else:
     logging.warning("GUI.py: bundled nltk_data not found")
+
+if getattr(sys, "frozen", False):
+    nltk.download = lambda *args, **kwargs: None
+else:
+    for _pkg in (
+        "punkt_tab",
+        "averaged_perceptron_tagger_eng",
+        "wordnet",
+        "wordnet_ic",
+    ):
+        try:
+            nltk.download(_pkg, quiet=True)
+        except Exception as exc:  # noqa: BLE001
+            logging.warning("GUI.py: nltk.download(%s) failed: %s", _pkg, exc)
+
+from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE
 
 # main.py
 from customtkinter import *
@@ -58,12 +65,13 @@ if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
 promptRestart = False
-proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-output = proc.stdout.split('\n')
-if "No installed package found matching input criteria." in output[len(output)-2]:
-    print("Installing ffmpeg. This is a one time installation.")
-    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-    promptRestart = True
+if platform.system() == "Windows":
+    proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+    output = proc.stdout.split('\n')
+    if "No installed package found matching input criteria." in output[len(output)-2]:
+        print("Installing ffmpeg. This is a one time installation.")
+        subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+        promptRestart = True
 
 class mainGUI(CTk):
 

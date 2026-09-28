@@ -38,8 +38,10 @@ jobs:
       - name: Install Python requirements
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip install pyinstaller pipwin mysql-connector-python
+          # setuptools>=82 removed pkg_resources.NullProvider and breaks PyInstaller boot
+          pip install "setuptools>=70,<81" "pyinstaller>=6.11,<7"
+          pip install -r requirements.txt importlib-metadata sacremoses tokenizers
+          pip install pipwin mysql-connector-python
           pipwin install pyaudio
           python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
@@ -69,12 +71,14 @@ jobs:
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
           --add-data "jre;jre" ^
+          --collect-data language_tool_python ^
+          --copy-metadata language_tool_python ^
           --collect-data whisper ^
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^
           --collect-data pyannote.audio ^
-          --collect-data language_tool_python ^
           --copy-metadata torch ^
+          --copy-metadata pyannote.audio ^
           --copy-metadata tqdm ^
           --copy-metadata regex ^
           --copy-metadata sacremoses ^

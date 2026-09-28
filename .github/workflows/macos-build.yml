@@ -11,6 +11,7 @@ on:
       - issue178_build-test-failures
       - issue-2-cicd-logging
       - macOS-testRelease
+      - feature/macos-bundle-deps
 
 jobs:
   build-macos:
@@ -38,7 +39,9 @@ jobs:
       - name: Install Python requirements
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          # setuptools>=82 removed pkg_resources.NullProvider and breaks PyInstaller boot
+          pip install "setuptools>=70,<81" "pyinstaller>=6.11,<7"
+          pip install -r requirements.txt importlib-metadata sacremoses tokenizers
           pip install mysql-connector-python pyaudio
         # python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
@@ -48,7 +51,7 @@ jobs:
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
 
-      # ✅ NEW: build-time NLTK download
+      # Build-time NLTK download (packages used by grammar.py / GUI.py)
       - name: Download NLTK corpora for bundling
         run: |
           mkdir -p nltk_data
@@ -56,13 +59,68 @@ jobs:
           import nltk, os
           download_dir = "nltk_data"
           os.makedirs(download_dir, exist_ok=True)
-          # the ones that kept failing on client mac
-          nltk.download("wordnet", download_dir=download_dir)
-          nltk.download("omw-1.4", download_dir=download_dir)
-          # these two names fix your developer's odd names
-          nltk.download("punkt", download_dir=download_dir)
-          nltk.download("averaged_perceptron_tagger", download_dir=download_dir)
+          packages = [
+              "wordnet",
+              "wordnet_ic",
+              "omw-1.4",
+              "punkt",
+              "punkt_tab",
+              "averaged_perceptron_tagger",
+              "averaged_perceptron_tagger_eng",
+          ]
+          for package in packages:
+              nltk.download(package, download_dir=download_dir)
           PYCODE
+
+      # Bundle a portable JDK so Grammar Check works with no system Java
+      - name: Download Temurin JDK 17 (macOS)
+        run: |
+          set -euo pipefail
+          ARCH="$(uname -m)"
+          if [ "$ARCH" = "arm64" ]; then
+            JDK_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.12_7.tar.gz"
+          else
+            JDK_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.12_7.tar.gz"
+          fi
+          echo "Downloading Temurin JDK for $ARCH from $JDK_URL"
+          curl -L "$JDK_URL" -o temurin17.tar.gz
+          mkdir -p jdk_extract
+          tar -xzf temurin17.tar.gz -C jdk_extract
+          # Normalize to jre/bin/java (macOS layout is Contents/Home)
+          HOME_DIR="$(find jdk_extract -type d -path '*/Contents/Home' | head -n 1)"
+          if [ -z "$HOME_DIR" ]; then
+            echo "Could not locate JDK Contents/Home after extract"
+            find jdk_extract -maxdepth 4 -type d
+            exit 1
+          fi
+          rm -rf jre
+          mv "$HOME_DIR" jre
+          chmod +x jre/bin/java
+          ./jre/bin/java -version
+
+      # Static ffmpeg/ffprobe (Homebrew's are dynamically linked and not portable)
+      - name: Download static ffmpeg (macOS)
+        run: |
+          set -euo pipefail
+          if [ "$(uname -m)" = "arm64" ]; then ARCH=arm64; else ARCH=amd64; fi
+          BASE="https://ffmpeg.martin-riedl.de/redirect/latest/macos/$ARCH/release"
+          rm -rf ffmpeg_bin ffmpeg_extract
+          mkdir -p ffmpeg_bin ffmpeg_extract
+          for tool in ffmpeg ffprobe; do
+            curl -fL "$BASE/$tool.zip" -o "$tool.zip"
+            unzip -o "$tool.zip" -d ffmpeg_extract
+            BIN="$(find ffmpeg_extract -type f -name "$tool" | head -n 1)"
+            if [ -z "$BIN" ]; then
+              echo "Could not find $tool in downloaded zip"
+              find ffmpeg_extract
+              exit 1
+            fi
+            mv "$BIN" "ffmpeg_bin/$tool"
+            chmod +x "ffmpeg_bin/$tool"
+          done
+          ./ffmpeg_bin/ffmpeg -hide_banner -version | head -n 1
+          ./ffmpeg_bin/ffprobe -hide_banner -version | head -n 1
+          otool -L ffmpeg_bin/ffmpeg
 
       - name: Build macOS App
         run: |
@@ -74,12 +132,17 @@ jobs:
           --add-data "build_assets/en-model.slp:pattern/text/en" \
           --add-data "CTkXYFrame:CTkXYFrame" \
           --add-data "nltk_data:nltk_data" \
+          --add-data "jre:jre" \
+          --add-binary "ffmpeg_bin/ffmpeg:ffmpeg_bin" \
+          --add-binary "ffmpeg_bin/ffprobe:ffmpeg_bin" \
+          --collect-data language_tool_python \
+          --copy-metadata language_tool_python \
           --collect-data whisper \
           --collect-data lightning_fabric \
           --collect-data pytorch_lightning \
           --collect-data pyannote.audio \
-          --collect-data language_tool_python \
           --copy-metadata torch \
+          --copy-metadata pyannote.audio \
           --copy-metadata tqdm \
           --copy-metadata regex \
           --copy-metadata sacremoses \
