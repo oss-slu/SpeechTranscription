@@ -1,3 +1,9 @@
+import multiprocessing
+
+# Must run before the heavy imports below: in the frozen app, multiprocessing helper
+# processes re-launch this executable and would otherwise start a second GUI.
+multiprocessing.freeze_support()
+
 import warnings
 warnings.filterwarnings("ignore", module="matplotlib")  # suppress font warnings
 

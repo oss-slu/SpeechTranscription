@@ -51,7 +51,7 @@ def _ensure_resource(res_name, path):
 
 
 _ensure_resource("punkt", "tokenizers/punkt")
-_ensure_resource("averaged_perceptron_tagger", "taggers/averaged_perceptron_tagger")
+_ensure_resource("averaged_perceptron_tagger_eng", "taggers/averaged_perceptron_tagger_eng")
 _ensure_resource("wordnet", "corpora/wordnet")
 
 

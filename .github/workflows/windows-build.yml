@@ -78,6 +78,7 @@ jobs:
           --collect-data pytorch_lightning ^
           --collect-data pyannote.audio ^
           --copy-metadata torch ^
+          --copy-metadata pyannote.audio ^
           --copy-metadata tqdm ^
           --copy-metadata regex ^
           --copy-metadata sacremoses ^
