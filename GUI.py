@@ -16,6 +16,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from java_runtime import get_base_path
+from ffmpeg_runtime import configure_bundled_ffmpeg
+
+configure_bundled_ffmpeg()
 
 # Frozen apps must use bundled nltk_data and never download at startup.
 nltk_data_dir = os.path.join(get_base_path(), "nltk_data")
@@ -56,12 +59,13 @@ if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
 promptRestart = False
-proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-output = proc.stdout.split('\n')
-if "No installed package found matching input criteria." in output[len(output)-2]:
-    print("Installing ffmpeg. This is a one time installation.")
-    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-    promptRestart = True
+if platform.system() == "Windows":
+    proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+    output = proc.stdout.split('\n')
+    if "No installed package found matching input criteria." in output[len(output)-2]:
+        print("Installing ffmpeg. This is a one time installation.")
+        subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+        promptRestart = True
 
 class mainGUI(CTk):
 

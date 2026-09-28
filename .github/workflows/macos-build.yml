@@ -98,6 +98,30 @@ jobs:
           chmod +x jre/bin/java
           ./jre/bin/java -version
 
+      # Static ffmpeg/ffprobe (Homebrew's are dynamically linked and not portable)
+      - name: Download static ffmpeg (macOS)
+        run: |
+          set -euo pipefail
+          if [ "$(uname -m)" = "arm64" ]; then ARCH=arm64; else ARCH=amd64; fi
+          BASE="https://ffmpeg.martin-riedl.de/redirect/latest/macos/$ARCH/release"
+          rm -rf ffmpeg_bin ffmpeg_extract
+          mkdir -p ffmpeg_bin ffmpeg_extract
+          for tool in ffmpeg ffprobe; do
+            curl -fL "$BASE/$tool.zip" -o "$tool.zip"
+            unzip -o "$tool.zip" -d ffmpeg_extract
+            BIN="$(find ffmpeg_extract -type f -name "$tool" | head -n 1)"
+            if [ -z "$BIN" ]; then
+              echo "Could not find $tool in downloaded zip"
+              find ffmpeg_extract
+              exit 1
+            fi
+            mv "$BIN" "ffmpeg_bin/$tool"
+            chmod +x "ffmpeg_bin/$tool"
+          done
+          ./ffmpeg_bin/ffmpeg -hide_banner -version | head -n 1
+          ./ffmpeg_bin/ffprobe -hide_banner -version | head -n 1
+          otool -L ffmpeg_bin/ffmpeg
+
       - name: Build macOS App
         run: |
           pyinstaller --name Saltify \
@@ -109,6 +133,8 @@ jobs:
           --add-data "CTkXYFrame:CTkXYFrame" \
           --add-data "nltk_data:nltk_data" \
           --add-data "jre:jre" \
+          --add-binary "ffmpeg_bin/ffmpeg:ffmpeg_bin" \
+          --add-binary "ffmpeg_bin/ffprobe:ffmpeg_bin" \
           --collect-data language_tool_python \
           --copy-metadata language_tool_python \
           --collect-data whisper \

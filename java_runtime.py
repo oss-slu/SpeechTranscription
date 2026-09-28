@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import stat
 
 
 def get_base_path():
@@ -50,6 +51,10 @@ def configure_bundled_java():
         print("Looking for Java at:", java_bin)
 
         if os.path.exists(java_bin):
+            if not java_bin.endswith(".exe"):
+                mode = os.stat(java_bin).st_mode
+                if not mode & stat.S_IXUSR:
+                    os.chmod(java_bin, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
             java_home = _java_home_from_bin(java_bin)
             os.environ["JAVA_HOME"] = java_home
             os.environ["PATH"] = os.path.join(java_home, "bin") + os.pathsep + os.environ.get("PATH", "")
