@@ -97,6 +97,23 @@ jobs:
           --hidden-import "pyannote.audio" \
           GUI.py
 
+      # SBOM: --onefile hides dependencies inside the binary, so scan the
+      # Python environment PyInstaller bundled from (OSS-SLU baseline §4, fallback #2).
+      - name: Generate macOS SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ${{ env.pythonLocation }}
+          format: spdx-json
+          output-file: Saltify_macos-sbom.spdx.json
+          upload-artifact: false
+
+      - name: Upload macOS SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saltify_macos-sbom
+          path: Saltify_macos-sbom.spdx.json
+          if-no-files-found: error
+
       - name: Run GUI headless for log
         run: |
           export HEADLESS=true

@@ -9,6 +9,9 @@ permissions:
   contents: write
   packages: read
   actions: read
+  id-token: write           # OIDC token for signing attestations
+  attestations: write       # write provenance attestations
+  artifact-metadata: write  # link attestations to the repo's artifacts
 jobs:
   call-macos-build:
     uses: ./.github/workflows/macos-build.yml
@@ -21,7 +24,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Create artifacts directory
-        run: mkdir -p artifacts/macos artifacts/windows
+        run: mkdir -p artifacts/macos artifacts/windows artifacts/sbom
       - name: Download macOS build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -32,6 +35,17 @@ jobs:
         with:
           name: SpeechTranscription_windows
           path: artifacts/windows
+      # SBOMs go in their own folder so they are NOT zipped into the release archives
+      - name: Download macOS SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: Saltify_macos-sbom
+          path: artifacts/sbom
+      - name: Download Windows SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: Saltify_windows-sbom
+          path: artifacts/sbom
       - name: List directory structure
         run: |
           echo "Full directory structure:"
@@ -41,6 +55,7 @@ jobs:
           ls -la artifacts/
           ls -la artifacts/macos || echo "No macOS artifacts"
           ls -la artifacts/windows || echo "No Windows artifacts"
+          ls -la artifacts/sbom || echo "No SBOMs"
       - name: Include Client Installation Guide
         run: |
           if [ -f "Client_Installation_Guide.md" ]; then
@@ -83,6 +98,27 @@ jobs:
           
           echo "- Saltify_macos.zip: macOS executable" >> release_notes.md
           echo "- Saltify_windows.zip: Windows executable" >> release_notes.md
+          echo "- Saltify_macos-sbom.spdx.json: macOS SBOM (SPDX JSON)" >> release_notes.md
+          echo "- Saltify_windows-sbom.spdx.json: Windows SBOM (SPDX JSON)" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "Verify a download: \`gh attestation verify Saltify_windows.zip --repo ${{ github.repository }}\`" >> release_notes.md
+
+      # Build provenance attestations for the final release archives
+      - name: Attest macOS ZIP provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: artifacts/Saltify_macos.zip
+      - name: Attest Windows ZIP provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: artifacts/Saltify_windows.zip
+      - name: Verify ZIP attestations
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh attestation verify artifacts/Saltify_macos.zip --repo ${{ github.repository }}
+          gh attestation verify artifacts/Saltify_windows.zip --repo ${{ github.repository }}
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -112,3 +148,21 @@ jobs:
           asset_path: artifacts/Saltify_windows.zip
           asset_name: Saltify_windows.zip
           asset_content_type: application/zip
+      - name: Upload macOS SBOM Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/sbom/Saltify_macos-sbom.spdx.json
+          asset_name: Saltify_macos-sbom.spdx.json
+          asset_content_type: application/json
+      - name: Upload Windows SBOM Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/sbom/Saltify_windows-sbom.spdx.json
+          asset_name: Saltify_windows-sbom.spdx.json
+          asset_content_type: application/json
