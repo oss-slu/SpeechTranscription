@@ -52,6 +52,9 @@ jobs:
       # The packaged app never downloads NLTK data, so it must be bundled
       - name: Download NLTK data for bundling
         run: python scripts/bundle_nltk_data.py nltk_data
+          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          pip install pyinstaller mysql-connector-python pyaudio
+          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
