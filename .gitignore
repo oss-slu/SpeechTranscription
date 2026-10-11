@@ -21,3 +21,4 @@ nltk_data/
 app.log
 jre/
 ffmpeg_bin/
+brag-output/
