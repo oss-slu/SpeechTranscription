@@ -19,8 +19,9 @@ def test_configure_bundled_ffmpeg_prepends_path_and_sets_exec_bit(tmp_path, monk
 
     assert found == str(bin_dir / "ffmpeg")
     assert os.environ["PATH"].split(os.pathsep)[0] == str(bin_dir)
-    for name in ("ffmpeg", "ffprobe"):
-        assert os.stat(bin_dir / name).st_mode & stat.S_IXUSR
+    if os.name != "nt":
+        for name in ("ffmpeg", "ffprobe"):
+            assert os.stat(bin_dir / name).st_mode & stat.S_IXUSR
 
 
 def test_configure_bundled_ffmpeg_missing_leaves_path(tmp_path, monkeypatch):

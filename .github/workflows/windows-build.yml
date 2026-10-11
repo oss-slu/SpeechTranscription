@@ -42,12 +42,11 @@ jobs:
 
       - name: Install Python requirements
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           # setuptools>=82 removed pkg_resources.NullProvider and breaks PyInstaller boot
-          pip install "setuptools>=70,<81" "pyinstaller>=6.11,<7"
-          pip install -r requirements.txt importlib-metadata sacremoses tokenizers
-          pip install pipwin mysql-connector-python
-          pipwin install pyaudio
+          python -m pip install "setuptools>=70,<81" "pyinstaller>=6.11,<7"
+          python -m pip install -r requirements.txt importlib-metadata sacremoses tokenizers
+          python -m pip install mysql-connector-python pyaudio
 
       # The packaged app never downloads NLTK data, so it must be bundled
       - name: Download NLTK data for bundling
