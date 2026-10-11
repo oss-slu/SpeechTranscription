@@ -15,6 +15,11 @@ on:
       - excellenceGUI
       - nltkDownloads
       - feature/remove-java-prerequisite_windows
+      - feature/macos-bundle-deps
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -38,10 +43,14 @@ jobs:
       - name: Install Python requirements
         run: |
           python -m pip install --upgrade pip
+          # setuptools>=82 removed pkg_resources.NullProvider and breaks PyInstaller boot
+          python -m pip install "setuptools>=70,<81" "pyinstaller>=6.11,<7"
           python -m pip install -r requirements.txt importlib-metadata sacremoses tokenizers
-          # Keep setuptools below 81 for PyInstaller compatibility on Windows.
-          python -m pip install "setuptools>=70,<81" "pyinstaller>=6.11,<7" mysql-connector-python pyaudio
-          python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
+          python -m pip install mysql-connector-python pyaudio
+
+      # The packaged app never downloads NLTK data, so it must be bundled
+      - name: Download NLTK data for bundling
+        run: python scripts/bundle_nltk_data.py nltk_data
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
@@ -68,13 +77,16 @@ jobs:
           --add-data "images;images" ^
           --add-data "build_assets\\en-model.slp;pattern/text/en" ^
           --add-data "CTkXYFrame;CTkXYFrame" ^
+          --add-data "nltk_data;nltk_data" ^
           --add-data "jre;jre" ^
+          --collect-data language_tool_python ^
+          --copy-metadata language_tool_python ^
           --collect-data whisper ^
           --collect-data lightning_fabric ^
           --collect-data pytorch_lightning ^
           --collect-data pyannote.audio ^
-          --collect-data language_tool_python ^
           --copy-metadata torch ^
+          --copy-metadata pyannote.audio ^
           --copy-metadata tqdm ^
           --copy-metadata regex ^
           --copy-metadata sacremoses ^
@@ -92,11 +104,36 @@ jobs:
           --hidden-import "pyannote.audio" ^
           GUI.py
 
+      # Launch the packaged exe in self-test mode without the runner's Java, so
+      # it can only pass using what is bundled inside it. The exe is windowed
+      # (no console), so results come back through the report file.
+      - name: Smoke test packaged app
+        shell: pwsh
+        timeout-minutes: 15
+        env:
+          HEADLESS: "true"
+          SALTIFY_SELFTEST_REPORT: ${{ github.workspace }}\selftest-report.txt
+        run: |
+          $report = $env:SALTIFY_SELFTEST_REPORT
+          Remove-Item $report -ErrorAction SilentlyContinue
+          Remove-Item Env:JAVA_HOME -ErrorAction SilentlyContinue
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch '(?i)java|jdk|jre' }) -join ';'
+          $p = Start-Process -FilePath "dist\Saltify.exe" -Wait -PassThru
+          if (-not (Test-Path $report)) {
+            "RESULT: FAIL (app exited with $($p.ExitCode) before writing a report)" | Set-Content $report
+          }
+          Add-Content $env:GITHUB_STEP_SUMMARY "### Windows packaged app self-test (exit code $($p.ExitCode))"
+          Add-Content $env:GITHUB_STEP_SUMMARY '```'
+          Get-Content $report | Add-Content $env:GITHUB_STEP_SUMMARY
+          Add-Content $env:GITHUB_STEP_SUMMARY '```'
+          Get-Content $report
+          exit $p.ExitCode
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: SpeechTranscription_windows_logs
-          path: app.log
+          name: SpeechTranscription_windows_selftest
+          path: selftest-report.txt
 
       - uses: actions/upload-artifact@v4
         if: always()
