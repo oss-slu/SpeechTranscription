@@ -39,8 +39,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
-          pip install pyinstaller pipwin mysql-connector-python
-          pipwin install pyaudio
+          pip install pyinstaller mysql-connector-python
           python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
