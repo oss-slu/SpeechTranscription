@@ -11,6 +11,7 @@ on:
       - issue178_build-test-failures
       - issue-2-cicd-logging
       - macOS-testRelease
+      - feature/remove-java-prerequisite_macos
       - feature/macos-bundle-deps
   pull_request:
     branches:
@@ -128,10 +129,10 @@ jobs:
           --noconfirm \
           --onefile \
           --add-data "images:images" \
+          --add-data "jre:jre" \
           --add-data "build_assets/en-model.slp:pattern/text/en" \
           --add-data "CTkXYFrame:CTkXYFrame" \
           --add-data "nltk_data:nltk_data" \
-          --add-data "jre:jre" \
           --add-binary "ffmpeg_bin/ffmpeg:ffmpeg_bin" \
           --add-binary "ffmpeg_bin/ffprobe:ffmpeg_bin" \
           --collect-data language_tool_python \
@@ -209,6 +210,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         if: always()
-        with: 
+        with:
           name: SpeechTranscription_macos
-          path: dist/Saltify
+          path: dist/Saltify*

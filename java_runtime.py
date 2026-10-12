@@ -1,8 +1,8 @@
 import os
 import sys
 import shutil
+import platform
 import stat
-
 
 def get_base_path():
     if getattr(sys, "frozen", False):
@@ -42,10 +42,12 @@ def _java_home_from_bin(java_bin):
 
 def configure_bundled_java():
     base_path = get_base_path()
+    system = platform.system()
 
     print("sys.frozen:", getattr(sys, "frozen", False))
     print("sys._MEIPASS:", getattr(sys, "_MEIPASS", "NOT SET"))
     print("sys.executable:", sys.executable)
+    print("System:", system)
 
     for java_bin in _java_candidates(base_path):
         print("Looking for Java at:", java_bin)
