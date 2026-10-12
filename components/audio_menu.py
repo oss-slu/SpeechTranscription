@@ -4,6 +4,7 @@ from CTkXYFrame.CTkXYFrame.ctk_xyframe import *
 from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
 from components.constants import LOCK_ICON, UNLOCK_ICON, CLEAR_ICON
+from components.salt_utils import format_correction_for_convention_box
 from audio import AudioManager
 from grammar import GrammarChecker
 from export import Exporter
@@ -904,11 +905,9 @@ class audioMenu(CTkFrame):
     @global_error_handler
     def applyCorrection(self):
         unlockItem(self.conventionBox)
-        correctedSentence = self.correctionEntryBox.get("1.0", "end")
-        timestart = correctedSentence.index("[")
-        timeend = correctedSentence.index("]")
-        timestamp = correctedSentence[timestart:timeend+1]
-        correctedSentence = timestamp + " " + addConventions.removeErrorCoding(correctedSentence[timeend+1:]) + "\n"
+        correctedSentence = format_correction_for_convention_box(
+            self.correctionEntryBox.get("1.0", "end")
+        )
         self.conventionBox.insert("end", correctedSentence)
         self.correctionEntryBox.delete("1.0", "end")
         self.manageGrammarCorrection()
