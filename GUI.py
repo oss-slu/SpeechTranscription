@@ -1,46 +1,61 @@
+import multiprocessing
+
+# Must run before the heavy imports below: in the frozen app, multiprocessing helper
+# processes re-launch this executable and would otherwise start a second GUI.
+multiprocessing.freeze_support()
+
+import os
+import sys
+
+# CI smoke test of the packaged app: runs before the GUI imports so a broken
+# import is reported instead of crashing (which hangs CI on an error dialog).
+if os.environ.get("HEADLESS", "false").lower() == "true":
+    from selftest import run_selftest
+
+    sys.exit(run_selftest())
+
 import warnings
 warnings.filterwarnings("ignore", module="matplotlib")  # suppress font warnings
 
 import logging
 logging.getLogger("language_tool_python").setLevel(logging.ERROR)  # suppress LanguageTool INFO
-# Adding Logging - CICD Internal Dev 
-import logging
-import os
-import sys
-import nltk
-nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
-nltk.download('wordnet')
-nltk.download('wordnet_ic')
-import os
-import sys
+# Adding Logging - CICD Internal Dev
 from tkinter import Text
-import nltk # type: ignore
 import platform
 import subprocess
-import logging
+
+import nltk  # type: ignore
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-nltk.download = lambda *args, **kwargs: None
+from java_runtime import get_base_path
+from ffmpeg_runtime import configure_bundled_ffmpeg
 
-from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE 
+configure_bundled_ffmpeg()
 
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
+# Frozen apps must use bundled nltk_data and never download at startup.
+nltk_data_dir = os.path.join(get_base_path(), "nltk_data")
 if os.path.exists(nltk_data_dir):
-    # put it first, not last
-    nltk.data.path.insert(0, nltk_data_dir)
-
-# Ensure NLTK knows where to find the bundled data when running as a frozen app
-app_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_dir = os.path.join(app_dir, "nltk_data")
-if os.path.exists(nltk_data_dir):
-    # put it first, not last
     nltk.data.path.insert(0, nltk_data_dir)
 else:
     logging.warning("GUI.py: bundled nltk_data not found")
+
+if getattr(sys, "frozen", False):
+    nltk.download = lambda *args, **kwargs: None
+else:
+    for _pkg in (
+        "punkt_tab",
+        "averaged_perceptron_tagger_eng",
+        "wordnet",
+        "wordnet_ic",
+    ):
+        try:
+            nltk.download(_pkg, quiet=True)
+        except Exception as exc:  # noqa: BLE001
+            logging.warning("GUI.py: nltk.download(%s) failed: %s", _pkg, exc)
+
+from components.constants import DEFAULT_FONT_SIZE, LARGE_FONT_SIZE, BUTTON_FONT_SIZE, LABEL_FONT_SIZE
 
 # main.py
 from customtkinter import *
@@ -58,12 +73,13 @@ if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
 promptRestart = False
-proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
-output = proc.stdout.split('\n')
-if "No installed package found matching input criteria." in output[len(output)-2]:
-    print("Installing ffmpeg. This is a one time installation.")
-    subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
-    promptRestart = True
+if platform.system() == "Windows":
+    proc = subprocess.run("winget list -q \"ffmpeg\" --accept-source-agreements", shell=True, encoding='utf-8', stdout=subprocess.PIPE)
+    output = proc.stdout.split('\n')
+    if "No installed package found matching input criteria." in output[len(output)-2]:
+        print("Installing ffmpeg. This is a one time installation.")
+        subprocess.run("winget install ffmpeg --accept-source-agreements --accept-package-agreements", shell=True)
+        promptRestart = True
 
 class mainGUI(CTk):
 
@@ -346,23 +362,9 @@ class mainGUI(CTk):
                                             height=30, width=120, lock=True)
         self.showGraphButton.place(relx=0, rely=1, anchor=SW, x=110, y=-10)  # Position to the right of the Help button
         
-        promptRestart = False
         if promptRestart:
             self.restartPromptPopup()
         self.mainloop()
 
 if __name__ == "__main__":
-    try:
-        headless = os.environ.get("HEADLESS", "false").lower() == "true"
-        if headless:
-            logger.info("Running in headless mode. GUI launch skipped.")
-            # Optionally test imports or basic initialization
-            import torch, whisper
-            logger.info("Core modules loaded successfully in headless mode.")
-            sys.exit(0)
-        else:
-            # Launch the GUI normally
-            gui = mainGUI()  # __init__ already calls mainloop()
-    except Exception as e:
-        # logger.exception("An error occurred while running the GUI.")
-        raise
+    gui = mainGUI()  # __init__ already calls mainloop()

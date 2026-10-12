@@ -1,41 +1,64 @@
 import logging
 import os
+import sys
+
 import nltk
-nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
-nltk.download('wordnet')
-nltk.download('wordnet_ic')
 
-import addConventions
+from java_runtime import get_base_path
 
-# #looking into the bundled nltk_data first (frozen app)
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
-BUNDLED_NLTK = os.path.join(APP_DIR, "nltk_data")
+# Prefer bundled nltk_data (PyInstaller _MEIPASS or source tree) before any download.
+BUNDLED_NLTK = os.path.join(get_base_path(), "nltk_data")
 if os.path.exists(BUNDLED_NLTK):
     nltk.data.path.insert(0, BUNDLED_NLTK)
 
-# #trying to load the resources, but DO NOT download at runtime on client machines
+_FROZEN = getattr(sys, "frozen", False)
+
+# Never download NLTK corpora inside the packaged app (no network / SSL on clients).
+if not _FROZEN:
+    for _pkg in (
+        "punkt_tab",
+        "averaged_perceptron_tagger_eng",
+        "wordnet",
+        "wordnet_ic",
+    ):
+        try:
+            nltk.download(_pkg, quiet=True)
+        except Exception as exc:  # noqa: BLE001 - best-effort for local/dev
+            logging.warning("grammar.py: nltk.download(%s) failed: %s", _pkg, exc)
+
+import addConventions  # noqa: E402  - after NLTK path / download setup
+
 MISSING_NLTK = []
+
 
 def _ensure_resource(res_name, path):
     try:
         nltk.data.find(path)
     except LookupError:
-        # we don't download here — we just record that it's missing
-        # MISSING_NLTK.append(res_name)
-        nltk.download('punkt_tab')
-        nltk.download('averaged_perceptron_tagger_eng')
-        nltk.download('wordnet')
-        
-        
+        if _FROZEN:
+            logging.warning(
+                "grammar.py: missing bundled NLTK resource %s (%s)", res_name, path
+            )
+            MISSING_NLTK.append(res_name)
+            return
+        try:
+            nltk.download("punkt_tab", quiet=True)
+            nltk.download("averaged_perceptron_tagger_eng", quiet=True)
+            nltk.download("wordnet", quiet=True)
+        except Exception as exc:  # noqa: BLE001
+            logging.warning("grammar.py: nltk download fallback failed: %s", exc)
+            MISSING_NLTK.append(res_name)
+
+
 _ensure_resource("punkt", "tokenizers/punkt")
-_ensure_resource("averaged_perceptron_tagger", "taggers/averaged_perceptron_tagger")
+_ensure_resource("averaged_perceptron_tagger_eng", "taggers/averaged_perceptron_tagger_eng")
 _ensure_resource("wordnet", "corpora/wordnet")
+
 
 class GrammarChecker:
     tokenizedSentences = []
     checkAllSentences = False
-    
+
     def checkGrammar(self, transcriptionText: str, checkAllSentences: bool):
         self.checkAllSentences = checkAllSentences
         if "punkt" in MISSING_NLTK:
@@ -57,7 +80,6 @@ class GrammarChecker:
                 corrected += str(self.tokenizedSentences[0]) + "\n"
                 del self.tokenizedSentences[0]
         return (corrected, None)
-
 
     def getInflectionalMorphemes(self, converting: str):
         return addConventions.addInflectionalMorphemes(converting)
