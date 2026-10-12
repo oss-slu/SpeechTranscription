@@ -104,6 +104,22 @@ jobs:
           --hidden-import "pyannote.audio" ^
           GUI.py
 
+      # SBOM: --onefile hides dependencies inside Saltify.exe, so scan the
+      # Python environment PyInstaller bundled from (OSS-SLU baseline §4, fallback #2).
+      - name: Generate Windows SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ${{ env.pythonLocation }}
+          format: spdx-json
+          output-file: Saltify_windows-sbom.spdx.json
+          upload-artifact: false
+
+      - name: Upload Windows SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saltify_windows-sbom
+          path: Saltify_windows-sbom.spdx.json
+          if-no-files-found: error
       # Launch the packaged exe in self-test mode without the runner's Java, so
       # it can only pass using what is bundled inside it. The exe is windowed
       # (no console), so results come back through the report file.
