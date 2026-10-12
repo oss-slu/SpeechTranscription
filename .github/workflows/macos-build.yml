@@ -11,6 +11,11 @@ on:
       - issue178_build-test-failures
       - issue-2-cicd-logging
       - macOS-testRelease
+      - feature/macos-bundle-deps
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build-macos:
@@ -38,9 +43,10 @@ jobs:
       - name: Install Python requirements
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller importlib-metadata sacremoses tokenizers
+          # setuptools>=82 removed pkg_resources.NullProvider and breaks PyInstaller boot
+          pip install "setuptools>=70,<81" "pyinstaller>=6.11,<7"
+          pip install -r requirements.txt importlib-metadata sacremoses tokenizers
           pip install mysql-connector-python pyaudio
-        # python -m nltk.downloader punkt averaged_perceptron_tagger stopwords vader_lexicon
 
       - name: Initialize Git submodules
         run: git submodule update --init --recursive
@@ -48,21 +54,72 @@ jobs:
       - name: Remove obsolete typing package
         run: pip uninstall -y typing || echo "typing not installed"
 
-      # ✅ NEW: build-time NLTK download
-      - name: Download NLTK corpora for bundling
+      # The packaged app never downloads NLTK data, so it must be bundled
+      - name: Download NLTK data for bundling
+        run: python scripts/bundle_nltk_data.py nltk_data
+
+      # Bundle a portable JDK so Grammar Check works with no system Java
+      - name: Download Temurin JDK 17 (macOS)
         run: |
-          mkdir -p nltk_data
-          python - <<'PYCODE'
-          import nltk, os
-          download_dir = "nltk_data"
-          os.makedirs(download_dir, exist_ok=True)
-          # the ones that kept failing on client mac
-          nltk.download("wordnet", download_dir=download_dir)
-          nltk.download("omw-1.4", download_dir=download_dir)
-          # these two names fix your developer's odd names
-          nltk.download("punkt", download_dir=download_dir)
-          nltk.download("averaged_perceptron_tagger", download_dir=download_dir)
-          PYCODE
+          set -euo pipefail
+          ARCH="$(uname -m)"
+          if [ "$ARCH" = "arm64" ]; then
+            JDK_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.12_7.tar.gz"
+          else
+            JDK_URL="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.12_7.tar.gz"
+          fi
+          echo "Downloading Temurin JDK for $ARCH from $JDK_URL"
+          curl -L "$JDK_URL" -o temurin17.tar.gz
+          mkdir -p jdk_extract
+          tar -xzf temurin17.tar.gz -C jdk_extract
+          # Normalize to jre/bin/java (macOS layout is Contents/Home)
+          HOME_DIR="$(find jdk_extract -type d -path '*/Contents/Home' | head -n 1)"
+          if [ -z "$HOME_DIR" ]; then
+            echo "Could not locate JDK Contents/Home after extract"
+            find jdk_extract -maxdepth 4 -type d
+            exit 1
+          fi
+          rm -rf jre
+          mv "$HOME_DIR" jre
+          chmod +x jre/bin/java
+          ./jre/bin/java -version
+
+      # Static ffmpeg/ffprobe (Homebrew's are dynamically linked and not portable).
+      # Pinned to one release and checksummed so builds are reproducible; to upgrade,
+      # change FFMPEG_RELEASE and both hashes together.
+      - name: Download static ffmpeg (macOS)
+        env:
+          FFMPEG_RELEASE: 1789931890_9.0.2
+          FFMPEG_SHA256: c8ed4c4e6978a03c485edbfe4e0a5dc2380f8a30bba5150531b31b094492d924
+          FFPROBE_SHA256: fcbe839537485eaee7a7a8bc5cbc0f90d53617e80943e8a5b2e31cb851197ea6
+        run: |
+          set -euo pipefail
+          if [ "$(uname -m)" != "arm64" ]; then
+            echo "Pinned ffmpeg build is arm64-only; runner is $(uname -m)"
+            exit 1
+          fi
+          BASE="https://ffmpeg.martin-riedl.de/download/macos/arm64/$FFMPEG_RELEASE"
+          rm -rf ffmpeg_bin ffmpeg_extract
+          mkdir -p ffmpeg_bin ffmpeg_extract
+          printf '%s  ffmpeg.zip\n%s  ffprobe.zip\n' "$FFMPEG_SHA256" "$FFPROBE_SHA256" > ffmpeg.sha256
+          for tool in ffmpeg ffprobe; do
+            curl -fL "$BASE/$tool.zip" -o "$tool.zip"
+          done
+          shasum -a 256 -c ffmpeg.sha256
+          for tool in ffmpeg ffprobe; do
+            unzip -o "$tool.zip" -d ffmpeg_extract
+            BIN="$(find ffmpeg_extract -type f -name "$tool" | head -n 1)"
+            if [ -z "$BIN" ]; then
+              echo "Could not find $tool in downloaded zip"
+              find ffmpeg_extract
+              exit 1
+            fi
+            mv "$BIN" "ffmpeg_bin/$tool"
+            chmod +x "ffmpeg_bin/$tool"
+          done
+          ./ffmpeg_bin/ffmpeg -hide_banner -version | head -n 1
+          ./ffmpeg_bin/ffprobe -hide_banner -version | head -n 1
+          otool -L ffmpeg_bin/ffmpeg
 
       - name: Build macOS App
         run: |
@@ -74,11 +131,17 @@ jobs:
           --add-data "build_assets/en-model.slp:pattern/text/en" \
           --add-data "CTkXYFrame:CTkXYFrame" \
           --add-data "nltk_data:nltk_data" \
+          --add-data "jre:jre" \
+          --add-binary "ffmpeg_bin/ffmpeg:ffmpeg_bin" \
+          --add-binary "ffmpeg_bin/ffprobe:ffmpeg_bin" \
+          --collect-data language_tool_python \
+          --copy-metadata language_tool_python \
           --collect-data whisper \
           --collect-data lightning_fabric \
           --collect-data pytorch_lightning \
           --collect-data pyannote.audio \
           --copy-metadata torch \
+          --copy-metadata pyannote.audio \
           --copy-metadata tqdm \
           --copy-metadata regex \
           --copy-metadata sacremoses \
@@ -96,16 +159,53 @@ jobs:
           --hidden-import "pyannote.audio" \
           GUI.py
 
-      - name: Run GUI headless for log
+      # SBOM: --onefile hides dependencies inside the binary, so scan the
+      # Python environment PyInstaller bundled from (OSS-SLU baseline §4, fallback #2).
+      - name: Generate macOS SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ${{ env.pythonLocation }}
+          format: spdx-json
+          output-file: Saltify_macos-sbom.spdx.json
+          upload-artifact: false
+
+      - name: Upload macOS SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: Saltify_macos-sbom
+          path: Saltify_macos-sbom.spdx.json
+          if-no-files-found: error
+
+      # Launch the packaged app in self-test mode with a minimal PATH and no
+      # JAVA_HOME, so it can only pass using what is bundled inside it.
+      - name: Smoke test packaged app
+        timeout-minutes: 15
         run: |
-          export HEADLESS=true
-          python GUI.py > app.log 2>&1 || true
+          REPORT="$PWD/selftest-report.txt"
+          rm -f "$REPORT"
+          set +e
+          env -u JAVA_HOME PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+            HEADLESS=true SALTIFY_SELFTEST_REPORT="$REPORT" ./dist/Saltify
+          STATUS=$?
+          set -e
+          if [ ! -f "$REPORT" ]; then
+            echo "RESULT: FAIL (app exited with $STATUS before writing a report)" > "$REPORT"
+            STATUS=1
+          fi
+          {
+            echo "### macOS packaged app self-test (exit code $STATUS)"
+            echo '```'
+            cat "$REPORT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$REPORT"
+          exit $STATUS
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: SpeechTranscription_macos_logs
-          path: app.log
+          name: SpeechTranscription_macos_selftest
+          path: selftest-report.txt
 
       - uses: actions/upload-artifact@v4
         if: always()

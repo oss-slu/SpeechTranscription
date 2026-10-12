@@ -8,6 +8,8 @@ ffmpeg
 diarization.txt
 user_settings.txt
 venv/
+.venv/
+.venv-clean/
 dist/
 venv39/
 myenv/
@@ -18,3 +20,5 @@ lightning_fabric/
 nltk_data/
 app.log
 jre/
+ffmpeg_bin/
+brag-output/
