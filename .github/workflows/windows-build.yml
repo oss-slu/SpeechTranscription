@@ -119,15 +119,17 @@ jobs:
           Remove-Item Env:JAVA_HOME -ErrorAction SilentlyContinue
           $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch '(?i)java|jdk|jre' }) -join ';'
           $p = Start-Process -FilePath "dist\Saltify.exe" -Wait -PassThru
+          $exitCode = $p.ExitCode
           if (-not (Test-Path $report)) {
             "RESULT: FAIL (app exited with $($p.ExitCode) before writing a report)" | Set-Content $report
+            $exitCode = 1
           }
-          Add-Content $env:GITHUB_STEP_SUMMARY "### Windows packaged app self-test (exit code $($p.ExitCode))"
+          Add-Content $env:GITHUB_STEP_SUMMARY "### Windows packaged app self-test (exit code $exitCode)"
           Add-Content $env:GITHUB_STEP_SUMMARY '```'
           Get-Content $report | Add-Content $env:GITHUB_STEP_SUMMARY
           Add-Content $env:GITHUB_STEP_SUMMARY '```'
           Get-Content $report
-          exit $p.ExitCode
+          exit $exitCode
 
       - uses: actions/upload-artifact@v4
         if: always()
