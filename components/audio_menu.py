@@ -5,13 +5,14 @@ from components.utils import createButton, lockItem, unlockItem
 from components.error_handler import global_error_handler, show_error_popup
 from components.constants import LOCK_ICON, UNLOCK_ICON, CLEAR_ICON
 from components.salt_utils import format_correction_for_convention_box
+from components.processing import TranscriptionJob
 from audio import AudioManager
 from grammar import GrammarChecker
 from export import Exporter
-import diarizationAndTranscription
 import addConventions
 import threading
-import time
+import queue
+import traceback
 import re
 import matplotlib
 matplotlib.use('TkAgg')  # Make sure to set this before importing pyplot
@@ -184,7 +185,7 @@ class audioMenu(CTkFrame):
         self.timelineSlider.configure(state="disabled")
 
         # ROW 2: Transcribe (and progress bar)
-        self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.transcriptionThread, 10, 10, 2, 2, 200, 125,
+        self.transcribeButton = createButton(self, "Transcribe", 2, 0, self.toggleTranscription, 10, 10, 2, 2, 200, 125,
                                           font=("Arial", 44))
 
         # ROW 4: Labelling Transcription buttons
@@ -199,7 +200,7 @@ class audioMenu(CTkFrame):
         self.downloadAudioButton = createButton(self, "Download Audio", 5, 0, self.downloadRecordedAudio)
         self.exportButton = createButton(self, "Export to Word", 5, 1, self.exportToWord)
 
-        self.grammarButton = createButton(self, "Grammar Check", 5, 2, self.grammarCheckThread)
+        self.grammarButton = createButton(self, "Grammar Check", 5, 2, self.toggleGrammarCheck)
         self.morphemesButton = createButton(self, "Add Morphemes", 5, 3, self.inflectionalMorphemes)
         self.submitGrammarButton = createButton(self, "Submit", 5, 5, self.applyCorrection)
 
@@ -261,8 +262,14 @@ class audioMenu(CTkFrame):
         self.conventionBox.insert("0.0", text="Text will generate here")
         lockItem(self.conventionBox)
 
-        # Progress Bar Canvas (Added More Padding Below the Button)
-        self.progressCanvas = tk.Canvas(self, width=225, height=20, bg="white", highlightthickness=0)
+        # Progress bar and status text, shown under the Transcribe button while processing
+        self.progressFrame = CTkFrame(self, fg_color="transparent")
+        self.progressCanvas = tk.Canvas(self.progressFrame, width=225, height=20, bg="white", highlightthickness=0)
+        self.progressCanvas.pack(pady=(0, 4))
+        self.progressLabel = CTkLabel(self.progressFrame, text="", font=("Arial", max(LABEL_FONT_SIZE - 3, 12)))
+        self.progressLabel.pack()
+        self._hideProgressId = None
+        self._animateId = None
 
         self.running = False  # Flag to control animation
         self.stripe_offset = 0  # Offset to move stripes
@@ -280,6 +287,17 @@ class audioMenu(CTkFrame):
 
         self.labelSpeakersOpen = False
         self.applyAliasesOpen = False
+
+        # Long-running work (transcription or grammar check). Only one runs at a time.
+        self.processing = None
+        self._processingMessages = None
+        self._processingCancel = None
+        self._transcriptionJob = None
+        self._pollId = None
+        self._lockedForProcessing = []
+        self._grammarRun = None
+        # Normalizing rewrites the audio file, so a cancelled run must finish before a retry starts one
+        self._normalizeLock = threading.Lock()
 
     @global_error_handler
     def uploadAudio(self):
@@ -548,25 +566,30 @@ class audioMenu(CTkFrame):
         self.updateCurrentTime(self.current_position)
 
     @global_error_handler
-    def startProgressBar(self):
+    def startProgressBar(self, status=""):
         """Starts the animated gradient striped progress bar with better spacing."""
+        if self._hideProgressId is not None:
+            self.after_cancel(self._hideProgressId)
+            self._hideProgressId = None
         self.transcribeButton.grid(row=2, column=0, rowspan=1, columnspan=2)
         self.transcribeButton.configure(height=100)  # Keep button visible
-        self.progressCanvas.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
-        self.running = True
+        self.progressFrame.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky=N)
+        self.progressLabel.configure(text=status)
         self.progress = 0
-        self.animate_striped_progress()
+        self.running = True
+        if self._animateId is None:
+            self.animate_striped_progress()
 
 
     def animate_striped_progress(self):
         """Creates a moving striped gradient effect on the progress bar."""
+        self._animateId = None
         if not self.running:
             return  # Stop animation if needed
 
         self.progressCanvas.delete("all")  # Clear previous frame
 
         stripe_width = 20  # Width of each stripe
-        num_stripes = 15  # Number of stripes
         self.stripe_offset = (self.stripe_offset + 3) % stripe_width  # Move stripes
 
         # Define two gradient shades of blue
@@ -585,28 +608,148 @@ class audioMenu(CTkFrame):
         # Draw a progress overlay
         self.progressCanvas.create_rectangle(0, 0, 225 * self.progress, 20, fill="blue", outline="")
 
-        self.progressCanvas.update_idletasks()  # Force UI update
-        self.progressCanvas.after(50, self.animate_striped_progress)  # Schedule next frame
+        self._animateId = self.progressCanvas.after(50, self.animate_striped_progress)  # Schedule next frame
 
     @global_error_handler
-    def update_progress_bar(self, progress):
-        """Switches to a solid fill as progress reaches 100%."""
-        self.progress = progress  # Store progress value
+    def update_progress_bar(self, progress, status=None):
+        """Fills the bar to the given fraction; switches to a solid fill at 100%."""
+        self.progress = max(self.progress, min(progress, 1.0))  # never move backwards
+        if status is not None:
+            self.progressLabel.configure(text=status)
 
         if progress >= 1.0:  # If fully completed, stop animation
             self.running = False
             self.progressCanvas.delete("all")
             self.progressCanvas.create_rectangle(0, 0, 225, 20, fill="blue", outline="")
-            self.progressCanvas.update_idletasks()
 
     @global_error_handler
-    def stopProgressBar(self):
-        """Ensure progress bar is fully filled before hiding it."""
-        self.update_progress_bar(1.0)
-        time.sleep(0.5)  # Short delay to show solid fill
-        self.progressCanvas.grid_remove()
+    def stopProgressBar(self, status="Done", completed=True):
+        """Shows the final state briefly, then hides the progress bar."""
+        if completed:
+            self.update_progress_bar(1.0, status)
+        else:
+            self.running = False
+            self.progressLabel.configure(text=status)
+        # Hide after a short delay without freezing the window
+        self._hideProgressId = self.after(1500 if not completed else 500, self._hideProgressBar)
+
+    def _hideProgressBar(self):
+        self._hideProgressId = None
+        self.progressFrame.grid_remove()
         self.transcribeButton.configure(height=200)  # Reset button size
         self.transcribeButton.grid(row=2, column=0, rowspan=2, columnspan=2)
+
+    def _processingButton(self, kind):
+        """The button that starts this kind of work, and its normal label. It becomes Cancel while running."""
+        if kind == "transcription":
+            return self.transcribeButton, "Transcribe"
+        return self.grammarButton, "Grammar Check"
+
+    def _beginProcessing(self, kind, status):
+        """Locks conflicting controls so the same work can't be started twice."""
+        self.processing = kind
+        self._processingMessages = queue.Queue()
+        self._processingCancel = threading.Event()
+        cancelButton, _ = self._processingButton(kind)
+        cancelButton.configure(text="Cancel")
+        # Everything that would clash with the running work, except its own Cancel button
+        widgets = [widget for widget in (
+            self.uploadButton, self.recordButton, self.transcribeButton, self.labelSpeakersButton,
+            self.applyAliasesButton, self.downloadAudioButton, self.exportButton, self.grammarButton,
+            self.morphemesButton, self.submitGrammarButton, self.transcriptionBoxClearButton,
+            self.conventionBoxClearButton) if widget is not cancelButton]
+        self._lockedForProcessing = [(widget, widget.cget("state")) for widget in widgets]
+        for widget in widgets:
+            lockItem(widget)
+        self.startProgressBar(status)
+        self._pollId = self.after(100, self._pollProcessing)
+
+    def _endProcessing(self):
+        """Puts every control back the way it was before the work started."""
+        cancelButton, label = self._processingButton(self.processing)
+        cancelButton.configure(text=label)
+        self.processing = None
+        self._processingMessages = None
+        self._transcriptionJob = None
+        if self._pollId is not None:
+            self.after_cancel(self._pollId)
+            self._pollId = None
+        for widget, state in self._lockedForProcessing:
+            widget.configure(state=state)
+        self._lockedForProcessing = []
+
+    def _pollProcessing(self):
+        """Runs on the GUI thread and applies messages from the background work."""
+        self._pollId = None
+        if self.processing is None:
+            return
+        try:
+            self._applyProcessingMessages()
+        except Exception as error:
+            # Never leave the controls locked because the GUI side failed
+            if self.processing is None:
+                print(traceback.format_exc())
+                show_error_popup(self.master, f"Something went wrong after processing finished: {error}")
+            else:
+                self._failProcessing(f"Something went wrong while processing: {error}", traceback.format_exc())
+
+    def _applyProcessingMessages(self):
+        messages = []
+        try:
+            while True:
+                messages.append(self._processingMessages.get_nowait())
+        except queue.Empty:
+            pass
+        if self._transcriptionJob is not None:
+            messages += self._transcriptionJob.poll()
+        if self.processing == "grammar":
+            fraction = self._grammarRun.getProgress()
+            self.update_progress_bar(min(fraction, 0.99), f"Checking grammar... {int(fraction * 100)}%")
+
+        for message in messages:
+            kind = message[0]
+            if kind == "prepared":
+                self._startTranscriptionJob(message[1])
+            elif kind == "progress":
+                stage, fraction = message[1], message[2]
+                self.update_progress_bar(min(fraction, 0.99), f"{stage}... {int(fraction * 100)}%")
+            elif kind == "done":
+                self._finishProcessing(message[1])
+                return
+            elif kind == "error":
+                self._failProcessing(message[1], message[2])
+                return
+        self._pollId = self.after(100, self._pollProcessing)
+
+    @global_error_handler
+    def cancelProcessing(self):
+        """Stops whatever is running. The audio and transcript are left as they were."""
+        if self.processing is None:
+            return
+        kind = self.processing
+        self._processingCancel.set()
+        if self._transcriptionJob is not None:
+            self._transcriptionJob.cancel()
+        self._endProcessing()
+        self.stopProgressBar("Transcription cancelled" if kind == "transcription" else "Grammar check cancelled",
+                             completed=False)
+
+    def _failProcessing(self, message, details):
+        kind = self.processing
+        print(details)
+        self._endProcessing()
+        self.stopProgressBar("Transcription failed" if kind == "transcription" else "Grammar check failed",
+                             completed=False)
+        retry = self.startTranscription if kind == "transcription" else self.grammarCheckThread
+        show_error_popup(self.master, message, retry=retry)
+
+    def _finishProcessing(self, result):
+        kind = self.processing
+        self._endProcessing()
+        if kind == "transcription":
+            self._onTranscriptionDone(result)
+        else:
+            self._onGrammarCheckDone(result)
 
     def get_color_for_label(self, label):
         # direct match first
@@ -820,29 +963,56 @@ class audioMenu(CTkFrame):
         apply_button.pack(pady=10)
 
     @global_error_handler
-    def transcribe(self):
-        if self.is_playing or self.is_paused:
-            self.pauseAudio()
-
-        self.startProgressBar()
-        filename = self.audio.normalizeUploadedFile()
-
-        try:
-            transcribedAudio = diarizationAndTranscription.transcribe(filename)
-            self.updateTranscriptionUI(transcribedAudio)
-        except Exception as e:
-            self.updateTranscriptionUI("Error during transcription.")
+    def toggleTranscription(self):
+        """The Transcribe button turns into Cancel while a transcription is running."""
+        if self.processing == "transcription":
+            self.cancelProcessing()
+        else:
+            self.startTranscription()
 
     @global_error_handler
-    def transcriptionThread(self):
+    def startTranscription(self):
+        if self.processing is not None or not self.audio.filePath:
+            return  # already running; ignore repeated clicks
         if self.is_playing or self.is_paused:
             self.pauseAudio()
             self.playPauseButton.configure(image=self._play_icon)
-        threading.Thread(target=self.transcribe, daemon=True).start()
 
-    @global_error_handler
-    def updateTranscriptionUI(self, transcribedAudio):
-        self.after(0, self._updateTranscriptionBox, transcribedAudio)
+        self._beginProcessing("transcription", "Preparing audio...")
+        threading.Thread(target=self._prepareAudio,
+                         args=(self._processingMessages, self._processingCancel), daemon=True).start()
+
+    def _prepareAudio(self, messages, cancel):
+        # Runs off the GUI thread; only talks to the GUI through the message queue
+        try:
+            with self._normalizeLock:
+                if cancel.is_set():
+                    return
+                filename = self.audio.normalizeUploadedFile()
+            if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+                raise FileNotFoundError(filename)
+            if not cancel.is_set():
+                messages.put(("prepared", filename))
+        except Exception as error:
+            if not cancel.is_set():
+                messages.put(("error", f"The audio could not be prepared for transcription: {error}. "
+                                       "Try uploading or recording it again.", traceback.format_exc()))
+
+    def _startTranscriptionJob(self, filename):
+        self.update_progress_bar(0.02, "Starting transcription...")
+        self._transcriptionJob = TranscriptionJob(filename)
+        self._transcriptionJob.start()
+
+    def _onTranscriptionDone(self, transcribedAudio):
+        if not transcribedAudio or not transcribedAudio.strip():
+            # Keep whatever was in the box before rather than replacing it with nothing
+            self.stopProgressBar("No speech found", completed=False)
+            show_error_popup(self.master, "No speech was detected in this recording. "
+                                          "Check that the audio has someone talking and retry.",
+                             retry=self.startTranscription)
+            return
+        self._updateTranscriptionBox(transcribedAudio)
+        self.stopProgressBar("Transcription complete")
 
     @global_error_handler
     def _updateTranscriptionBox(self, transcribedAudio):
@@ -858,8 +1028,6 @@ class audioMenu(CTkFrame):
         self.grammarButton.configure(state="normal")
         self.submitGrammarButton.configure(state="normal")
         self.morphemesButton.configure(state="normal")
-
-        self.stopProgressBar()
 
     @global_error_handler
     def downloadRecordedAudio(self):
@@ -884,23 +1052,50 @@ class audioMenu(CTkFrame):
             else:
                 self.exporter.exportToWord(text_without_timestamps, downloadFile.name)
 
+    def _runGrammarCheck(self, checker, text, messages, cancel):
+        # Runs off the GUI thread: only computes, the GUI is updated in _onGrammarCheckDone
+        try:
+            checker.checkGrammar(text, False)
+            correction = checker.getNextCorrection(shouldStop=cancel.is_set)
+            if not cancel.is_set():
+                messages.put(("done", (checker, correction)))
+        except Exception as error:
+            if not cancel.is_set():
+                messages.put(("error", f"The grammar check failed: {error}. Your transcript has not been changed; "
+                                       "you can retry.", traceback.format_exc()))
+
     @global_error_handler
-    def grammarCheck(self):
-        self.startProgressBar()
+    def toggleGrammarCheck(self):
+        """The Grammar Check button turns into Cancel while the check is running."""
+        if self.processing == "grammar":
+            self.cancelProcessing()
+        else:
+            self.grammarCheckThread()
+
+    @global_error_handler
+    def grammarCheckThread(self):
+        if self.processing is not None:
+            return  # already running; ignore repeated clicks
+        text = self.getTranscriptionText()
+        # A fresh checker per run, so a cancelled run still finishing can't touch the next one
+        self._grammarRun = GrammarChecker()
+        self._beginProcessing("grammar", "Checking grammar...")
+        threading.Thread(target=self._runGrammarCheck,
+                         args=(self._grammarRun, text, self._processingMessages, self._processingCancel),
+                         daemon=True).start()
+
+    def _onGrammarCheckDone(self, result):
+        checker, correction = result
+        self.grammar = checker
         lockItem(self.exportButton)
         unlockItem(self.conventionBox)
         unlockItem(self.correctionEntryBox)
         unlockItem(self.submitGrammarButton)
         self.conventionBox.delete("1.0", "end")
         self.correctionEntryBox.delete("1.0", "end")
-        self.grammar.checkGrammar(self.getTranscriptionText(), False)
-        self.manageGrammarCorrection()
+        self._showGrammarCorrection(*correction)
         self.color_code_transcription()
-        self.stopProgressBar()
-
-    @global_error_handler
-    def grammarCheckThread(self):
-        threading.Thread(target=self.grammarCheck).start()
+        self.stopProgressBar("Grammar check complete")
 
     @global_error_handler
     def applyCorrection(self):
@@ -914,7 +1109,9 @@ class audioMenu(CTkFrame):
 
     @global_error_handler
     def manageGrammarCorrection(self):
-        corrected, sentenceToCorrect = self.grammar.getNextCorrection()
+        self._showGrammarCorrection(*self.grammar.getNextCorrection())
+
+    def _showGrammarCorrection(self, corrected, sentenceToCorrect):
         if corrected:
             self.conventionBox.insert("end", corrected)
         if sentenceToCorrect:

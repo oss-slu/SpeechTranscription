@@ -21,10 +21,11 @@ def global_error_handler(func):
             show_error_popup(args[0], str(e))
     return wrapper
 
-def show_error_popup(master, error_message):
+def show_error_popup(master, error_message, retry=None):
+    '''retry, if given, adds a Retry button that closes the popup and calls it.'''
     popup = CTkToplevel(master)
     popup.title("ERROR")
-    popup.geometry("400x200")
+    popup.geometry("420x240")
     popup.resizable(False, False)
 
     error_label = CTkLabel(popup, text="ERROR", font=("Arial", 26, "bold"))
@@ -36,5 +37,16 @@ def show_error_popup(master, error_message):
     def file_bug():
         webbrowser.open("https://github.com/oss-slu/SpeechTranscription/issues")
 
-    file_bug_button = CTkButton(popup, text="File a Bug", command=file_bug)
-    file_bug_button.pack(pady=20)
+    button_frame = CTkFrame(popup, fg_color="transparent")
+    button_frame.pack(pady=20)
+
+    if retry is not None:
+        def retry_and_close():
+            popup.destroy()
+            retry()
+
+        retry_button = CTkButton(button_frame, text="Retry", command=retry_and_close)
+        retry_button.pack(side="left", padx=10)
+
+    file_bug_button = CTkButton(button_frame, text="File a Bug", command=file_bug)
+    file_bug_button.pack(side="left", padx=10)
