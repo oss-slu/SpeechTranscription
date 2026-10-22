@@ -33,13 +33,14 @@ def loadModel():
 
 class _ProgressBar(tqdm.tqdm):
     '''Stands in for whisper's tqdm bar and forwards how far through the audio it is.'''
-    callback = None
+    # Replaced with the real callback when transcribeAudio builds a subclass
+    callback = staticmethod(lambda fraction: None)
 
     def update(self, n=1):
         # Count here rather than using self.n, which a disabled bar doesn't track
         self.framesDone = getattr(self, "framesDone", 0) + (n or 0)
         result = super().update(n)
-        if self.callback and self.total:
+        if self.total:
             self.callback(min(self.framesDone / self.total, 1.0))
         return result
 
