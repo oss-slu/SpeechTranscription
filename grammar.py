@@ -57,6 +57,7 @@ _ensure_resource("wordnet", "corpora/wordnet")
 
 class GrammarChecker:
     tokenizedSentences = []
+    totalSentences = 0
     checkAllSentences = False
 
     def checkGrammar(self, transcriptionText: str, checkAllSentences: bool):
@@ -66,12 +67,22 @@ class GrammarChecker:
             self.tokenizedSentences = [s.strip() for s in transcriptionText.split(".") if s.strip()]
         else:
             self.tokenizedSentences = nltk.sent_tokenize(transcriptionText)
+        self.totalSentences = len(self.tokenizedSentences)
 
-    def getNextCorrection(self):
+    def getProgress(self):
+        '''Fraction of sentences checked so far, from 0.0 to 1.0.'''
+        if not self.totalSentences:
+            return 0.0
+        return 1 - len(self.tokenizedSentences) / self.totalSentences
+
+    def getNextCorrection(self, shouldStop=None):
+        '''shouldStop() is checked between sentences so a long check can be cancelled.'''
         corrected = ""
         if len(self.tokenizedSentences) == 0:
             return (None, None)
         while len(self.tokenizedSentences):
+            if shouldStop and shouldStop():
+                return (corrected, None)
             sentenceToCorrect = addConventions.correctSentence(self.tokenizedSentences[0])
             if (self.tokenizedSentences[0] != sentenceToCorrect) or self.checkAllSentences:
                 del self.tokenizedSentences[0]
