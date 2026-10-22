@@ -1,13 +1,17 @@
 """Tests for the transcription/grammar processing workflow: progress, cancel, and error recovery."""
 
+import importlib
+import multiprocessing
 import os
+import shutil
+import subprocess
+import sys
 import threading
 import time
 
 import pytest
 
 import grammar as grammar_module
-from components import processing
 from components.processing import TranscriptionJob, describeTranscriptionError
 
 
@@ -69,9 +73,46 @@ class TestTranscriptionJob:
         while not job.poll() and time.time() < deadline:
             time.sleep(0.05)
         job.cancel()
-        assert not job._process.is_alive()
+        assert not job.isAlive()
+        assert job.exitcode is not None
         assert not job.isRunning()
         assert job.poll() == []
+
+    def test_polling_a_dead_worker_never_blocks(self):
+        job = TranscriptionJob("clip.wav", target=_crashingWorker)
+        job.start()
+        slowest = 0.0
+        messages = []
+        deadline = time.time() + 30
+        while job.isRunning() and time.time() < deadline:
+            started = time.perf_counter()
+            messages += job.poll()
+            slowest = max(slowest, time.perf_counter() - started)
+            time.sleep(0.05)
+        assert messages and messages[0][0] == "error"
+        # poll() runs on the GUI thread, so it must return immediately even while waiting out the grace
+        # period. A normal call takes a few ms; the limit leaves room for a busy machine but is well
+        # under the 0.5 s a blocking wait for the queue would take.
+        assert slowest < 0.2, f"poll() blocked for {slowest:.3f}s"
+
+    def test_repeated_cancel_and_retry_leaves_no_workers_behind(self):
+        for _ in range(4):
+            job = TranscriptionJob("clip.wav", target=_slowWorker)
+            job.start()
+            deadline = time.time() + 30
+            while not job.poll() and time.time() < deadline:
+                time.sleep(0.05)
+            job.cancel()
+            assert job.poll() == []
+
+        job = TranscriptionJob("clip.wav", target=_succeedingWorker)
+        job.start()
+        assert _runUntilFinished(job)[-1] == ("done", "[0:00] transcript of clip.wav")
+        # Only the last worker may still be finishing; every cancelled one is gone
+        deadline = time.time() + 5
+        while multiprocessing.active_children() and time.time() < deadline:
+            time.sleep(0.05)
+        assert multiprocessing.active_children() == []
 
 
 @pytest.mark.parametrize("error, expected", [
@@ -290,3 +331,66 @@ class TestAudioMenuProcessing:
         assert menu.transcribeButton.cget("state") == "normal"
         _pump(menu, lambda: False, timeout=0.3)
         assert menu.popups == []
+
+
+class TestWhisperProgressHook:
+    @pytest.fixture
+    def transcription(self):
+        return pytest.importorskip("diarizationAndTranscription")
+
+    def test_installed_whisper_still_reports_progress_through_tqdm(self, transcription):
+        # Canary: if a whisper update changes this, progress silently falls back to stages only
+        import inspect
+        whisperTranscribe = importlib.import_module("whisper.transcribe")
+        assert transcription._whisperProgressHook() is whisperTranscribe
+        source = inspect.getsource(whisperTranscribe.transcribe)
+        assert "tqdm.tqdm(" in source and "pbar.update(" in source
+
+    def test_progress_is_forwarded_and_tqdm_restored(self, transcription, monkeypatch):
+        whisperTranscribe = importlib.import_module("whisper.transcribe")
+        original = whisperTranscribe.tqdm
+
+        class FakeModel:
+            def transcribe(self, audioFile, **options):
+                assert options["verbose"] is False  # whisper only drives the bar when verbose is False
+                with whisperTranscribe.tqdm.tqdm(total=4, disable=True) as bar:
+                    for _ in range(4):
+                        bar.update(1)
+                return {"text": "Hello.", "segments": []}
+
+        monkeypatch.setattr(transcription, "loadModel", lambda: FakeModel())
+        fractions = []
+        result = transcription.transcribeAudio("clip.wav", on_progress=fractions.append)
+        assert result["text"] == "Hello."
+        assert fractions == [0.25, 0.5, 0.75, 1.0]
+        assert whisperTranscribe.tqdm is original
+
+    def test_falls_back_when_whisper_internals_change(self, transcription, monkeypatch):
+        whisperTranscribe = importlib.import_module("whisper.transcribe")
+        monkeypatch.setattr(whisperTranscribe, "tqdm", object())
+
+        class FakeModel:
+            def transcribe(self, audioFile, **options):
+                assert "verbose" not in options
+                return {"text": "Hello.", "segments": []}
+
+        monkeypatch.setattr(transcription, "loadModel", lambda: FakeModel())
+        fractions = []
+        assert transcription.transcribeAudio("clip.wav", on_progress=fractions.append)["text"] == "Hello."
+        assert fractions == []
+
+
+@pytest.mark.skipif(os.environ.get("SALTIFY_WHISPER_TESTS") != "1",
+                    reason="set SALTIFY_WHISPER_TESTS=1 to run real Whisper (slow, needs the small.en model)")
+@pytest.mark.skipif(sys.platform != "darwin" or not shutil.which("say"), reason="uses macOS 'say' to make speech")
+def test_real_whisper_transcription_in_worker_process(tmp_path):
+    wav = tmp_path / "speech.wav"
+    subprocess.run(["say", "-o", str(wav), "--data-format=LEI16@16000", "The dog runs to the park."], check=True)
+    job = TranscriptionJob(str(wav))
+    job.start()
+    messages = _runUntilFinished(job, timeout=300)
+    progress = [message[2] for message in messages if message[0] == "progress"]
+    assert progress == sorted(progress)
+    assert any(message[1] == "Transcribing" and message[2] > 0.1 for message in messages if message[0] == "progress")
+    assert messages[-1][0] == "done"
+    assert "dog" in messages[-1][1].lower()

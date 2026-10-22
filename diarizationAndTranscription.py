@@ -36,22 +36,40 @@ class _ProgressBar(tqdm.tqdm):
     callback = None
 
     def update(self, n=1):
+        # Count here rather than using self.n, which a disabled bar doesn't track
+        self.framesDone = getattr(self, "framesDone", 0) + (n or 0)
         result = super().update(n)
         if self.callback and self.total:
-            self.callback(min(self.n / self.total, 1.0))
+            self.callback(min(self.framesDone / self.total, 1.0))
         return result
+
+
+def _whisperProgressHook():
+    '''The whisper.transcribe module, if it still reports progress through tqdm.tqdm.
+
+    This relies on whisper internals, so if a whisper update changes them we
+    transcribe without detailed progress instead of failing.
+    '''
+    try:
+        # (whisper.transcribe is shadowed by the function of the same name, so look the module up)
+        whisperTranscribe = importlib.import_module("whisper.transcribe")
+    except ImportError:
+        return None
+    if not callable(getattr(getattr(whisperTranscribe, "tqdm", None), "tqdm", None)):
+        print("[WARNING] whisper no longer uses tqdm.tqdm; transcription progress will not be detailed")
+        return None
+    return whisperTranscribe
 
 
 def transcribeAudio(audioFile, on_progress=None):
     '''on_progress(fraction) is called with 0.0 to 1.0 as whisper works through the audio.'''
     print("Starting transcription")
     model = loadModel()
-    if on_progress is None:
+    whisperTranscribe = _whisperProgressHook() if on_progress is not None else None
+    if whisperTranscribe is None:
         transcribedAudio = model.transcribe(audioFile, fp16=False, language='English', condition_on_previous_text=False)
     else:
         # whisper only reports progress through its tqdm bar, so swap in one that calls back
-        # (whisper.transcribe is shadowed by the function of the same name, so look the module up)
-        whisperTranscribe = importlib.import_module("whisper.transcribe")
         progressBar = type("ProgressBar", (_ProgressBar,), {"callback": staticmethod(on_progress)})
         originalTqdm = whisperTranscribe.tqdm
         whisperTranscribe.tqdm = types.SimpleNamespace(tqdm=progressBar)

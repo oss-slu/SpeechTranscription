@@ -9,6 +9,7 @@ it is to stop the process running it. Messages come back over a queue as tuples:
 """
 import multiprocessing
 import queue
+import time
 import traceback
 
 
@@ -45,16 +46,25 @@ def _transcriptionWorker(audioFile, messages):
 
 
 class TranscriptionJob:
+    # How long to keep checking for a final message after the worker exits. The queue's
+    # feeder can still be flushing then, but poll() never waits for it.
+    EXIT_GRACE_SECONDS = 1.0
+
     def __init__(self, audioFile, target=_transcriptionWorker):
         # spawn behaves the same on every OS and doesn't copy Tk state into the child
         context = multiprocessing.get_context("spawn")
         self._messages = context.Queue()
         self._process = context.Process(target=target, args=(audioFile, self._messages), daemon=True)
+        self._exitedAt = None
+        self.exitcode = None
         self.finished = False
         self.cancelled = False
 
     def start(self):
         self._process.start()
+
+    def isAlive(self):
+        return self.exitcode is None and self._process.is_alive()
 
     def isRunning(self):
         return not self.finished and not self.cancelled
@@ -65,21 +75,23 @@ class TranscriptionJob:
             return []
         messages = self._drain()
         if not self.finished and not self._process.is_alive():
-            # The queue's feeder can still be flushing after the process exits
-            messages += self._drain(timeout=0.5)
-            if not self.finished:
+            if self._exitedAt is None:
+                self._exitedAt = time.monotonic()
+            elif time.monotonic() - self._exitedAt >= self.EXIT_GRACE_SECONDS:
                 self.finished = True
                 messages.append(("error",
                                  "The transcription process stopped unexpectedly. Retry, or try a shorter recording.",
                                  f"Worker exit code: {self._process.exitcode}"))
+        if self.finished:
+            self._cleanUp()
         return messages
 
-    def _drain(self, timeout=None):
+    def _drain(self):
         messages = []
         while True:
             try:
-                message = self._messages.get(timeout=timeout) if timeout else self._messages.get_nowait()
-            except queue.Empty:
+                message = self._messages.get_nowait()
+            except (queue.Empty, OSError, ValueError):
                 return messages
             messages.append(message)
             if message[0] in ("done", "error"):
@@ -96,3 +108,15 @@ class TranscriptionJob:
             if self._process.is_alive():
                 self._process.kill()
                 self._process.join(timeout=2)
+        self._cleanUp()
+
+    def _cleanUp(self):
+        '''Releases the queue and process. Each job has its own queue, so nothing stale can
+        reach a later job.'''
+        # A terminated worker can leave the queue half written; don't wait on flushing it
+        self._messages.cancel_join_thread()
+        self._messages.close()
+        if not self._process.is_alive():
+            self._process.join(timeout=0)
+            self.exitcode = self._process.exitcode
+            self._process.close()
