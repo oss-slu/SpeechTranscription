@@ -204,9 +204,9 @@ class mainGUI(CTk):
         frame, btn, del_btn = self.audioButtonList[index]
         frame.destroy()
 
-        # Remove session object
+        # Remove session object, stopping any transcription it still has running
         self.audioButtonList.pop(index)
-        self.audioMenuList.pop(index)
+        self.audioMenuList.pop(index).cancelProcessing()
 
         # Reindex remaining sessions
         for i, (frame, btn, del_btn) in enumerate(self.audioButtonList):

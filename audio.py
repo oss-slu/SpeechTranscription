@@ -216,23 +216,26 @@ class AudioManager:
                 self.wf.close()
                 self.wf = None
 
-        pre_normalized_audio = AudioSegment.from_file(self.filePath, format="wav")
+        # Use one path throughout: if a new file is loaded meanwhile, never write this audio over it
+        filePath = self.filePath
+        pre_normalized_audio = AudioSegment.from_file(filePath, format="wav")
         normalized_audio = normalize(pre_normalized_audio)
 
-        directory = os.path.dirname(os.path.abspath(self.filePath)) or "."
+        directory = os.path.dirname(os.path.abspath(filePath)) or "."
         fd, temp_path = tempfile.mkstemp(suffix=".wav", dir=directory)
         os.close(fd)
         try:
             normalized_audio.export(out_f=temp_path, format="wav")
-            os.replace(temp_path, self.filePath)
+            os.replace(temp_path, filePath)
         except Exception:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
             raise
 
         with self.lock:
-            self.wf = wave.open(self.filePath, "rb")
-        return self.filePath
+            if self.filePath == filePath:
+                self.wf = wave.open(filePath, "rb")
+        return filePath
         
     def createWaveformFile(self):
         self.audioExists = True

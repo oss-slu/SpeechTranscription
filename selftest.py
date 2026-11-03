@@ -77,11 +77,13 @@ def check_nltk_data():
 
 
 def check_app_imports():
-    # Imports the same chain the GUI does: grammar/LanguageTool, Whisper, pyannote, torch.
+    # Imports the same chain the app does: grammar/LanguageTool, Whisper, pyannote, torch.
+    # The transcription module is only imported by the worker process, so check it here.
     import components.audio_menu  # noqa: F401
+    import diarizationAndTranscription  # noqa: F401
     import whisper  # noqa: F401
 
-    return "components.audio_menu, whisper"
+    return "components.audio_menu, diarizationAndTranscription, whisper"
 
 
 CHECKS = [

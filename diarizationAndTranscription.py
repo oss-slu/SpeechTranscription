@@ -4,9 +4,12 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     from pyannote.audio import Pipeline
     import whisper
+import tqdm
 from pydub import AudioSegment
 import os
 import re
+import types
+import importlib
 from dotenv import load_dotenv
 
 import sys
@@ -17,10 +20,65 @@ if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
 
-def transcribeAudio(audioFile):
+_model = None
+
+
+def loadModel():
+    # Loading the model is slow, so keep it for later transcriptions in this process
+    global _model
+    if _model is None:
+        _model = whisper.load_model("small.en")  # using small.en for better accuracy
+    return _model
+
+
+class _ProgressBar(tqdm.tqdm):
+    '''Stands in for whisper's tqdm bar and forwards how far through the audio it is.'''
+    # Replaced with the real callback when transcribeAudio builds a subclass
+    callback = staticmethod(lambda fraction: None)
+
+    def update(self, n=1):
+        # Count here rather than using self.n, which a disabled bar doesn't track
+        self.framesDone = getattr(self, "framesDone", 0) + (n or 0)
+        result = super().update(n)
+        if self.total:
+            self.callback(min(self.framesDone / self.total, 1.0))
+        return result
+
+
+def _whisperProgressHook():
+    '''The whisper.transcribe module, if it still reports progress through tqdm.tqdm.
+
+    This relies on whisper internals, so if a whisper update changes them we
+    transcribe without detailed progress instead of failing.
+    '''
+    try:
+        # (whisper.transcribe is shadowed by the function of the same name, so look the module up)
+        whisperTranscribe = importlib.import_module("whisper.transcribe")
+    except ImportError:
+        return None
+    if not callable(getattr(getattr(whisperTranscribe, "tqdm", None), "tqdm", None)):
+        print("[WARNING] whisper no longer uses tqdm.tqdm; transcription progress will not be detailed")
+        return None
+    return whisperTranscribe
+
+
+def transcribeAudio(audioFile, on_progress=None):
+    '''on_progress(fraction) is called with 0.0 to 1.0 as whisper works through the audio.'''
     print("Starting transcription")
-    model = whisper.load_model("small.en")  # using small.en for better accuracy
-    transcribedAudio = model.transcribe(audioFile, fp16=False, language='English', condition_on_previous_text=False)
+    model = loadModel()
+    whisperTranscribe = _whisperProgressHook() if on_progress is not None else None
+    if whisperTranscribe is None:
+        transcribedAudio = model.transcribe(audioFile, fp16=False, language='English', condition_on_previous_text=False)
+    else:
+        # whisper only reports progress through its tqdm bar, so swap in one that calls back
+        progressBar = type("ProgressBar", (_ProgressBar,), {"callback": staticmethod(on_progress)})
+        originalTqdm = whisperTranscribe.tqdm
+        whisperTranscribe.tqdm = types.SimpleNamespace(tqdm=progressBar)
+        try:
+            transcribedAudio = model.transcribe(audioFile, fp16=False, language='English',
+                                                condition_on_previous_text=False, verbose=False)
+        finally:
+            whisperTranscribe.tqdm = originalTqdm
     print("Finished transcription")
     return transcribedAudio
 
@@ -46,8 +104,18 @@ def formatTranscriptionWithTimestamps(transcription: str, timestamps: list):
             transcript += f"[{timestamp}] {line}\n"
     return transcript.strip()
 
-def transcribe(audioFile):
-    transcription = transcribeAudio(audioFile)
+def transcribe(audioFile, on_progress=None):
+    '''on_progress(stage, fraction) reports the current step and overall progress (0.0 to 1.0).'''
+    def report(stage, fraction):
+        if on_progress:
+            on_progress(stage, fraction)
+
+    report("Loading model", 0.05)
+    loadModel()
+    report("Transcribing", 0.1)
+    transcription = transcribeAudio(
+        audioFile, on_progress=lambda fraction: report("Transcribing", 0.1 + 0.8 * fraction))
+    report("Formatting", 0.95)
     transcriptionText = formatTranscription(transcription["text"])
     # Use absolute times with millisecond precision
     timestamps = []

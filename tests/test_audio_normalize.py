@@ -155,3 +155,29 @@ def test_normalize_export_failure_cleans_temp_and_preserves_source(audio_manager
         assert f.read() == original_bytes
     leftover_temps = [name for name in os.listdir(tmp_path) if name.endswith(".wav") and name != "session.wav"]
     assert leftover_temps == []
+
+
+def test_normalize_never_writes_over_a_file_loaded_meanwhile(audio_manager, tmp_path, monkeypatch):
+    """If a new recording is loaded while normalization runs, the old audio must not replace it."""
+    old_path = str(tmp_path / "old.wav")
+    new_path = str(tmp_path / "new.wav")
+    _write_sine_wav(old_path, amp=2000)
+    _write_sine_wav(new_path, amp=8000)
+    with open(new_path, "rb") as new_file:
+        new_contents = new_file.read()
+    audio_manager.filePath = old_path
+
+    real_normalize = audio_module.normalize
+
+    def normalize_then_switch_file(segment):
+        audio_manager.filePath = new_path  # a new recording arrives mid-normalization
+        return real_normalize(segment)
+
+    monkeypatch.setattr(audio_module, "normalize", normalize_then_switch_file)
+
+    assert audio_manager.normalizeUploadedFile() == old_path
+    with open(new_path, "rb") as new_file:
+        assert new_file.read() == new_contents
+    # The newly loaded file stays current; normalization doesn't reopen the old one as the session audio
+    assert audio_manager.filePath == new_path
+    assert audio_manager.wf is None
