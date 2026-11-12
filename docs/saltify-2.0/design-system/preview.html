@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saltify Design Preview</title>
+<link rel="stylesheet" href="design-tokens.css">
+<script>
+  // ?theme=light|dark forces a theme; ?motion=reduce forces reduced motion; ?embed=1 hides the toolbar.
+  (function () {
+    var p = new URLSearchParams(location.search);
+    var t = p.get("theme"), m = p.get("motion");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    if (m === "reduce") document.documentElement.setAttribute("data-motion", "reduce");
+    if (p.get("embed") === "1") document.documentElement.classList.add("embed");
+  })();
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--color-bg-app);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: var(--focus-ring-width) solid var(--color-focus-ring); outline-offset: var(--focus-ring-offset); }
+
+  /* ---------- preview chrome ---------- */
+  .toolbar {
+    position: sticky; top: 0; z-index: var(--z-sticky);
+    display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-bg-surface); border-bottom: var(--border-width) solid var(--color-border-subtle);
+  }
+  .toolbar h1 { font-size: var(--font-size-title-sm); line-height: var(--line-height-title-sm); margin: 0 auto 0 0; }
+  .embed .toolbar { display: none; }
+  .both { display: none; grid-template-columns: 1fr 1fr; gap: 0; height: calc(100vh - 57px); }
+  .both iframe { width: 100%; height: 100%; border: 0; border-right: 1px solid var(--color-border-default); }
+  body.mode-both .both { display: grid; }
+  body.mode-both main { display: none; }
+
+  main { padding: var(--space-6) var(--space-4); max-width: 1320px; margin: 0 auto; }
+  section.block { margin-bottom: var(--space-10); }
+  section.block > h2 { font-size: var(--font-size-title); line-height: var(--line-height-title); font-weight: var(--font-weight-semibold); margin: 0 0 var(--space-1); }
+  section.block > p.lede { color: var(--color-text-secondary); margin: 0 0 var(--space-4); }
+  .state-label { font-size: var(--font-size-caption); line-height: var(--line-height-caption); color: var(--color-text-muted); }
+
+  /* ---------- shell mock ---------- */
+  .shell {
+    display: grid; grid-template-columns: var(--shell-sidebar-width) 1fr;
+    min-height: 560px; border-radius: var(--radius-xl); overflow: hidden;
+    border: var(--border-width) solid var(--color-border-subtle);
+    background: var(--color-bg-app); box-shadow: var(--shadow-lg);
+  }
+  .sidebar {
+    background: var(--color-bg-sidebar); border-right: var(--border-width) solid var(--color-border-subtle);
+    padding: var(--space-4) var(--space-3); display: flex; flex-direction: column; gap: var(--space-1);
+  }
+  .brand { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--font-weight-bold); font-size: var(--font-size-title); padding: var(--space-2) var(--space-3) var(--space-5); }
+  .brand svg { color: var(--color-accent-primary); }
+  .nav-item {
+    display: flex; align-items: center; gap: var(--space-3); min-height: 36px; width: 100%;
+    padding: 0 var(--space-3); border: 0; border-radius: var(--radius-md); background: transparent;
+    color: var(--color-text-secondary); font-weight: var(--font-weight-medium); text-align: left; cursor: pointer;
+    transition: background var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+  .nav-item:hover { background: var(--color-bg-hover); color: var(--color-text-primary); }
+  .nav-item[aria-current="page"] { background: var(--color-bg-selected); color: var(--color-text-selected); }
+  .nav-spacer { flex: 1; }
+  .storage { padding: var(--space-3); border-top: var(--border-width) solid var(--color-border-subtle); margin-top: var(--space-2); font-size: var(--font-size-caption); color: var(--color-text-muted); }
+  .meter { height: 6px; border-radius: var(--radius-pill); background: var(--color-bg-pressed); margin: var(--space-1) 0; overflow: hidden; }
+  .meter span { display: block; height: 100%; width: 25%; background: var(--color-accent-primary); }
+
+  .content { padding: var(--space-8) var(--space-8) var(--space-6); min-width: 0; }
+  .content-head { display: flex; justify-content: space-between; gap: var(--space-4); align-items: flex-start; flex-wrap: wrap; }
+  .display { font-size: var(--font-size-display); line-height: var(--line-height-display); font-weight: var(--font-weight-bold); margin: 0; }
+  .sub { color: var(--color-text-secondary); margin: var(--space-1) 0 0; }
+  .search {
+    display: flex; align-items: center; gap: var(--space-2); min-width: 240px; height: 36px; padding: 0 var(--space-3);
+    background: var(--color-bg-surface); border: var(--border-width) solid var(--color-border-default); border-radius: var(--radius-md); color: var(--color-text-muted);
+  }
+  .search input { border: 0; background: transparent; outline: none; flex: 1; min-width: 0; color: var(--color-text-primary); }
+  .search input::placeholder { color: var(--color-text-muted); }
+  .search:focus-within { outline: var(--focus-ring-width) solid var(--color-focus-ring); outline-offset: var(--focus-ring-offset); }
+  kbd { font-family: var(--font-family-sans); font-size: var(--font-size-caption); padding: 0 var(--space-1); border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); color: var(--color-text-muted); }
+
+  .actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin: var(--space-6) 0 var(--space-8); }
+  .action-card {
+    display: flex; align-items: center; gap: var(--space-4); min-height: 80px; padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg); border: var(--border-width) solid transparent; text-align: left; cursor: pointer;
+    transition: background var(--motion-duration-fast) var(--motion-easing-standard), transform var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+  .action-card strong { display: block; font-size: var(--font-size-title-sm); line-height: var(--line-height-title-sm); font-weight: var(--font-weight-semibold); }
+  .action-card small { font-size: var(--font-size-caption); line-height: var(--line-height-caption); opacity: 1; }
+  .action-card.record { background: var(--color-accent-record); color: var(--color-on-accent); }
+  .action-card.record:hover { background: var(--color-accent-record-hover); }
+  .action-card.import { background: var(--color-accent-import); color: var(--color-on-accent); }
+  .action-card.import:hover { background: var(--color-accent-import-hover); }
+  .action-card.neutral { background: var(--color-bg-surface); border-color: var(--color-border-subtle); color: var(--color-text-primary); }
+  .action-card.neutral small { color: var(--color-text-secondary); }
+  .action-card.neutral:hover { background: var(--color-bg-hover); }
+  .action-card:active { transform: translateY(1px); }
+
+  .row-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-3); }
+  .row-head h3 { font-size: var(--font-size-title); line-height: var(--line-height-title); font-weight: var(--font-weight-semibold); margin: 0; }
+  a { color: var(--color-text-link); text-decoration: none; font-weight: var(--font-weight-medium); }
+  a:hover { text-decoration: underline; }
+  .session-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+  .session {
+    display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto 32px; gap: var(--space-4); align-items: center;
+    min-height: 56px; padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+    background: var(--color-bg-surface); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-lg);
+  }
+  .session:hover { background: var(--color-bg-hover); }
+  .session[aria-selected="true"] { background: var(--color-bg-selected); border-color: var(--color-accent-primary); }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--color-bg-surface-sunken); color: var(--color-text-secondary); }
+  .session .name { font-weight: var(--font-weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .session .meta { font-size: var(--font-size-caption); line-height: var(--line-height-caption); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+  .badge {
+    display: inline-flex; align-items: center; height: 24px; padding: 0 var(--space-2); border-radius: var(--radius-sm);
+    font-size: var(--font-size-label); line-height: var(--line-height-label); font-weight: var(--font-weight-medium); white-space: nowrap;
+  }
+  .b-success { background: var(--color-status-success-bg); color: var(--color-status-success-fg); }
+  .b-info { background: var(--color-status-info-bg); color: var(--color-status-info-fg); }
+  .b-review { background: var(--color-status-review-bg); color: var(--color-status-review-fg); }
+  .b-warning { background: var(--color-status-warning-bg); color: var(--color-status-warning-fg); }
+  .b-danger { background: var(--color-status-danger-bg); color: var(--color-status-danger-fg); }
+  .b-neutral { background: var(--color-status-neutral-bg); color: var(--color-status-neutral-fg); }
+
+  /* ---------- workspace mock ---------- */
+  .workspace { display: grid; grid-template-columns: minmax(0, 1fr) var(--shell-inspector-width-compact); gap: var(--space-4); }
+  .panel { background: var(--color-bg-surface); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-lg); }
+  .player { padding: var(--space-4); border-bottom: var(--border-width) solid var(--color-border-subtle); }
+  .wave { display: flex; align-items: center; gap: 2px; height: 56px; position: relative; }
+  .wave i { flex: 1; border-radius: 2px; background: var(--color-waveform-unplayed); }
+  .wave i.played { background: var(--color-waveform-played); }
+  .wave .playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--color-waveform-playhead); left: 38%; }
+  .transport { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3); font-variant-numeric: tabular-nums; color: var(--color-text-secondary); }
+  .play {
+    width: var(--target-transport); height: var(--target-transport); border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--color-accent-primary); color: var(--color-on-accent); display: grid; place-items: center;
+  }
+  .play:hover { background: var(--color-accent-primary-hover); }
+  .play:active { background: var(--color-accent-primary-pressed); }
+  .utterances { list-style: none; margin: 0; padding: var(--space-2); }
+  .utt {
+    display: grid; grid-template-columns: 48px 88px minmax(0, 1fr); gap: var(--space-3); align-items: start;
+    padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  }
+  .utt:hover { background: var(--color-bg-hover); }
+  .utt.current { background: var(--color-bg-selected); }
+  .utt time { color: var(--color-text-muted); font-variant-numeric: tabular-nums; font-size: var(--font-size-label); line-height: var(--line-height-transcript); }
+  .utt p { margin: 0; font-size: var(--font-size-transcript); line-height: var(--line-height-transcript); max-width: var(--transcript-max-width); }
+  .chip { display: inline-flex; align-items: center; justify-content: center; height: 24px; margin-top: 1px; padding: 0 var(--space-2); border-radius: var(--radius-sm); font-size: var(--font-size-label); font-weight: var(--font-weight-medium); }
+  .sp1 { background: var(--color-speaker-1-bg); color: var(--color-speaker-1-fg); }
+  .sp2 { background: var(--color-speaker-2-bg); color: var(--color-speaker-2-fg); }
+  .sp3 { background: var(--color-speaker-3-bg); color: var(--color-speaker-3-fg); }
+  .sp4 { background: var(--color-speaker-4-bg); color: var(--color-speaker-4-fg); }
+  .sp5 { background: var(--color-speaker-5-bg); color: var(--color-speaker-5-fg); }
+  .sp6 { background: var(--color-speaker-6-bg); color: var(--color-speaker-6-fg); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .inspector { padding: var(--space-4); display: grid; gap: var(--space-4); align-content: start; }
+  .inspector h4 { margin: 0; font-size: var(--font-size-title-sm); line-height: var(--line-height-title-sm); }
+  .speaker-row { display: grid; gap: var(--space-2); }
+  .speaker-row .who { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--font-weight-medium); }
+
+  /* ---------- components ---------- */
+  .grid-states { display: grid; grid-template-columns: 120px repeat(7, minmax(0, 1fr)); gap: var(--space-3); align-items: center; overflow-x: auto; }
+  .grid-states > .hdr { font-size: var(--font-size-caption); color: var(--color-text-muted); font-weight: var(--font-weight-medium); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+    min-height: var(--target-default); padding: 0 var(--space-4); border-radius: var(--radius-md);
+    font-size: var(--font-size-label); font-weight: var(--font-weight-semibold); cursor: pointer; white-space: nowrap;
+    border: var(--border-width) solid transparent;
+    transition: background var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+  .btn-primary { background: var(--color-accent-primary); color: var(--color-on-accent); }
+  .btn-primary:hover, .btn-primary.is-hover { background: var(--color-accent-primary-hover); }
+  .btn-primary:active, .btn-primary.is-pressed { background: var(--color-accent-primary-pressed); }
+  .btn-secondary { background: var(--color-bg-surface); color: var(--color-text-primary); border-color: var(--color-border-default); }
+  .btn-secondary:hover, .btn-secondary.is-hover { background: var(--color-bg-hover); }
+  .btn-secondary:active, .btn-secondary.is-pressed { background: var(--color-bg-pressed); }
+  .btn-ghost { background: transparent; color: var(--color-text-primary); }
+  .btn-ghost:hover, .btn-ghost.is-hover { background: var(--color-bg-hover); }
+  .btn-ghost:active, .btn-ghost.is-pressed { background: var(--color-bg-pressed); }
+  .btn-danger { background: var(--color-status-danger-bg); color: var(--color-status-danger-fg); }
+  .btn-danger:hover, .btn-danger.is-hover { border-color: var(--color-error-border); }
+  .btn-danger:active, .btn-danger.is-pressed { background: var(--color-bg-pressed); }
+  .is-focus { outline: var(--focus-ring-width) solid var(--color-focus-ring); outline-offset: var(--focus-ring-offset); }
+  .btn:disabled, .btn.is-disabled { background: var(--color-disabled-bg); color: var(--color-disabled-text); border-color: var(--color-disabled-border); cursor: not-allowed; }
+  .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin 0.8s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+  :root[data-motion="reduce"] .spinner { animation-duration: 2.4s; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .field { display: grid; gap: var(--space-1); }
+  .field label { font-size: var(--font-size-label); font-weight: var(--font-weight-medium); }
+  .input, .select {
+    height: var(--target-default); padding: 0 var(--space-3); border-radius: var(--radius-md);
+    background: var(--color-bg-surface-sunken); border: var(--border-width) solid var(--color-border-strong); color: var(--color-text-primary); width: 100%;
+  }
+  .input:hover { background: var(--color-bg-hover); }
+  .input:focus-visible, .input.is-focus { outline: var(--focus-ring-width) solid var(--color-focus-ring); outline-offset: 0; border-color: var(--color-focus-ring); }
+  .input[aria-invalid="true"] { border-color: var(--color-error-border); }
+  .input:disabled { background: var(--color-disabled-bg); border-color: var(--color-disabled-border); color: var(--color-disabled-text); cursor: not-allowed; }
+  .help { font-size: var(--font-size-caption); line-height: var(--line-height-caption); color: var(--color-text-muted); }
+  .help.err { color: var(--color-error-text); display: flex; gap: var(--space-1); align-items: center; }
+  .fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+
+  .toggle { position: relative; width: 40px; height: 24px; border-radius: var(--radius-pill); border: var(--border-width) solid var(--color-border-strong); background: var(--color-bg-surface-sunken); cursor: pointer; padding: 0; }
+  .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--color-text-secondary); transition: transform var(--motion-duration-fast) var(--motion-easing-standard); }
+  .toggle[aria-checked="true"] { background: var(--color-accent-primary); border-color: var(--color-accent-primary); }
+  .toggle[aria-checked="true"]::after { transform: translateX(16px); background: var(--color-on-accent); }
+  .toggle:disabled { background: var(--color-disabled-bg); border-color: var(--color-disabled-border); cursor: not-allowed; }
+  .toggle:disabled::after { background: var(--color-disabled-text); }
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+
+  .tabs { display: inline-flex; padding: 3px; gap: 2px; background: var(--color-bg-surface-sunken); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-md); }
+  .tab { min-height: 30px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text-secondary); font-size: var(--font-size-label); font-weight: var(--font-weight-medium); cursor: pointer; }
+  .tab:hover { color: var(--color-text-primary); background: var(--color-bg-hover); }
+  .tab[aria-selected="true"] { background: var(--color-bg-surface); color: var(--color-text-selected); box-shadow: var(--shadow-sm); }
+
+  .flex { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .cards-2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+  .card { padding: var(--space-5); }
+  .card h4 { margin: 0 0 var(--space-1); font-size: var(--font-size-title-sm); }
+  .card p { margin: 0 0 var(--space-4); color: var(--color-text-secondary); }
+  .banner { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); }
+  .banner.warn { background: var(--color-status-warning-bg); color: var(--color-status-warning-fg); }
+  .banner.err { background: var(--color-status-danger-bg); color: var(--color-status-danger-fg); }
+  .banner strong { display: block; }
+
+  .type-row { display: grid; grid-template-columns: 160px 1fr; gap: var(--space-4); align-items: baseline; padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--color-border-subtle); }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-2); }
+  .swatch { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-2); background: var(--color-bg-surface); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-md); min-width: 0; }
+  .swatch span:first-child { width: 28px; height: 28px; flex: none; border-radius: var(--radius-sm); border: 1px solid var(--color-border-default); }
+  .swatch code { font-size: 11px; line-height: 14px; color: var(--color-text-secondary); overflow-wrap: anywhere; }
+
+  @media (max-width: 1100px) {
+    .shell { grid-template-columns: var(--shell-sidebar-rail-width) 1fr; }
+    .sidebar .label, .brand .label, .storage { display: none; }
+    .nav-item { justify-content: center; padding: 0; }
+    .workspace { grid-template-columns: 1fr; }
+    .grid-states { grid-template-columns: 100px repeat(7, 120px); }
+    .fields, .cards-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 720px) {
+    .actions, .fields, .cards-2 { grid-template-columns: 1fr; }
+    .session { grid-template-columns: 36px minmax(0, 1fr) 32px; }
+    .session .badge { display: none; }
+    .content { padding: var(--space-5) var(--space-4); }
+    .utt { grid-template-columns: 40px 1fr; }
+    .utt p { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 10v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z M14 3v5h5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="7" y="5" width="3.5" height="14" rx="1" fill="currentColor"/><rect x="13.5" y="5" width="3.5" height="14" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 7v6M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="toolbar" role="toolbar" aria-label="Preview options">
+  <h1>Saltify 2.0 design preview · #361</h1>
+  <div class="tabs" role="tablist" aria-label="Theme">
+    <button class="tab" role="tab" data-mode="system" aria-selected="true">System</button>
+    <button class="tab" role="tab" data-mode="light" aria-selected="false">Light</button>
+    <button class="tab" role="tab" data-mode="dark" aria-selected="false">Dark</button>
+    <button class="tab" role="tab" data-mode="both" aria-selected="false">Side by side</button>
+  </div>
+  <label class="toggle-row"><span class="state-label">Reduced motion</span>
+    <button class="toggle" role="switch" aria-checked="false" id="motion-toggle" aria-label="Reduced motion"></button></label>
+</div>
+
+<div class="both" aria-label="Light and dark side by side"></div>
+
+<main>
+  <!-- 1. Dashboard shell -->
+  <section class="block" aria-labelledby="h-shell">
+    <h2 id="h-shell">Shell and dashboard</h2>
+    <p class="lede">Sidebar, primary navigation, content region, action cards and recent sessions. Narrow the window below 1100px to see the icon rail.</p>
+    <div class="shell">
+      <nav class="sidebar" aria-label="Primary">
+        <div class="brand"><svg width="24" height="24" aria-hidden="true"><use href="#i-wave"/></svg><span class="label">saltify.</span></div>
+        <button class="nav-item" aria-current="page"><svg width="18" height="18" aria-hidden="true"><use href="#i-home"/></svg><span class="label">Home</span></button>
+        <button class="nav-item"><svg width="18" height="18" aria-hidden="true"><use href="#i-list"/></svg><span class="label">Sessions</span></button>
+        <button class="nav-item"><svg width="18" height="18" aria-hidden="true"><use href="#i-mic"/></svg><span class="label">Record</span></button>
+        <button class="nav-item"><svg width="18" height="18" aria-hidden="true"><use href="#i-upload"/></svg><span class="label">Import</span></button>
+        <button class="nav-item" aria-expanded="false"><svg width="18" height="18" aria-hidden="true"><use href="#i-chart"/></svg><span class="label">Analysis</span></button>
+        <button class="nav-item"><svg width="18" height="18" aria-hidden="true"><use href="#i-file"/></svg><span class="label">Exports</span></button>
+        <div class="nav-spacer"></div>
+        <button class="nav-item"><svg width="18" height="18" aria-hidden="true"><use href="#i-gear"/></svg><span class="label">Settings</span></button>
+        <button class="nav-item"><svg width="18" height="18" aria-hidden="true"><use href="#i-help"/></svg><span class="label">Help</span></button>
+        <div class="storage">Storage<div class="meter" role="meter" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" aria-label="Storage used"><span></span></div>12.4 GB of 50 GB</div>
+      </nav>
+      <div class="content">
+        <div class="content-head">
+          <div>
+            <p class="display">Good morning!</p>
+            <p class="sub">Record, transcribe, and analyze child language samples.</p>
+          </div>
+          <label class="search"><svg width="16" height="16" aria-hidden="true"><use href="#i-search"/></svg><input placeholder="Search sessions…" aria-label="Search sessions"><kbd>Ctrl K</kbd></label>
+        </div>
+        <div class="actions">
+          <button class="action-card record"><svg width="28" height="28" aria-hidden="true"><use href="#i-mic"/></svg><span><strong>New Recording</strong><small>Capture audio now</small></span></button>
+          <button class="action-card import"><svg width="28" height="28" aria-hidden="true"><use href="#i-upload"/></svg><span><strong>Import Audio</strong><small>Add an existing file</small></span></button>
+          <button class="action-card neutral"><svg width="28" height="28" aria-hidden="true"><use href="#i-file"/></svg><span><strong>New Session</strong><small>Create empty session</small></span></button>
+        </div>
+        <div class="row-head"><h3>Recent Sessions</h3><a href="#">View all →</a></div>
+        <ul class="session-list" id="sessions"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Workspace -->
+  <section class="block" aria-labelledby="h-ws">
+    <h2 id="h-ws">Transcription workspace</h2>
+    <p class="lede">Player, transcript rows (transcript type scale, tabular timestamps, speaker chips with text labels) and the speakers inspector.</p>
+    <div class="flex" style="justify-content:space-between;margin-bottom:var(--space-4)">
+      <div>
+        <div style="font-size:var(--font-size-heading);line-height:var(--line-height-heading);font-weight:var(--font-weight-semibold)">Ella - Play Based Assessment</div>
+        <div class="state-label">Nov 12, 2024 · 12:36 · <span style="color:var(--color-status-warning-fg);font-weight:var(--font-weight-medium)">Draft</span></div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Workspace view">
+        <button class="tab" role="tab" aria-selected="true">Transcript</button>
+        <button class="tab" role="tab" aria-selected="false">SALT</button>
+        <button class="tab" role="tab" aria-selected="false">SUGAR</button>
+        <button class="tab" role="tab" aria-selected="false">Export</button>
+      </div>
+    </div>
+    <div class="workspace">
+      <div class="panel">
+        <div class="player">
+          <div class="wave" id="wave" aria-hidden="true"><div class="playhead"></div></div>
+          <div class="transport">
+            <button class="play" aria-label="Pause"><svg width="20" height="20" aria-hidden="true"><use href="#i-pause"/></svg></button>
+            <button class="btn btn-ghost" aria-label="Back 10 seconds">−10s</button>
+            <button class="btn btn-ghost" aria-label="Forward 15 seconds">+15s</button>
+            <span>00:42 / 12:36</span>
+          </div>
+        </div>
+        <ol class="utterances" id="utts"></ol>
+      </div>
+      <aside class="panel inspector" aria-label="Speakers">
+        <h4>Detected speakers</h4>
+        <div id="speakers" style="display:grid;gap:var(--space-4)"></div>
+        <div class="toggle-row"><span>Show speaker labels</span><button class="toggle" role="switch" aria-checked="true" aria-label="Show speaker labels"></button></div>
+        <div class="toggle-row"><span>Auto-detect speakers</span><button class="toggle" role="switch" aria-checked="true" aria-label="Auto-detect speakers"></button></div>
+        <div class="toggle-row"><span style="color:var(--color-disabled-text)">Diarization (unavailable)</span><button class="toggle" role="switch" aria-checked="false" disabled aria-label="Diarization"></button></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 3. Component states -->
+  <section class="block" aria-labelledby="h-states">
+    <h2 id="h-states">Button states</h2>
+    <p class="lede">Hover, focus and pressed are forced here for review. The real components also respond to the mouse and keyboard.</p>
+    <div class="grid-states" id="states"></div>
+  </section>
+
+  <section class="block" aria-labelledby="h-fields">
+    <h2 id="h-fields">Inputs</h2>
+    <div class="fields">
+      <div class="field"><label for="f1">Default</label><input id="f1" class="input" value="Ella"><span class="help">Child's first name only</span></div>
+      <div class="field"><label for="f2">Focus</label><input id="f2" class="input is-focus" value="Examiner"></div>
+      <div class="field"><label for="f3">Error</label><input id="f3" class="input" aria-invalid="true" aria-describedby="f3e" value="??"><span class="help err" id="f3e"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"/></svg>Speaker name can't be empty or symbols only</span></div>
+      <div class="field"><label for="f4">Disabled</label><input id="f4" class="input" value="Locked while processing" disabled></div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-status">
+    <h2 id="h-status">Status badges and speakers</h2>
+    <div class="flex" style="margin-bottom:var(--space-4)">
+      <span class="badge b-success">Transcribed</span><span class="badge b-info">Recorded</span><span class="badge b-info">In Review</span>
+      <span class="badge b-review">Reviewed</span><span class="badge b-review">Exported</span><span class="badge b-warning">Draft</span>
+      <span class="badge b-warning">Recovered</span><span class="badge b-danger">Failed</span><span class="badge b-neutral">Not Transcribed</span>
+      <span class="badge b-neutral">SALT</span><span class="badge b-neutral">SUGAR</span>
+    </div>
+    <div class="flex">
+      <span class="chip sp1">Examiner</span><span class="chip sp2">Child</span><span class="chip sp3">Parent</span>
+      <span class="chip sp4">Speaker 4</span><span class="chip sp5">Speaker 5</span><span class="chip sp6">Speaker 6</span>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-empty">
+    <h2 id="h-empty">Empty, loading, recovery and error states</h2>
+    <div class="cards-2">
+      <div class="panel card"><h4>No sessions yet</h4><p>Record or import audio to create your first session.</p><button class="btn btn-primary">New Recording</button></div>
+      <div class="panel card" aria-busy="true"><h4>Transcribing…</h4><p>Ella - Play Based Assessment · 34% · about 3 min left</p><div class="meter" role="progressbar" aria-valuenow="34" aria-valuemin="0" aria-valuemax="100" aria-label="Transcription progress"><span style="width:34%"></span></div><div style="margin-top:var(--space-3)"><button class="btn btn-secondary">Cancel</button></div></div>
+      <div class="panel card" style="display:grid;gap:var(--space-3)">
+        <div class="banner warn" role="status"><svg width="18" height="18" aria-hidden="true"><use href="#i-alert"/></svg><div><strong>Recovered unsaved changes</strong>Saltify closed unexpectedly. Your edits from 14:21 were restored.</div></div>
+        <div class="banner err" role="alert"><svg width="18" height="18" aria-hidden="true"><use href="#i-alert"/></svg><div><strong>Transcription failed</strong>The audio file couldn't be read. <a href="#" style="color:inherit;text-decoration:underline">Retry</a></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Typography -->
+  <section class="block" aria-labelledby="h-type">
+    <h2 id="h-type">Typography</h2>
+    <div id="type"></div>
+  </section>
+
+  <!-- 5. Tokens -->
+  <section class="block" aria-labelledby="h-tokens">
+    <h2 id="h-tokens">Colour tokens</h2>
+    <p class="lede">The values come from the active theme in design-tokens.css.</p>
+    <div class="swatches" id="swatches"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ----- toolbar -----
+  var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  var both = document.querySelector(".both");
+  function setMode(mode) {
+    document.querySelectorAll(".toolbar .tab").forEach(function (t) { t.setAttribute("aria-selected", String(t.dataset.mode === mode)); });
+    document.body.classList.toggle("mode-both", mode === "both");
+    if (mode === "light" || mode === "dark") root.setAttribute("data-theme", mode); else root.removeAttribute("data-theme");
+    if (mode === "both" && !both.children.length) {
+      ["light", "dark"].forEach(function (t) {
+        var f = document.createElement("iframe");
+        f.title = t + " theme"; f.src = location.pathname + "?embed=1&theme=" + t + (root.getAttribute("data-motion") ? "&motion=reduce" : "");
+        both.appendChild(f);
+      });
+    }
+    store.set("saltify-preview-mode", mode);
+  }
+  if (!root.classList.contains("embed")) {
+    document.querySelectorAll(".toolbar .tab").forEach(function (t) { t.addEventListener("click", function () { setMode(t.dataset.mode); }); });
+    setMode(store.get("saltify-preview-mode") || "system");
+  }
+  var mt = $("motion-toggle");
+  mt.addEventListener("click", function () {
+    var on = mt.getAttribute("aria-checked") !== "true";
+    mt.setAttribute("aria-checked", String(on));
+    if (on) root.setAttribute("data-motion", "reduce"); else root.removeAttribute("data-motion");
+    both.innerHTML = ""; if (document.body.classList.contains("mode-both")) setMode("both");
+  });
+
+  // ----- demo toggles -----
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest(".inspector .toggle:not(:disabled)");
+    if (t) t.setAttribute("aria-checked", String(t.getAttribute("aria-checked") !== "true"));
+  });
+
+  // ----- sessions -----
+  var sessions = [
+    ["Ella - Play Based Assessment", "Nov 12, 2024 · 15:24 · 12:36", ["success", "Transcribed"], ["info", "In Review"], true],
+    ["Jacob - Articulation Probe", "Nov 10, 2024 · 09:14 · 08:21", ["info", "Recorded"], ["neutral", "Not Transcribed"]],
+    ["Mia - Classroom Observation", "Nov 8, 2024 · 13:02 · 20:14", ["success", "Transcribed"], ["review", "Reviewed"]],
+    ["Liam - Narrative Sample", "Nov 5, 2024 · 11:47 · 10:03", ["review", "Exported"], ["neutral", "SALT"]],
+    ["Sophie - Conversation Sample", "Nov 3, 2024 · 14:21 · 18:56", ["danger", "Failed"], ["neutral", "SUGAR"]]
+  ];
+  $("sessions").innerHTML = sessions.map(function (s) {
+    return '<li class="session"' + (s[4] ? ' aria-selected="true"' : "") + ' tabindex="0">' +
+      '<span class="avatar"><svg width="18" height="18" aria-hidden="true"><use href="#i-wave"/></svg></span>' +
+      '<span style="min-width:0"><div class="name">' + s[0] + '</div><div class="meta">' + s[1] + "</div></span>" +
+      '<span class="badge b-' + s[2][0] + '">' + s[2][1] + '</span><span class="badge b-' + s[3][0] + '">' + s[3][1] + "</span>" +
+      '<button class="btn btn-ghost" style="padding:0;width:32px" aria-label="More actions for ' + s[0] + '"><svg width="18" height="18" aria-hidden="true"><use href="#i-more"/></svg></button></li>';
+  }).join("");
+
+  // ----- waveform -----
+  var wave = $("wave"), bars = "";
+  for (var i = 0; i < 90; i++) {
+    var h = 18 + Math.round(70 * Math.abs(Math.sin(i * 0.37) * Math.cos(i * 0.11)));
+    bars += '<i class="' + (i < 34 ? "played" : "") + '" style="height:' + h + '%"></i>';
+  }
+  wave.insertAdjacentHTML("afterbegin", bars);
+
+  // ----- transcript -----
+  var utts = [
+    ["00:12", 1, "Examiner", "Tell me what you are building here."],
+    ["00:18", 2, "Child", "I'm making a house. It's for my dog.", true],
+    ["00:24", 1, "Examiner", "Oh, a house for your dog. What does your dog do?"],
+    ["00:31", 2, "Child", "He, um, he runs and he plays. Sometimes he barks really loud."],
+    ["00:38", 3, "Parent", "He does bark a lot, doesn't he?"],
+    ["00:45", 2, "Child", "Um, he likes to go outside and play with me and my brother."]
+  ];
+  $("utts").innerHTML = utts.map(function (u) {
+    return '<li class="utt' + (u[4] ? " current" : "") + '"' + (u[4] ? ' aria-current="true"' : "") + ' tabindex="0"><time>' + u[0] +
+      '</time><span class="chip sp' + u[1] + '">' + u[2] + "</span><p>" + u[3] + "</p></li>";
+  }).join("");
+
+  // ----- speakers inspector -----
+  $("speakers").innerHTML = [["1", "Speaker 1", "Examiner"], ["2", "Speaker 2", "Child"], ["3", "Speaker 3", "Parent"]].map(function (s) {
+    return '<div class="speaker-row"><div class="who"><span class="dot" style="background:var(--color-speaker-' + s[0] + '-solid)"></span>' + s[1] +
+      '</div><input class="input" aria-label="' + s[1] + ' name" value="' + s[2] + '"></div>';
+  }).join("");
+
+  // ----- state grid -----
+  var states = [["Default", ""], ["Hover", "is-hover"], ["Focus", "is-focus"], ["Pressed", "is-pressed"], ["Disabled", "disabled"], ["Loading", "loading"], ["Error", "error"]];
+  var html = '<span></span>' + states.map(function (s) { return '<span class="hdr">' + s[0] + "</span>"; }).join("");
+  [["Primary", "btn-primary", "Transcribe"], ["Secondary", "btn-secondary", "Export"], ["Ghost", "btn-ghost", "Cancel"], ["Danger", "btn-danger", "Delete session"]].forEach(function (v) {
+    html += '<span class="state-label">' + v[0] + "</span>";
+    states.forEach(function (s) {
+      if (s[1] === "disabled") html += '<span><button class="btn ' + v[1] + '" disabled>' + v[2] + "</button></span>";
+      else if (s[1] === "loading") html += '<span><button class="btn ' + v[1] + '" aria-busy="true" aria-disabled="true"><span class="spinner" aria-hidden="true"></span>' + v[2] + "</button></span>";
+      else if (s[1] === "error") html += '<span style="display:grid;gap:2px;justify-items:start"><button class="btn ' + v[1] + '" aria-describedby="err-' + v[1] + '">' + v[2] + '</button><span class="help err" id="err-' + v[1] + '">Failed. Try again</span></span>';
+      else html += '<span><button class="btn ' + v[1] + " " + s[1] + '">' + v[2] + "</button></span>";
+    });
+  });
+  $("states").innerHTML = html;
+
+  // ----- typography -----
+  var type = [["display", "700", "Good morning!"], ["heading", "600", "Ella - Play Based Assessment"], ["title", "600", "Recent Sessions"],
+    ["title-sm", "600", "Detected Speakers"], ["transcript", "400", "He, um, he runs and he plays. Sometimes he barks really loud."],
+    ["body", "400", "Record, transcribe, and analyze child language samples."], ["label", "500", "Transcript · SALT · SUGAR · Export"],
+    ["caption", "400", "Nov 12, 2024 · 15:24 · 12:36"]];
+  $("type").innerHTML = type.map(function (t) {
+    return '<div class="type-row"><span class="state-label">' + t[0] + "<br>" +
+      '<span data-size="' + t[0] + '"></span></span><span style="font-size:var(--font-size-' + t[0] + ');line-height:var(--line-height-' + t[0] + ');font-weight:' + t[1] + '">' + t[2] + "</span></div>";
+  }).join("");
+
+  // ----- swatches -----
+  var groups = {
+    bg: ["app", "sidebar", "surface", "surface-raised", "surface-sunken", "hover", "pressed", "selected"],
+    text: ["primary", "secondary", "muted", "disabled", "link", "selected"],
+    border: ["subtle", "default", "strong"],
+    accent: ["primary", "primary-hover", "primary-pressed", "primary-subtle", "record", "record-hover", "import", "import-hover"],
+    misc: ["focus-ring", "error-border", "error-text", "waveform-played", "waveform-unplayed", "waveform-playhead"]
+  };
+  var names = [];
+  Object.keys(groups).forEach(function (g) { groups[g].forEach(function (n) { names.push("--color-" + (g === "misc" ? "" : g + "-") + n); }); });
+  ["success", "info", "review", "warning", "danger", "neutral"].forEach(function (s) { names.push("--color-status-" + s + "-bg", "--color-status-" + s + "-fg"); });
+  for (var k = 1; k <= 6; k++) names.push("--color-speaker-" + k + "-solid", "--color-speaker-" + k + "-bg", "--color-speaker-" + k + "-fg");
+  function paintSwatches() {
+    var cs = getComputedStyle(root);
+    $("swatches").innerHTML = names.map(function (n) {
+      return '<div class="swatch"><span style="background:var(' + n + ')"></span><code>' + n.slice(2) + "<br>" + cs.getPropertyValue(n).trim() + "</code></div>";
+    }).join("");
+    document.querySelectorAll("[data-size]").forEach(function (el) {
+      var key = el.getAttribute("data-size");
+      el.textContent = cs.getPropertyValue("--font-size-" + key).trim() + " / " + cs.getPropertyValue("--line-height-" + key).trim();
+    });
+  }
+  paintSwatches();
+  new MutationObserver(paintSwatches).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+  try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintSwatches); } catch (e) {}
+})();
+</script>
+</body>
+</html>
