@@ -137,7 +137,7 @@ Six speaker slots cover examiner, child, parent and three extras. Slot 1 is Exam
 | ≥ 1440 | 232 expanded | 248 docked | 320 docked |
 | 1280–1439 | 232 expanded | 248 docked | 288 docked |
 | 1100–1279 | 232 expanded | Collapses; opens as overlay | 288 docked |
-| 1024–1099 | 64 icon rail (labels in tooltips) | Overlay | Drawer from right |
+| 1024–1099 | 64 icon rail (visible labels hidden; each item keeps its `aria-label` and shows its label in a tooltip on hover after 500ms or on keyboard focus, Esc dismisses) | Overlay | Drawer from right |
 | < 1024 × 640 | Not supported for layout | The main region scrolls. Content is **never clipped** (see #327). | |
 
 The window minimum is **1024 × 640 CSS px**. Users can collapse the sidebar and inspector at any size, and that choice is remembered per user.
@@ -197,7 +197,7 @@ Every interactive component supports the states below. Components get state colo
 | Target size | ≥ 24×24 (WCAG 2.5.8); 32 default; 40 primary | `target-*` tokens, review |
 | Focus visible | Every focusable element shows `focus-ring` | Review on `preview.html` |
 | No colour-only meaning | Status, speakers and errors always have text or an icon | Review |
-| Reduced motion | OS `prefers-reduced-motion` **or** in-app `data-motion="reduce"` sets all durations to 0ms. The waveform stops auto-scrolling and the playhead moves in steps. Progress bars still update | Generated CSS |
+| Reduced motion | OS `prefers-reduced-motion` **or** in-app `data-motion="reduce"` sets all durations to 0ms and stops looping animation such as the spinner (`animation: none`). The waveform stops auto-scrolling and the playhead moves in steps. Progress bars still update | Generated CSS |
 | Motion budget | Hover/press 120ms, panels 180ms, dialogs 260ms. Nothing over 300ms, nothing that flashes | Tokens |
 
 ### Keyboard model
@@ -230,6 +230,6 @@ Review checklist, compared with the four reference images attached to [#350](htt
 - [ ] Focus ring is visible on every control in both themes (tab through the page)
 - [ ] Layout at 1024, 1280 and 1440 px wide; text zoom at 200%
 - [ ] Windows at 100%, 150% and 200% scaling; macOS at 1× and 2×
-- [ ] Reduced motion switch removes transitions
+- [ ] Reduced motion switch removes transitions and stops the spinner
 
 Attach screenshots of `preview.html` at 1280×800 in both themes to the PR.
